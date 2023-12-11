@@ -34,7 +34,7 @@
 				//logoSrc: "@/assets/logo.png",
 				usuario: '',
 				contrasena: '',
-				recordarCredenciales: false,
+				recordarCredenciales: true,
 				colorIndex: 0,
 			}
 		},
@@ -48,56 +48,98 @@
 			async iniciarSesion() {
 				this.$q.loading.show()
 				// Hacer la solicitud de inicio de sesión (simulación)
-				this.startSesion()
-					.then(async (respuesta) => {
-						if (respuesta.length) {
-							// Inicio de sesión exitoso
-							if (this.recordarCredenciales) {
-								this.$q.loading.hide()
-								// Guardar credenciales en la colección 'credenciales'
-								console.log('entro')
-								for (let a of respuesta) {
-									await this.$rsNeDB('credenciales').insert({
-										usuario: this.usuario,
-										authToken: a.AuthToken,
-										id: a.Id,
-										tenant: a.tenant,
-									})
-									await this.$rsNeDB('user').insert({
-										userName: this.usuario,
-										password: this.contrasena,
-										RememberMe: 0,
-										projectSelector: 'HPRefurbish',
-									})
-								}
-								const documentos = await this.$rsNeDB('user').findOne({
-									userName: 'randy',
-								})
+				let res = []
+				for (let s of this.$env.project) {
+					const options = {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'User-Agent': 'insomnia/2023.5.8',
+						},
+						body: JSON.stringify({
+							userName: this.usuario,
+							password: this.contrasena,
+							RememberMe: 0,
+							projectSelector: s.id,
+						}),
+					}
 
-								console.log('Documentos:', documentos)
-							}
-
-							// Redirigir a la siguiente página (por ejemplo, el panel principal)
-							this.$router.push('/')
-						} else {
-							this.$q.loading.hide()
-							// Inicio de sesión fallido
-							console.error('Inicio de sesión fallido. Verifica usuario y contraseña.')
-						}
-						console.log(respuesta)
-					})
-					.catch((error) => {
+					// Realizar la solicitud fetch
+					await fetch(`${s.url}/Login/Authenticate`, options)
+						.then((response) => response.json())
+						.then((response) => {
+							console.log(response)
+							res.push(response)
+						}) // Resolver la promesa con la respuesta
+						.catch((err) => reject(err)) // Rechazar la promesa con el error
+				}
+				console.log(res.length)
+				if (res.length) {
+					// Inicio de sesión exitoso
+					if (this.recordarCredenciales) {
 						this.$q.loading.hide()
-						// Manejar el error aquí
-						console.error(error)
-					})
+						// Guardar credenciales en la colección 'credenciales'
+						console.log('entro')
+						for (let a of res) {
+							await this.$rsNeDB('credenciales').insert({
+								usuario: this.usuario,
+								authToken: a.AuthToken,
+								id: a.Id,
+								tenant: a.tenant,
+							})
+							await this.$rsNeDB('user').insert({
+								userName: this.usuario,
+								password: this.contrasena,
+								RememberMe: 0,
+								projectSelector: 'HPRefurbish',
+							})
+						}
+						const documentos = await this.$rsNeDB('user').findOne({
+							userName: 'randy',
+						})
+
+						console.log('Documentos:', documentos)
+					}
+
+					// Redirigir a la siguiente página (por ejemplo, el panel principal)
+					this.$router.push('/')
+				} else {
+					this.$q.loading.hide()
+					// Inicio de sesión fallido
+					console.error('Inicio de sesión fallido. Verifica usuario y contraseña.')
+				}
 			},
 
 			// Función de simulación de inicio de sesión (puedes reemplazarla con tu lógica de autenticación real)
 			async startSesion() {
-				return new Promise((resolve, reject) => {
+				let data = []
+				for (let s of this.$env.project) {
+					const options = {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'User-Agent': 'insomnia/2023.5.8',
+						},
+						body: JSON.stringify({
+							userName: this.usuario,
+							password: this.contrasena,
+							RememberMe: 0,
+							projectSelector: s.id,
+						}),
+					}
+
+					// Realizar la solicitud fetch
+					fetch(`${s.url}/Login/Authenticate`, options)
+						.then((response) => response.json())
+						.then((response) => data.push(response)) // Resolver la promesa con la respuesta
+						.catch((err) => reject(err)) // Rechazar la promesa con el error
+				}
+				console.log()
+				return data
+
+				/* return new Promise((resolve, reject) => {
 					// Construir el objeto de opciones para la solicitud fetch
-					console.log(this.$env)
+					//console.log(this.$env)
 					let data = []
 					for (let s of this.$env.project) {
 						const options = {
@@ -120,8 +162,9 @@
 							.then((response) => data.push(response)) // Resolver la promesa con la respuesta
 							.catch((err) => reject(err)) // Rechazar la promesa con el error
 					}
+					console.log(data)
 					resolve(data)
-				})
+				}) */
 			},
 			cerrarVentana() {
 				// Cerrar la ventana en Electron

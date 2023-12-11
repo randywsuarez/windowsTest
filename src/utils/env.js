@@ -8,12 +8,12 @@ export default {
 		{
 			db: 'SfisDB',
 			id: 'HPRefurbish',
-			url: 'https://sfisprodisp.azurewebsites.net/api/APP/',
+			url: 'https://sfisprodisp.azurewebsites.net/api/APP',
 		},
 		{
 			db: 'Sfis_HP_RevenueDB',
 			id: 'ISP-PC',
-			url: 'https://sfis-hprevenue.azurewebsites.net/api/APP/',
+			url: 'https://sfis-hprevenue.azurewebsites.net/api/APP',
 		},
 	],
 	mongodb: {
