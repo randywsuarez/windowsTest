@@ -6,6 +6,11 @@ export default {
 	},
 	project: [
 		{
+			db: 'SFisDB_DEV',
+			id: 'HPRefurbish',
+			url: 'https://sfiswebwebdev.azurewebsites.net/api/APP',
+		},
+		{
 			db: 'SfisDB',
 			id: 'HPRefurbish',
 			url: 'https://sfisprodisp.azurewebsites.net/api/APP',

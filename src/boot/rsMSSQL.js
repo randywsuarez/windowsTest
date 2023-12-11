@@ -17,6 +17,7 @@ export default async ({ Vue }) => {
 
 		async executeQuery(query) {
 			try {
+				console.log(this.config)
 				const pool = await new sql.ConnectionPool(this.config).connect()
 				const request = pool.request()
 
