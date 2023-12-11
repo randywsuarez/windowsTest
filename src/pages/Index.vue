@@ -24,10 +24,11 @@
 			return {
 				user: {},
 				device: {},
+				test: [],
 			}
 		},
 
-		async created() {
+		async beforeCreate() {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
 			console.log(this.user)
 		},
@@ -40,12 +41,12 @@
 					for (let x of this.$env.project) {
 						console.log(x)
 						let res = await this.$rsDB(x.db)
-							.select('SerialNumber, ArrivedSKU')
+							.select('SerialNumber, ArrivedSKU, StationID')
 							.from('sfis_WorkTracking')
 							.where(`SerialNumber = '${result.Serial}'`)
 							.execute()
 						if (res) {
-							console.log(res)
+							console.log(res[0])
 							break
 						}
 					}
