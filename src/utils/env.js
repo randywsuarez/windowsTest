@@ -4,17 +4,17 @@ export default {
 		user: 'sfis_test',
 		password: 'Sf1s@R3ad_1st#2023prod',
 	},
-	db: ['SfisDB', 'Sfis_HP_RevenueDB'],
 	project: [
 		{
 			db: 'SfisDB',
 			id: 'HPRefurbish',
-			url: 'https://sfiswebwebdev.azurewebsites.net/api/APP/',
+			url: 'https://sfisprodisp.azurewebsites.net/api/APP/',
 		},
-		/* {
-        id: "ISP-PC",
-        url: "https://sfiswebwebdev.azurewebsites.net/api/APP/",
-      }, */
+		{
+			db: 'Sfis_HP_RevenueDB',
+			id: 'ISP-PC',
+			url: 'https://sfis-hprevenue.azurewebsites.net/api/APP/',
+		},
 	],
 	mongodb: {
 		dev: 'http://localhost:4300/api',
