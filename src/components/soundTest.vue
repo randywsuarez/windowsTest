@@ -5,31 +5,15 @@
 		<q-card-section class="reproductor-content">
 			<div class="botones-reproductor">
 				<!-- Botones de reproducción -->
-				<q-btn @click="reproducirSonido('Left')" icon="skip_previous" round />
+				<!-- <q-btn @click="reproducirSonido('Left')" icon="skip_previous" round /> -->
 				<q-btn @click="reproducirSonido('Play')" icon="play_arrow" class="play-btn" round />
-				<q-btn @click="reproducirSonido('Right')" icon="skip_next" round />
+				<!-- <q-btn @click="reproducirSonido('Right')" icon="skip_next" round /> -->
 			</div>
 		</q-card-section>
 
 		<q-card-actions align="right">
-			<q-btn
-				flat
-				color="red"
-				label="FAIL"
-				@click="
-					detenerReproduccion
-					$emit('respuesta', false)
-				"
-			/>
-			<q-btn
-				flat
-				color="green"
-				label="PASS"
-				@click="
-					detenerReproduccion
-					$emit('respuesta', true)
-				"
-			/>
+			<q-btn flat color="red" label="FAIL" @click="detenerReproduccion(false)" />
+			<q-btn flat color="green" label="PASS" @click="detenerReproduccion(true)" />
 		</q-card-actions>
 
 		<!-- Elemento de audio -->
@@ -101,9 +85,13 @@
 					this.reproducirAudio()
 				}
 			},
-			detenerReproduccion() {
+			detenerReproduccion(a) {
 				// Detener la reproducción al presionar "Fail" o "Pass"
 				this.isPlaying = false
+				console.log('stop')
+				this.$refs.audioElement.pause()
+				this.$refs.audioElement.currentTime = 0
+				this.$emit('respuesta', a)
 			},
 		},
 	}
