@@ -1,5 +1,5 @@
 <template>
-	<q-card>
+	<q-card class="reproductor-card">
 		<!-- ... (código existente) ... -->
 
 		<q-card-section class="reproductor-content">
@@ -12,17 +12,39 @@
 		</q-card-section>
 
 		<q-card-actions align="right">
-			<q-btn flat color="red" label="FAIL" @click="$emit('respuesta', false)" />
-			<q-btn flat color="green" label="PASS" @click="$emit('respuesta', true)" />
+			<q-btn
+				flat
+				color="red"
+				label="FAIL"
+				@click="
+					detenerReproduccion
+					$emit('respuesta', false)
+				"
+			/>
+			<q-btn
+				flat
+				color="green"
+				label="PASS"
+				@click="
+					detenerReproduccion
+					$emit('respuesta', true)
+				"
+			/>
 		</q-card-actions>
 
 		<!-- Elemento de audio -->
-		<audio ref="audioElement" :src="ruta"></audio>
+		<audio ref="audioElement" :src="ruta" @timeupdate="verificarFinReproduccion"></audio>
 	</q-card>
 </template>
 
 <script>
 	export default {
+		props: {
+			autoplay: {
+				type: Boolean,
+				default: false,
+			},
+		},
 		data() {
 			return {
 				buttons: [
@@ -31,13 +53,13 @@
 					{ label: 'Right', audio: 'Right.wav' },
 				],
 				ruta: '',
+				isPlaying: false,
 			}
 		},
 		computed: {
 			// Obtener la fuente del audio basado en la acción actual
 			audioSource() {
 				const currentAudio = this.buttons.find((btn) => btn.label === this.currentAudioLabel)
-				console.log(currentAudio.audio, this.currentAudioLabel)
 				return currentAudio ? currentAudio.audio : ''
 			},
 		},
@@ -49,23 +71,39 @@
 
 				// Configurar la etiqueta actual para la fuente de audio
 				this.currentAudioLabel = action
-				console.log(
-					action,
-					this.buttons.find((btn) => btn.label == action).audio,
-					this.$refs.audioElement.readyState
-				)
-				this.ruta = this.buttons.find((btn) => btn.label == action).audio
-				// Reproducir el audio
-				if (this.$refs.audioElement.readyState >= 3) {
-					this.reproducirAudio()
+				const currentAudio = this.buttons.find((btn) => btn.label == action)
+				if (currentAudio) {
+					console.log('Audio Source:', currentAudio.audio)
+					this.ruta = currentAudio.audio
+
+					// Reproducir el audio si la propiedad autoplay es verdadera
+					if (this.autoplay) {
+						this.reproducirAudio()
+					}
+				} else {
+					console.error('No se encontró el audio para la acción:', action)
 				}
 			},
+
 			reproducirAudio() {
+				this.isPlaying = true
 				// Reproducir el audio
 				this.$refs.audioElement.play().catch((error) => {
 					// Manejar cualquier error durante la reproducción
+					console.log(this.ruta)
 					console.error('Error al reproducir el audio:', error.message)
 				})
+			},
+			verificarFinReproduccion() {
+				// Verificar si el audio ha alcanzado el final y reiniciar la reproducción
+				if (this.isPlaying && this.$refs.audioElement.currentTime >= this.$refs.audioElement.duration) {
+					this.$refs.audioElement.currentTime = 0
+					this.reproducirAudio()
+				}
+			},
+			detenerReproduccion() {
+				// Detener la reproducción al presionar "Fail" o "Pass"
+				this.isPlaying = false
 			},
 		},
 	}
