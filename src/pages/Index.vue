@@ -6,19 +6,38 @@
 			:title="device.Description"
 			:subtitle="`${device.SKU} - ${device.Serial}`"
 		/>
-		<!-- <img
-      alt="Quasar logo"
-      src="~assets/quasar-logo-vertical.svg"
-      style="width: 200px; height: 200px"
-    > -->
+		<q-card class="card" v-if="activate.audio">
+			<q-card-section> <div class="text-h6">Audio Test</div> </q-card-section><q-separator />
+			<q-card-section class="reproductor-content">
+				<q-card-section>
+					<Reproductor
+						ref="reproductorRef"
+						id="audioTest"
+						@respuesta="sound = $event"
+						:autoplay="true"
+					/>
+				</q-card-section>
+			</q-card-section>
 
-		<Reproductor
-			ref="audioTest"
-			id="audioTest"
-			@respuesta="sound = $event"
-			:autoplay="true"
-			v-if="activate.audio"
-		/>
+			<q-card-actions align="right">
+				<q-btn
+					id="audioFail"
+					ref="audioFail"
+					flat
+					color="red"
+					label="FAIL"
+					@click="detenerReproduccion('fail')"
+				/>
+				<q-btn
+					id="audioPass"
+					ref="audioPass"
+					flat
+					color="green"
+					label="PASS"
+					@click="detenerReproduccion('pass')"
+				/>
+			</q-card-actions>
+		</q-card>
 	</q-page>
 </template>
 
@@ -43,6 +62,16 @@
 			}
 		},
 		methods: {
+			detenerReproduccion(r) {
+				if (r == 'pass') {
+					this.test['audio'] = 'Internal Speaker Test PASS '
+					this.activate.audio = false
+				} else if (r == 'fail') {
+					this.test['audio'] = 'Internal Speaker Test FAIL '
+					this.activate.audio = false
+				}
+				this.$refs.reproductorRef.detenerReproduccion(r)
+			},
 			DateTime() {
 				const options = { method: 'GET' }
 				return fetch('https://worldtimeapi.org/api/timezone/America/Chicago', options)
@@ -60,15 +89,10 @@
 					.catch((err) => console.error(err))
 			},
 			audioTest(a) {
-				console.log('randy', document.querySelector('#test #audioTest #audioPass'))
-				let r = ''
 				return new Promise((resolve) => {
 					document.addEventListener('click', function clicDelRaton() {
 						document.removeEventListener('click', clicDelRaton)
-
-						if (this.sound) r = 'Internal Speaker Test PASS '
-						else r = 'Internal Speaker Test FAIL '
-						resolve(r)
+						resolve()
 					})
 				})
 			},
@@ -83,7 +107,6 @@
 					console.error('Error ejecutando script:', error)
 				} else {
 					let res = ''
-					console.log('Resultado del script:', result)
 					for (let x of this.$env.project) {
 						let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
 						console.log(u.tenant, x.db)
@@ -100,10 +123,8 @@
 						}
 					}
 					if (!this.project.hasOwnProperty('id')) return (test['Serial'] = `SN ID Check FAIL`)
-					console.log(res, res.length)
 					if (!res[0].StationID == 15) return
 					this.device = result
-					// Realizar acciones adicionales con el resultado aquí
 					let datetime = await this.DateTime()
 					this.test['Date'] = datetime.date
 					this.test['startTime'] = datetime.time
@@ -113,22 +134,24 @@
 					this.test['Description'] = `Product Description: ${this.device.Description}`
 					this.activate.audio = true
 					await this.audioTest()
-					for (let st = 0; st < 10; st++) {
-						if (this.sound != 'pass' || this.sound != 'fail') await this.audioTest()
-						else if (this.sound == 'pass') {
-							this.test['audio'] = 'Internal Speaker Test PASS '
-							this.activate.audio = false
-							break
-						} else if (this.sound == 'fail') {
-							this.test['audio'] = 'Internal Speaker Test FAIL '
-							this.activate.audio = false
-							break
-						}
-						console.log('sound', this.sound)
-					}
 					console.log(this.test)
 				}
 			})
 		},
 	}
 </script>
+<style scoped>
+	.card {
+		border-radius: 15px;
+		overflow: hidden;
+		background: rgba(255, 255, 255, 0.1);
+		backdrop-filter: blur(10px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		width: 90%;
+		position: relative;
+		margin-top: 25px;
+	}
+	.q-card-section {
+		border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	}
+</style>
