@@ -1,14 +1,21 @@
 <template>
-	<q-card class="reproductor-card">
+	<q-card class="reproductor-card card">
 		<!-- ... (código existente) ... -->
 
 		<q-card-section class="reproductor-content">
-			<div class="botones-reproductor">
-				<!-- Botones de reproducción -->
-				<!-- <q-btn @click="reproducirSonido('Left')" icon="skip_previous" round /> -->
-				<q-btn @click="reproducirSonido('Play')" icon="play_arrow" class="play-btn" round />
-				<!-- <q-btn @click="reproducirSonido('Right')" icon="skip_next" round /> -->
-			</div>
+			<q-card-section>
+				<div class="text-h6">Audio Test</div>
+			</q-card-section>
+
+			<q-separator />
+			<q-card-section class="botones-reproductor">
+				<q-btn
+					@click="toggleReproduccion"
+					:icon="isPlaying ? 'stop' : 'play_arrow'"
+					class="play-btn"
+					round
+				/>
+			</q-card-section>
 		</q-card-section>
 
 		<q-card-actions align="right">
@@ -36,7 +43,7 @@
 					{ label: 'Play', audio: 'Both.wav' }, // Cambiado a Both.wav
 					{ label: 'Right', audio: 'Right.wav' },
 				],
-				ruta: '',
+				ruta: 'Both.wav',
 				isPlaying: false,
 			}
 		},
@@ -48,21 +55,31 @@
 			},
 		},
 		methods: {
+			toggleReproduccion() {
+				// Alternar entre reproducción y pausa
+				if (this.isPlaying) {
+					this.detenerReproduccion('stop')
+				} else {
+					this.reproducirSonido('Play')
+				}
+			},
 			async reproducirSonido(action) {
-				// Pausar el audio actual antes de cambiar
+				/* // Pausar el audio actual antes de cambiar
 				this.$refs.audioElement.pause()
-				this.$refs.audioElement.currentTime = 0
+				this.$refs.audioElement.currentTime = 0 */
 
 				// Configurar la etiqueta actual para la fuente de audio
 				this.currentAudioLabel = action
-				const currentAudio = this.buttons.find((btn) => btn.label == action)
+				const currentAudio = await this.buttons.find((btn) => btn.label == action)
+				this.$refs.audioElement.src = this.ruta
 				if (currentAudio) {
-					console.log('Audio Source:', currentAudio.audio)
 					this.ruta = currentAudio.audio
-
 					// Reproducir el audio si la propiedad autoplay es verdadera
 					if (this.autoplay) {
-						this.reproducirAudio()
+						for (let x = 0; x < 3; x++) {
+							console.log('paso')
+							this.reproducirAudio()
+						}
 					}
 				} else {
 					console.error('No se encontró el audio para la acción:', action)
@@ -74,7 +91,6 @@
 				// Reproducir el audio
 				this.$refs.audioElement.play().catch((error) => {
 					// Manejar cualquier error durante la reproducción
-					console.log(this.ruta)
 					console.error('Error al reproducir el audio:', error.message)
 				})
 			},
@@ -88,18 +104,20 @@
 			detenerReproduccion(a) {
 				// Detener la reproducción al presionar "Fail" o "Pass"
 				this.isPlaying = false
-				console.log('stop')
 				this.$refs.audioElement.pause()
 				this.$refs.audioElement.currentTime = 0
-				this.$emit('respuesta', a)
+				if (!a == 'stop') this.$emit('respuesta', a)
 			},
+		},
+		mounted() {
+			if (this.autoplay) this.reproducirSonido('Play')
 		},
 	}
 </script>
 
 <style scoped>
 	.reproductor-card {
-		width: 300px;
+		width: 250px;
 	}
 
 	.reproductor-header {
@@ -131,5 +149,18 @@
 
 	.reproductor-actions {
 		padding: 15px;
+	}
+	.card {
+		border-radius: 15px;
+		overflow: hidden;
+		background: rgba(255, 255, 255, 0.1);
+		backdrop-filter: blur(10px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		width: 90%; /* Ancho del contenedor al 80% del espacio disponible */
+		position: relative; /* Agregado para posicionar correctamente el avatar */
+		margin-top: 25px; /* Ajusta según sea necesario para dar espacio al div superior */
+	}
+	.q-card-section {
+		border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 	}
 </style>

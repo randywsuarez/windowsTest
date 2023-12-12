@@ -12,8 +12,7 @@
       style="width: 200px; height: 200px"
     > -->
 
-		<Reproductor @respuesta="sound = $event" :autoplay="true" />
-		<p>Respuesta del Reproductor: {{ sound }}</p>
+		<Reproductor @respuesta="audioTest" :autoplay="true" v-if="activate.audio" />
 	</q-page>
 </template>
 
@@ -32,6 +31,9 @@
 				test: {},
 				project: {},
 				sound: false,
+				activate: {
+					audio: false,
+				},
 			}
 		},
 		methods: {
@@ -50,6 +52,19 @@
 						}
 					})
 					.catch((err) => console.error(err))
+			},
+			audioTest(a) {
+				console.log(a)
+				return new Promise((resolve) => {
+					// Puedes utilizar algún evento para indicar que la acción ha ocurrido
+					// En este ejemplo, estoy utilizando un clic del ratón
+					document.addEventListener('click', function clicDelRaton() {
+						if (a) this['audio'] = 'Internal Speaker Test PASS '
+						else this['audio'] = 'Internal Speaker Test FAIL '
+						document.removeEventListener('click', clicDelRaton)
+						resolve()
+					})
+				})
 			},
 		},
 		async beforeCreate() {
@@ -90,7 +105,8 @@
 					if (this.device.SKU == res[0].ArrivedSKU)
 						this.test['Model'] = `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
 					this.test['Description'] = `Product Description: ${this.device.Description}`
-
+					this.activate.audio = true
+					await this.audioTest()
 					console.log(this.test)
 				}
 			})
