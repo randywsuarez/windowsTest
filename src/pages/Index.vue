@@ -1,5 +1,5 @@
 <template>
-	<q-page class="" style="padding-top: 10px">
+	<q-page id="test" class="" style="padding-top: 10px">
 		<user-info-grid
 			:username="user.usuario"
 			:project="project.id"
@@ -12,7 +12,13 @@
       style="width: 200px; height: 200px"
     > -->
 
-		<Reproductor @respuesta="audioTest" :autoplay="true" v-if="activate.audio" />
+		<Reproductor
+			ref="audioTest"
+			id="audioTest"
+			@respuesta="sound = $event"
+			:autoplay="true"
+			v-if="activate.audio"
+		/>
 	</q-page>
 </template>
 
@@ -30,7 +36,7 @@
 				device: {},
 				test: {},
 				project: {},
-				sound: false,
+				sound: 'nada',
 				activate: {
 					audio: false,
 				},
@@ -54,15 +60,15 @@
 					.catch((err) => console.error(err))
 			},
 			audioTest(a) {
-				console.log(a)
+				console.log('randy', document.querySelector('#test #audioTest #audioPass'))
+				let r = ''
 				return new Promise((resolve) => {
-					// Puedes utilizar algún evento para indicar que la acción ha ocurrido
-					// En este ejemplo, estoy utilizando un clic del ratón
 					document.addEventListener('click', function clicDelRaton() {
-						if (a) this['audio'] = 'Internal Speaker Test PASS '
-						else this['audio'] = 'Internal Speaker Test FAIL '
 						document.removeEventListener('click', clicDelRaton)
-						resolve()
+
+						if (this.sound) r = 'Internal Speaker Test PASS '
+						else r = 'Internal Speaker Test FAIL '
+						resolve(r)
 					})
 				})
 			},
@@ -107,6 +113,19 @@
 					this.test['Description'] = `Product Description: ${this.device.Description}`
 					this.activate.audio = true
 					await this.audioTest()
+					for (let st = 0; st < 10; st++) {
+						if (this.sound != 'pass' || this.sound != 'fail') await this.audioTest()
+						else if (this.sound == 'pass') {
+							this.test['audio'] = 'Internal Speaker Test PASS '
+							this.activate.audio = false
+							break
+						} else if (this.sound == 'fail') {
+							this.test['audio'] = 'Internal Speaker Test FAIL '
+							this.activate.audio = false
+							break
+						}
+						console.log('sound', this.sound)
+					}
 					console.log(this.test)
 				}
 			})

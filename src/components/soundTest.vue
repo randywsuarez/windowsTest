@@ -1,5 +1,5 @@
 <template>
-	<q-card class="reproductor-card card">
+	<q-card class="card">
 		<!-- ... (código existente) ... -->
 
 		<q-card-section class="reproductor-content">
@@ -19,8 +19,22 @@
 		</q-card-section>
 
 		<q-card-actions align="right">
-			<q-btn flat color="red" label="FAIL" @click="detenerReproduccion(false)" />
-			<q-btn flat color="green" label="PASS" @click="detenerReproduccion(true)" />
+			<q-btn
+				id="audioFail"
+				ref="audioFail"
+				flat
+				color="red"
+				label="FAIL"
+				@click="detenerReproduccion('fail')"
+			/>
+			<q-btn
+				id="audioPass"
+				ref="audioPass"
+				flat
+				color="green"
+				label="PASS"
+				@click="detenerReproduccion('pass')"
+			/>
 		</q-card-actions>
 
 		<!-- Elemento de audio -->
@@ -106,6 +120,7 @@
 				this.isPlaying = false
 				this.$refs.audioElement.pause()
 				this.$refs.audioElement.currentTime = 0
+				console.log(a)
 				if (!a == 'stop') this.$emit('respuesta', a)
 			},
 		},
