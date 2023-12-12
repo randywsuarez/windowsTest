@@ -38,16 +38,31 @@
 				/>
 			</q-card-actions>
 		</q-card>
+
+		<q-card>
+			<q-card-section>
+				<q-card-title>Cámara</q-card-title>
+			</q-card-section>
+			<q-card-section>
+				<CameraCapture @capture-result="handleCaptureResult" />
+			</q-card-section>
+			<q-card-actions align="right">
+				<q-btn color="negative" label="Fail" @click="handleAction('fail')" />
+				<q-btn color="positive" label="Pass" @click="handleAction('pass')" />
+			</q-card-actions>
+		</q-card>
 	</q-page>
 </template>
 
 <script>
 	import UserInfoGrid from '../components/UserInfoGrid.vue'
 	import Reproductor from '../components/soundTest.vue'
+	import CameraCapture from '../components/camaraCapture.vue'
 	export default {
 		components: {
 			UserInfoGrid,
 			Reproductor,
+			CameraCapture,
 		},
 		data() {
 			return {
@@ -62,6 +77,20 @@
 			}
 		},
 		methods: {
+			handleCaptureResult(result) {
+				console.log(`Captura ${result ? 'exitosa' : 'fallida'}`)
+				// Realizar acciones adicionales según el resultado de la captura
+				if (result) {
+					// Acciones después de una captura exitosa
+				} else {
+					// Acciones después de una captura fallida
+				}
+			},
+			handleAction(action) {
+				console.log(`${action} button clicked`)
+				// Realizar acciones adicionales según el botón presionado (Fail o Pass)
+				// Puedes agregar lógica específica aquí
+			},
 			detenerReproduccion(r) {
 				if (r == 'pass') {
 					this.test['audio'] = 'Internal Speaker Test PASS '
