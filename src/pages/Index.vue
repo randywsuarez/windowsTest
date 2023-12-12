@@ -12,7 +12,7 @@
       style="width: 200px; height: 200px"
     > -->
 
-		<Reproductor @respuesta="sound = $event" :autoPlay="true" />
+		<Reproductor @respuesta="sound = $event" :autoplay="true" />
 		<p>Respuesta del Reproductor: {{ sound }}</p>
 	</q-page>
 </template>
