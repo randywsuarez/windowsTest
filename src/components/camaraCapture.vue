@@ -21,6 +21,12 @@
 <script>
 	export default {
 		name: 'CamaraCapture', // Nombre del componente
+		props: {
+			imageName: {
+				type: String,
+				default: '',
+			},
+		},
 		data() {
 			return {
 				capturedImage: '',
@@ -64,6 +70,10 @@
 			},
 			stopCamera() {
 				if (this.videoStream) {
+					// Pausar la reproducción del video
+					this.$refs.video.pause()
+
+					// Detener todas las pistas de la transmisión de la cámara
 					this.videoStream.getTracks().forEach((track) => track.stop())
 				}
 			},
@@ -101,14 +111,18 @@
 				canvas.width = this.$refs.video.videoWidth
 				canvas.height = this.$refs.video.videoHeight
 				context.drawImage(this.$refs.video, 0, 0, canvas.width, canvas.height)
-				const imageDataURL = canvas.toDataURL('image/jpeg')
+				const imageDataURL = canvas.toDataURL('image/jpg')
 
 				// Imprime el valor base64 en la consola
-				console.log('Imagen capturada:', imageDataURL)
+				//console.log('Imagen capturada:', imageDataURL)
 				this.capturedImage = imageDataURL
 				this.showCapturedImage = true
 				this.showVideo = false
 				this.stopCamera()
+				console.log(this.imageName)
+				if (this.imageName) {
+					this.$uploadImage(`${this.imageName}.jpg`, imageDataURL)
+				}
 			},
 		},
 		computed: {

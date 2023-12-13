@@ -39,12 +39,12 @@
 			</q-card-actions>
 		</q-card>
 
-		<q-card class="card">
+		<q-card class="card" v-if="activate.camera">
 			<q-card-section>
 				<q-card-title>Cámara</q-card-title>
 			</q-card-section>
 			<q-card-section>
-				<CameraCapture @capture-result="handleCaptureResult" />
+				<CameraCapture @capture-result="handleCaptureResult" :imageName="device.Serial" />
 			</q-card-section>
 			<q-card-actions align="right">
 				<q-btn color="negative" label="Fail" @click="handleAction('fail')" />
@@ -73,6 +73,7 @@
 				sound: 'nada',
 				activate: {
 					audio: false,
+					camera: false,
 				},
 			}
 		},
@@ -163,6 +164,7 @@
 					this.test['Description'] = `Product Description: ${this.device.Description}`
 					this.activate.audio = true
 					await this.audioTest()
+					this.activate.camera = true
 					console.log(this.test)
 				}
 			})

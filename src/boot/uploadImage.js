@@ -5,7 +5,13 @@ const path = require('path')
 module.exports = ({ Vue }) => {
 	Vue.prototype.$uploadImage = function (imageName, imageData) {
 		// Ruta para guardar las imágenes en la carpeta "LogPics"
-		const imagePath = path.join(__dirname, '..', 'LogPics', imageName)
+		console.log(process.cwd().split(path.sep)[0] + path.sep)
+		const imagePath = path.join(
+			process.cwd().split(path.sep)[0] + path.sep,
+			'..',
+			'LogPics',
+			imageName
+		)
 
 		// Guarda la imagen en el sistema de archivos
 		try {
