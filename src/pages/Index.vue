@@ -39,7 +39,7 @@
 			</q-card-actions>
 		</q-card>
 
-		<q-card>
+		<q-card class="card">
 			<q-card-section>
 				<q-card-title>Cámara</q-card-title>
 			</q-card-section>
