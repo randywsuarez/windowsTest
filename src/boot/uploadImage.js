@@ -1,11 +1,9 @@
-// src/boot/uploadImage.js
 const fs = require('fs')
 const path = require('path')
 
 module.exports = ({ Vue }) => {
 	Vue.prototype.$uploadImage = function (imageName, imageData) {
 		// Ruta para guardar las imágenes en la carpeta "LogPics"
-		console.log(process.cwd().split(path.sep)[0] + path.sep)
 		const imagePath = path.join(
 			process.cwd().split(path.sep)[0] + path.sep,
 			'..',
@@ -13,12 +11,18 @@ module.exports = ({ Vue }) => {
 			imageName
 		)
 
-		// Guarda la imagen en el sistema de archivos
+		// Elimina el encabezado de los datos base64 (por ejemplo, "data:image/jpeg;base64,")
+		const base64Data = imageData.replace(/^data:image\/jpeg;base64,/, '')
+
+		// Convierte los datos base64 a un buffer
+		const buffer = Buffer.from(base64Data, 'base64')
+
+		// Guarda el buffer como un archivo JPG
 		try {
-			fs.writeFileSync(imagePath, imageData, 'base64')
-			console.log(`Imagen guardada en: ${imagePath}`)
+			fs.writeFileSync(imagePath, buffer)
+			console.log(`Archivo guardado: ${imagePath}`)
 		} catch (error) {
-			console.error('Error al guardar la imagen:', error)
+			console.error('Error al guardar el archivo:', error)
 		}
 
 		// Agrega la imagen al prototipo "image"

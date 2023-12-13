@@ -41,7 +41,7 @@
 		<!-- <keyboard /> -->
 		<q-card class="card" v-if="activate.camera">
 			<q-card-section>
-				<q-card-title>Cámara</q-card-title>
+				<q-card-section> <div class="text-h6">Camera Test</div> </q-card-section><q-separator />
 			</q-card-section>
 			<q-card-section>
 				<CameraCapture @capture-result="handleCaptureResult" :imageName="device.Serial" />
@@ -91,8 +91,8 @@
 			},
 			handleAction(action) {
 				console.log(`${action} button clicked`)
-				// Realizar acciones adicionales según el botón presionado (Fail o Pass)
-				// Puedes agregar lógica específica aquí
+				this.test['camera'] = `Webcam test ${action.toUpperCase()} `
+				this.activate.camera = false
 			},
 			detenerReproduccion(r) {
 				if (r == 'pass') {
@@ -120,7 +120,7 @@
 					})
 					.catch((err) => console.error(err))
 			},
-			audioTest(a) {
+			espera(a) {
 				return new Promise((resolve) => {
 					document.addEventListener('click', function clicDelRaton() {
 						document.removeEventListener('click', clicDelRaton)
@@ -165,8 +165,9 @@
 						this.test['Model'] = `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
 					this.test['Description'] = `Product Description: ${this.device.Description}`
 					this.activate.audio = true
-					await this.audioTest()
+					await this.espera()
 					this.activate.camera = true
+					await this.espera()
 					console.log(this.test)
 				}
 			})
