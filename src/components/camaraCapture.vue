@@ -111,7 +111,7 @@
 				canvas.width = this.$refs.video.videoWidth
 				canvas.height = this.$refs.video.videoHeight
 				context.drawImage(this.$refs.video, 0, 0, canvas.width, canvas.height)
-				const imageDataURL = canvas.toDataURL('image/jpg')
+				const imageDataURL = canvas.toDataURL('image/jpeg')
 
 				// Imprime el valor base64 en la consola
 				//console.log('Imagen capturada:', imageDataURL)
