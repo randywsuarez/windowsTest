@@ -1,10 +1,9 @@
-<!-- src/components/Teclado.vue -->
 <template>
 	<q-card class="teclado-card">
 		<q-card-section class="teclado-section">
-			<div class="teclado">
-				<div v-for="fila in filas" :key="fila" class="fila">
-					<div v-for="tecla in fila" :key="tecla" class="tecla" @click="highlightKey(tecla)">
+			<div class="teclado" :style="{ transform: zoomLevel }">
+				<div v-for="fila in filas" :key="fila" class="fila q-mb-sm">
+					<div v-for="tecla in fila" :key="tecla" class="tecla q-pa-xs" @click="highlightKey(tecla)">
 						{{ tecla }}
 					</div>
 				</div>
@@ -41,6 +40,7 @@
 					['Ctrl', 'Win', 'Alt', ' ', 'Alt', 'Ctrl', '←', '↓', '→', '7', '8', '9', '-'],
 					[' ', ' ', ' ', '0', '.', 'Enter', '+'],
 				],
+				zoomLevel: 'scale(0.4)',
 			}
 		},
 		methods: {
@@ -61,11 +61,17 @@
 </script>
 
 <style scoped>
+	@media (max-width: 300px) {
+		.teclado-card {
+			max-width: 100%;
+		}
+	}
 	.teclado-card {
 		border-radius: 20px;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 		max-width: 600px;
 		margin: auto;
+		transition: transform 0.3s ease-in-out;
 	}
 
 	.teclado-section {
