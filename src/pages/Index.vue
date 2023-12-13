@@ -38,7 +38,7 @@
 				/>
 			</q-card-actions>
 		</q-card>
-		<!-- <keyboard /> -->
+
 		<q-card class="card" v-if="activate.camera">
 			<q-card-section>
 				<q-card-section> <div class="text-h6">Camera Test</div> </q-card-section><q-separator />
@@ -51,6 +51,19 @@
 				<q-btn color="positive" label="Pass" @click="handleAction('pass')" />
 			</q-card-actions>
 		</q-card>
+
+		<!-- <q-card class="card" v-if="activate.keyboard">
+			<q-card-section>
+				<q-card-section> <div class="text-h6">Keyboard Test</div> </q-card-section><q-separator />
+			</q-card-section>
+			<q-card-section>
+				<keyboard />
+			</q-card-section>
+			<q-card-actions align="right">
+				<q-btn color="negative" label="Fail" @click="handleAction('fail')" />
+				<q-btn color="positive" label="Pass" @click="handleAction('pass')" />
+			</q-card-actions>
+		</q-card> -->
 	</q-page>
 </template>
 
@@ -76,6 +89,7 @@
 				activate: {
 					audio: false,
 					camera: false,
+					keyboard: true,
 				},
 			}
 		},
