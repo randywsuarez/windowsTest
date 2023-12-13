@@ -38,7 +38,7 @@
 				/>
 			</q-card-actions>
 		</q-card>
-
+		<!-- <keyboard /> -->
 		<q-card class="card" v-if="activate.camera">
 			<q-card-section>
 				<q-card-title>Cámara</q-card-title>
@@ -58,11 +58,13 @@
 	import UserInfoGrid from '../components/UserInfoGrid.vue'
 	import Reproductor from '../components/soundTest.vue'
 	import CameraCapture from '../components/camaraCapture.vue'
+	import keyboard from '../components/keyboardTest.vue'
 	export default {
 		components: {
 			UserInfoGrid,
 			Reproductor,
 			CameraCapture,
+			keyboard,
 		},
 		data() {
 			return {
