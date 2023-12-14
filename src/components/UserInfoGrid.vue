@@ -14,11 +14,11 @@
 					<div class="q-page-container">
 						<div class="row">
 							<!-- Columna izquierda con la imagen (25% del ancho) -->
-							<!-- <div class="col-3 img-container">
-                <img :src="imageSrc" alt="Imagen" class="img-avatar" />
-              </div> -->
+							<div class="col-2 img-container">
+								<img :src="imageSrc" alt="Imagen" class="img-avatar" />
+							</div>
 							<!-- Columna derecha con la información (75% del ancho) -->
-							<div class="col-12">
+							<div class="col-9">
 								<div class="info-text">
 									<p class="info-title">{{ title }}</p>
 									<p class="info-subtitle">{{ subtitle }}</p>

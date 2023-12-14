@@ -94,6 +94,86 @@
 			}
 		},
 		methods: {
+			ramInfo(i) {
+				let objetos = i.map((item) => {
+					let [serialNumber, manufacturer, capacity, speed, ddrVersion] = item.split(',')
+
+					let objeto = {
+						SerialNumber: serialNumber.trim(),
+						Manufacturer: manufacturer.trim(),
+						Capacity: capacity.trim(),
+						Speed: speed.trim(),
+						DDRVersion: ddrVersion.trim(),
+					}
+
+					// Verificar si hay una descripción y agregarla al objeto
+					if (item.includes('Description')) {
+						let [, description] = item.match(/Description=([^;]*)/)
+						objeto.Description = description.trim()
+					}
+
+					return objeto
+				})
+
+				let capacidadMap = new Map() // Mapa para realizar el seguimiento de la cantidad por variedad
+
+				objetos.forEach((objeto) => {
+					let { Capacity } = objeto
+					let cantidad = capacidadMap.has(Capacity) ? capacidadMap.get(Capacity) + 1 : 1
+					capacidadMap.set(Capacity, cantidad)
+				})
+
+				let total = [...capacidadMap.keys()]
+					.reduce((acc, capacidad) => {
+						let cantidad = capacidadMap.get(capacidad)
+						return `${acc}${cantidad > 1 ? `, ${cantidad} x ${capacidad}` : `, 1 x ${capacidad}`}`
+					}, '')
+					.slice(2) // Eliminar la coma inicial
+
+				let totalString = total ? ` (Total: ${total})` : ''
+
+				let resultado = {
+					Information: objetos,
+					Total: totalString,
+				}
+
+				return resultado
+			},
+			hddInfo(informacion) {
+				let discos = informacion.map((item) => {
+					let [serial, description, size] = item.split(',')
+
+					return {
+						Serial: serial.trim(),
+						Description: description.trim(),
+						Size: size.trim(),
+					}
+				})
+
+				let sizeMap = new Map() // Mapa para realizar el seguimiento de la cantidad por tamaño
+
+				discos.forEach((disco) => {
+					let { Size } = disco
+					let cantidad = sizeMap.has(Size) ? sizeMap.get(Size) + 1 : 1
+					sizeMap.set(Size, cantidad)
+				})
+
+				let total = [...sizeMap.keys()]
+					.reduce((acc, size) => {
+						let cantidad = sizeMap.get(size)
+						return `${acc}${cantidad > 1 ? `, ${cantidad} x ${size}` : `, ${size}`}`
+					}, '')
+					.slice(2) // Eliminar la coma inicial
+
+				let totalString = total ? ` (Total: ${total})` : ''
+
+				let resultado = {
+					Information: discos,
+					Total: totalString,
+				}
+
+				return resultado
+			},
 			handleCaptureResult(result) {
 				console.log(`Captura ${result ? 'exitosa' : 'fallida'}`)
 				// Realizar acciones adicionales según el resultado de la captura
