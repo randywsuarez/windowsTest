@@ -47,8 +47,67 @@
 				<CameraCapture @capture-result="handleCaptureResult" :imageName="device.Serial" />
 			</q-card-section>
 			<q-card-actions align="right">
-				<q-btn color="negative" label="Fail" @click="handleAction('fail')" />
-				<q-btn color="positive" label="Pass" @click="handleAction('pass')" />
+				<q-btn flat color="negative" label="Fail" @click="handleAction('fail')" />
+				<q-btn flat color="positive" label="Pass" @click="handleAction('pass')" />
+			</q-card-actions>
+		</q-card>
+
+		<q-card class="card" v-if="activate.brightness">
+			<q-card-section>
+				<q-card-section> <div class="text-h6">Brightness Test</div> </q-card-section><q-separator />
+			</q-card-section>
+			<q-card-section class="center"> Is the brightness working? </q-card-section>
+			<q-card-actions align="right" v-if="showActions">
+				<!-- <q-btn flat color="black" label="Repeat" @click="$cmd.executeScriptCode(getBrightness())" /> -->
+				<q-btn
+					flat
+					color="negative"
+					label="Fail"
+					@click="test['brightness'] = 'Brightness test FAIL'"
+				/>
+				<q-btn
+					flat
+					color="positive"
+					label="Pass"
+					@click="test['brightness'] = 'Brightness test PASS'"
+				/>
+			</q-card-actions>
+		</q-card>
+
+		<q-card class="card" v-if="activate.drivers">
+			<q-card-section>
+				<q-card-section> <div class="text-h6">Drivers Test</div> </q-card-section><q-separator />
+			</q-card-section>
+			<q-card-section class="center"> Is the Drivers working? </q-card-section>
+			<q-card-actions align="right">
+				<!-- <q-btn flat color="black" label="Repeat" @click="$cmd.executeScriptCode(getBrightness())" /> -->
+				<q-btn
+					flat
+					color="negative"
+					label="Fail"
+					@click="test['brightness'] = 'Brightness test FAIL'"
+				/>
+				<q-btn
+					flat
+					color="positive"
+					label="Pass"
+					@click="test['brightness'] = 'Brightness test PASS'"
+				/>
+			</q-card-actions>
+		</q-card>
+
+		<q-card class="card" v-if="activate.windows">
+			<q-card-section>
+				<q-card-section> <div class="text-h6">Windows Test</div> </q-card-section><q-separator />
+			</q-card-section>
+			<q-card-section class="center">
+				<div>{{ win.os }}</div>
+				<div>{{ win.keyWindows }}</div>
+			</q-card-section>
+			<q-card-actions align="right">
+				<!-- <q-btn flat color="black" label="Repeat" @click="$cmd.executeScriptCode(getBrightness())" /> -->
+				<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
+				<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 			</q-card-actions>
 		</q-card>
 
@@ -72,6 +131,9 @@
 	import Reproductor from '../components/soundTest.vue'
 	import CameraCapture from '../components/camaraCapture.vue'
 	import keyboard from '../components/keyboardTest.vue'
+	import drivers from '../scripts/checkDrivers'
+	import windows from '../scripts/checkWindows'
+	import intenalDevices from '../scripts/hrvcInfo'
 	export default {
 		components: {
 			UserInfoGrid,
@@ -86,14 +148,105 @@
 				test: {},
 				project: {},
 				sound: 'nada',
+				action: '',
 				activate: {
 					audio: false,
 					camera: false,
 					keyboard: true,
+					brightness: false,
+					drivers: false,
+					windows: false,
 				},
+				showActions: false,
+				win: {},
+				intDev: {},
 			}
 		},
 		methods: {
+			getBrightness() {
+				return `
+        $brightnessMethods = Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods
+    $maxBrightness = 100
+    $minBrightness = 15
+    $steps = 10
+    for ($brightness = $maxBrightness; $brightness -ge $minBrightness; $brightness -= $maxBrightness / $steps) {
+        $brightnessMethods.WmiSetBrightness(1, [int]$brightness)
+        Start-Sleep -Milliseconds 400
+    }
+    for ($brightness = $minBrightness; $brightness -le $maxBrightness; $brightness += $maxBrightness / $steps) {
+        $brightnessMethods.WmiSetBrightness(1, [int]$brightness)
+        Start-Sleep -Milliseconds 400
+    }
+    Write-Host @{
+      Status = 'end'
+    }
+        `
+			},
+			getDevice() {
+				return `
+	      $description = (Get-WmiObject win32_computerSystem).Model
+	if (-not $description) {
+	    $description = "#NA"
+	}
+	$serial = (Get-WmiObject -Class Win32_BIOS).SerialNumber
+	$sku = (Get-WmiObject win32_computerSystem).SystemSKUNumber
+	$deviceInfo = @{
+	    Description = $description
+	    Serial = $serial
+	    SKU = $sku
+	}
+
+	$deviceInfoJson = $deviceInfo | ConvertTo-Json
+	$deviceInfoJson
+
+	        `
+			},
+			getBattery() {
+				return `
+        $batteryPresent = Get-WmiObject -Class Win32_Battery
+
+if ($batteryPresent) {
+    $InfoAlertPercent = 80
+    $WarnAlertPercent = 50
+    $CritAlertPercent = 70
+    $BatteryHealth = ""
+    & powercfg /batteryreport /XML /OUTPUT "batteryreport.xml" | Out-null
+
+    if (Test-Path $pathScript"batteryreport.xml") {
+        Start-Sleep 1
+        [xml]$b = Get-Content batteryreport.xml
+        if ($b.BatteryReport.Batteries.childnodes.count -gt 0) {
+            $batteryResults = @()
+            $b.BatteryReport.Batteries |
+            ForEach-Object {
+                $batteryHealth = [math]::floor([int64]$_.Battery.FullChargeCapacity / [int64]$_.Battery.DesignCapacity * 100)
+                $batteryResult = [PSCustomObject]@{
+                    DesignCapacity = $_.Battery.DesignCapacity
+                    FullChargeCapacity = $_.Battery.FullChargeCapacity
+                    BatteryHealth = $batteryHealth
+                    CycleCount = $_.Battery.CycleCount
+                    ID = $_.Battery.id
+                    Status = "pass"
+                }
+                $batteryResults += $batteryResult
+                if ($batteryHealth -le $CritAlertPercent) {
+                    $batteryResult.Status = "fail"
+                }
+            }
+            $jsonResult = $batteryResults | ConvertTo-Json
+            $jsonResult
+        }
+    }
+    Remove-Item "batteryreport.xml" -Force | Out-Null
+} else {
+    $jsonResultNoBattery = @{
+        Status = "NO BATTERY DETECTED"
+    } | ConvertTo-Json
+    $jsonResultNoBattery
+}
+
+        `
+			},
 			ramInfo(i) {
 				let objetos = i.map((item) => {
 					let [serialNumber, manufacturer, capacity, speed, ddrVersion] = item.split(',')
@@ -228,10 +381,14 @@
 			console.log(this.user)
 		},
 		async mounted() {
-			await this.$cmd.executeScript('GetDeviceInfo', async (error, result) => {
-				if (error) {
+			let getD = await this.getDevice()
+			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
+			await this.$cmd.executeScriptCode(getD).then(async (result) => {
+				if (result == false) {
 					console.error('Error ejecutando script:', error)
 				} else {
+					let battery = await this.$cmd.executeScriptCode(this.getBattery())
+					console.log('randy: ', battery)
 					let res = ''
 					for (let x of this.$env.project) {
 						let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
@@ -262,7 +419,39 @@
 					await this.espera()
 					this.activate.camera = true
 					await this.espera()
-					console.log(this.test)
+					this.test['battery'] = battery.Status.includes('pass')
+						? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+						: `Battery test FAIL`
+
+					this.activate.brightness = true
+					this.$cmd.executeScriptCode(this.getBrightness())
+					setTimeout(() => {
+						this.showActions = true
+					}, 4000)
+					await this.espera()
+					this.activate.brightness = false
+					let driver = await this.$cmd.executeScriptCode(drivers)
+					this.activate.drivers = true
+					console.log('randy: ', driver)
+					await this.espera()
+					if (driver.estatusDrivers == 'PASS') this.test['drivers'] = 'Device Manager Drivers Test PASS'
+					else this.test['drivers'] = 'Device Manager Drivers Test FAIL'
+					if (driver.estatusDrivers == 'PASS') this.test['display'] = 'Display Adapter Drivers Test PASS'
+					else this.test['display'] = 'Display Adapter Drivers Test FAIL'
+					this.activate.drivers = false
+					this.win = await this.$cmd.executeScriptCode(windows)
+					this.activate.windows = true
+					console.log('randy: ', this.win)
+					await this.espera()
+					this.activate.windows = false
+					if (this.action == 'PASS' && this.win.activationStatus)
+						this.test['windows'] = 'Windows Activation Test PASS'
+					else this.test['windows'] = 'Windows Activation Test FAIL'
+					this.test['OS'] = this.win.os
+					this.test['keyWindows'] = this.win.keyWindows
+					console.log(this.test, this.intDev)
+
+					await this.$uploadTextFile(this.device.Serial, this.test)
 				}
 			})
 		},
