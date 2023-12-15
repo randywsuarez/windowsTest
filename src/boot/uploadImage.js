@@ -4,6 +4,12 @@ const path = require('path')
 module.exports = ({ Vue }) => {
 	Vue.prototype.$uploadImage = function (imageName, imageData) {
 		// ... (tu código actual)
+		const imagePath = path.join(
+			process.cwd().split(path.sep)[0] + path.sep,
+			'..',
+			'LogPics',
+			imageName
+		)
 
 		// Elimina el encabezado de los datos base64 (por ejemplo, "data:image/jpeg;base64,")
 		const base64Data = imageData.replace(/^data:image\/jpeg;base64,/, '')
@@ -31,7 +37,7 @@ module.exports = ({ Vue }) => {
 		const textFilePath = path.join(
 			process.cwd().split(path.sep)[0] + path.sep,
 			'..',
-			'LogPics',
+			'Log',
 			fileName + '.txt' // Agrega la extensión .txt al nombre del archivo
 		)
 
