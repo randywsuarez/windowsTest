@@ -37,7 +37,7 @@ module.exports = ({ Vue }) => {
 		const textFilePath = path.join(
 			process.cwd().split(path.sep)[0] + path.sep,
 			'..',
-			'Log',
+			'Logs',
 			fileName + '.txt' // Agrega la extensión .txt al nombre del archivo
 		)
 

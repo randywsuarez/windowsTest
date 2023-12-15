@@ -1,11 +1,9 @@
-﻿$keyWindows = (Get-WmiObject -query 'select * from SoftwareLicensingService').OA3xOriginalProductKey
+export default `
+$keyWindows = (Get-WmiObject -query 'select * from SoftwareLicensingService').OA3xOriginalProductKey
 $os = Get-WmiObject -Class Win32_OperatingSystem | Select-Object -ExpandProperty Caption
 
 function CheckAndActivateWindows {
     while ($ta.LicenseStatus -ne 1) {
-        Write-Host "`n     7.1 Activating Windows..."
-        Write-Host "      [OK] Windows Product Key: $keyWindows" -ForegroundColor Green
-
         $activationResult = Start-Process -FilePath "slmgr.vbs" -ArgumentList "/ipk $keyWindows" -PassThru
         $activationResult = Start-Process -FilePath "slmgr.vbs" -ArgumentList "/ato" -PassThru
 
@@ -23,12 +21,10 @@ $activationStatus = $false
 if ($ta.LicenseStatus -eq 1) {
     $activation = "Windows Activated Successfully"
     $activationStatus = $true
-    Write-Host "    [OK] $activation" -ForegroundColor Green
 } else {
     CheckAndActivateWindows
     $activation = "Windows Activated Successfully"
     $activationStatus = $true
-    Write-Host "    [OK] $activation" -ForegroundColor Green
 }
 
 $output = @{
@@ -40,3 +36,5 @@ $output = @{
 Start-Process "ms-settings:activation"
 Write-Output $output
 
+
+`

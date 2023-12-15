@@ -18,7 +18,7 @@ if ($allDevices) {
         $msgBody = "Please check that there are no missing drivers or problems with drivers."
         $msgTitle = "Device Manager Drivers Test"
         $msgButton = 'AbortRetryIgnore'
-        $msgImage = 'Question'    
+        $msgImage = 'Question'
         $result = [System.Windows.Forms.MessageBox]::Show($msgBody,$msgTitle,$msgButton,$msgImage)
         $resDriver = ($result).value__
 
@@ -86,7 +86,7 @@ if ($allDevices) {
         $msgBody = "Verify that the display adapter drivers are installed. Do you want to check again?."
         $msgTitle = "Display Adapter Drivers Test"
         $msgButton = 'RetryCancel'
-        $msgImage = 'Question'    
+        $msgImage = 'Question'
         $result = [System.Windows.Forms.MessageBox]::Show($msgBody,$msgTitle,$msgButton,$msgImage)
         $resDriver = ($result).value__
 
