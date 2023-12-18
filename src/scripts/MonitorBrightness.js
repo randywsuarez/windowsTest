@@ -5,13 +5,14 @@ $brightnessMethods = Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightne
     $steps = 10
     for ($brightness = $maxBrightness; $brightness -ge $minBrightness; $brightness -= $maxBrightness / $steps) {
         $brightnessMethods.WmiSetBrightness(1, [int]$brightness)
-        Start-Sleep -Milliseconds 400
+        Start-Sleep -Milliseconds 175
     }
     for ($brightness = $minBrightness; $brightness -le $maxBrightness; $brightness += $maxBrightness / $steps) {
         $brightnessMethods.WmiSetBrightness(1, [int]$brightness)
-        Start-Sleep -Milliseconds 400
+        Start-Sleep -Milliseconds 175
     }
-    Write-Host @{
+    $result = @{
       Status = 'end'
     }
+    ($result | ConvertTo-Json)
 `

@@ -20,12 +20,12 @@
 			</q-toolbar>
 		</q-header>
 
-		<q-drawer v-model="leftDrawerOpen" show-if-above bordered content-class="bg-grey-1">
+		<!-- <q-drawer v-model="leftDrawerOpen" show-if-above bordered content-class="bg-grey-1">
 			<q-list>
 				<q-item-label header class="text-grey-8"> Essential Links </q-item-label>
 				<EssentialLink v-for="link in essentialLinks" :key="link.title" v-bind="link" />
 			</q-list>
-		</q-drawer>
+		</q-drawer> -->
 
 		<q-page-container>
 			<router-view />
@@ -83,7 +83,7 @@
 		},
 		async created() {
 			let credencialesGuardadas = await this.$rsNeDB('credenciales').findOne({})
-			console.log(credencialesGuardadas)
+			//console.log(credencialesGuardadas)
 			if (credencialesGuardadas == null) {
 				console.log('sin registro')
 				this.$router.push('/login')
@@ -95,7 +95,7 @@
 		methods: {
 			async comprobarToken() {
 				let respuesta = await this.checkToken()
-				console.log(respuesta[0])
+				//console.log(respuesta[0])
 				if (respuesta.length && respuesta[0].estado === 'OK') {
 					console.log('Usuario autenticado')
 				} else {
@@ -120,7 +120,7 @@
 						const data = await response.json()
 
 						if (data.length) {
-							console.log(data)
+							//console.log(data)
 							return { estado: 'OK' }
 						} else {
 							throw new Error('Invalid response')
