@@ -7,11 +7,12 @@
 			:subtitle="`${device.SKU} - ${device.Serial}`"
 		/>
 		<div class="main">
-			<q-card class="card" v-if="activate.audio">
+			<q-card class="card" v-show="activate.audio">
 				<q-card-section> <div class="text-h6">Audio Test</div> </q-card-section><q-separator />
 				<q-card-section class="reproductor-content">
 					<q-card-section>
 						<Reproductor
+							v-if="activate.audio"
 							ref="reproductorRef"
 							id="audioTest"
 							@respuesta="sound = $event"
@@ -20,7 +21,7 @@
 					</q-card-section>
 				</q-card-section>
 
-				<q-card-actions align="right">
+				<q-card-actions align="right" ref="actionAudio" id="actionAudio">
 					<q-btn
 						id="audioFail"
 						ref="audioFail"
@@ -39,25 +40,25 @@
 					/>
 				</q-card-actions>
 			</q-card>
-			<q-card class="card" v-if="activate.camera">
+			<q-card class="card" v-show="activate.camera">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Camera Test</div> </q-card-section><q-separator />
 				</q-card-section>
 				<q-card-section>
 					<CameraCapture @capture-result="handleCaptureResult" :imageName="device.Serial" />
 				</q-card-section>
-				<q-card-actions align="right">
+				<q-card-actions align="right" id="actionCamera">
 					<q-btn flat color="negative" label="Fail" @click="handleAction('fail')" />
 					<q-btn flat color="positive" label="Pass" @click="handleAction('pass')" />
 				</q-card-actions>
 			</q-card>
 
-			<q-card class="card" v-if="activate.brightness">
+			<q-card class="card" v-show="activate.brightness">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Brightness Test</div> </q-card-section><q-separator />
 				</q-card-section>
 				<q-card-section class="center"> Is the brightness working? </q-card-section>
-				<q-card-actions align="right" v-if="showActions">
+				<q-card-actions align="right" v-show="showActions" id="actionBrightness">
 					<q-btn
 						flat
 						color="negative"
@@ -73,12 +74,12 @@
 				</q-card-actions>
 			</q-card>
 
-			<q-card class="card" v-if="activate.drivers">
+			<q-card class="card" v-show="activate.drivers">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Drivers Test</div> </q-card-section><q-separator />
 				</q-card-section>
 				<q-card-section class="center"> Is the Drivers working? </q-card-section>
-				<q-card-actions align="right">
+				<q-card-actions align="right" id="actionDrivers">
 					<q-btn
 						flat
 						color="negative"
@@ -94,7 +95,7 @@
 				</q-card-actions>
 			</q-card>
 
-			<q-card class="card" v-if="activate.windows">
+			<q-card class="card" v-show="activate.windows">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Windows Test</div> </q-card-section><q-separator />
 				</q-card-section>
@@ -102,7 +103,7 @@
 					<div>{{ win.os }}</div>
 					<div>{{ win.keyWindows }}</div>
 				</q-card-section>
-				<q-card-actions align="right">
+				<q-card-actions align="right" id="actioWindows">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
@@ -321,12 +322,20 @@
 					})
 					.catch((err) => console.error(err))
 			},
-			espera(a) {
+			async espera(a) {
 				return new Promise((resolve) => {
-					document.addEventListener('click', function clicDelRaton() {
-						document.removeEventListener('click', clicDelRaton)
-						resolve()
-					})
+					const cardActions = document.querySelector(`#${a}`) // Cambia '.card-actions' por el selector adecuado
+
+					const clickHandler = (event) => {
+						console.log(a, event.target.innerText)
+						const target = event.target
+						if (target.innerText === 'PASS' || target.innerText === 'FAIL') {
+							cardActions.removeEventListener('click', clickHandler)
+							resolve()
+						}
+					}
+
+					cardActions.addEventListener('click', clickHandler)
 				})
 			},
 		},
@@ -368,9 +377,9 @@
 					this.test['Description'] = `Product Description: ${this.device.Description}`
 					this.activate.audio = true
 
-					await this.espera()
+					await this.espera('actionAudio')
 					this.activate.camera = true
-					await this.espera()
+					await this.espera('actionCamera')
 					this.test['battery'] = battery.Status.includes('pass')
 						? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
 						: `Battery test FAIL`
@@ -380,11 +389,11 @@
 					setTimeout(() => {
 						this.showActions = true
 					}, 4000)
-					await this.espera()
+					await this.espera('actionBrightness')
 					this.activate.brightness = false
 					let driver = await this.$cmd.executeScriptCode(drivers)
 					this.activate.drivers = true
-					await this.espera()
+					await this.espera('actionDrivers')
 					if (driver.estatusDrivers == 'PASS') this.test['drivers'] = 'Device Manager Drivers Test PASS'
 					else this.test['drivers'] = 'Device Manager Drivers Test FAIL'
 					if (driver.estatusDrivers == 'PASS') this.test['display'] = 'Display Adapter Drivers Test PASS'
@@ -392,7 +401,7 @@
 					this.activate.drivers = false
 					this.win = await this.$cmd.executeScriptCode(windows)
 					this.activate.windows = true
-					await this.espera()
+					await this.espera('actionWindows')
 					this.activate.windows = false
 					if (this.action == 'PASS' && this.win.activationStatus)
 						this.test['windows'] = 'Windows Activation Test PASS'
