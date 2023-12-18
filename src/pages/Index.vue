@@ -48,8 +48,8 @@
 					<CameraCapture @capture-result="handleCaptureResult" :imageName="device.Serial" />
 				</q-card-section>
 				<q-card-actions align="right" id="actionCamera">
-					<q-btn flat color="negative" label="Fail" @click="handleAction('fail')" />
-					<q-btn flat color="positive" label="Pass" @click="handleAction('pass')" />
+					<q-btn flat color="negative" label="Fail" @click="test['camera'] = 'Webcam test FAIL'" />
+					<q-btn flat color="positive" label="Pass" @click="test['camera'] = 'Webcam test PASS'" />
 				</q-card-actions>
 			</q-card>
 
@@ -78,7 +78,11 @@
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Drivers Test</div> </q-card-section><q-separator />
 				</q-card-section>
-				<q-card-section class="center"> Is the Drivers working? </q-card-section>
+				<q-card-section class="center">
+					Is the Drivers and Video working?
+					<div>Driver: {{ driver.estatusDrivers }}</div>
+					<div>Video: {{ driver.estatusVideo }}</div>
+				</q-card-section>
 				<q-card-actions align="right" id="actionDrivers">
 					<q-btn
 						flat
@@ -103,11 +107,24 @@
 					<div>{{ win.os }}</div>
 					<div>{{ win.keyWindows }}</div>
 				</q-card-section>
-				<q-card-actions align="right" id="actioWindows">
+				<q-card-actions align="right" id="actionWindows">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
+			<!-- <q-card class="card" v-show="activate.battery">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Battery Test</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<div>{{ win.os }}</div>
+					<div>{{ win.keyWindows }}</div>
+				</q-card-section>
+				<q-card-actions align="right" id="actionWindows">
+					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
+					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+				</q-card-actions>
+			</q-card> -->
 		</div>
 
 		<!-- <q-card class="card" v-if="activate.keyboard">
@@ -158,10 +175,13 @@
 					brightness: false,
 					drivers: false,
 					windows: false,
+					battery: false,
 				},
 				showActions: false,
 				win: {},
 				intDev: {},
+				getDev: {},
+				driver: {},
 			}
 		},
 		methods: {
@@ -341,7 +361,8 @@
 		},
 		async beforeCreate() {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
-			console.log(this.user)
+			//this.getDev = await this.$cmd.executeScriptCode(getDeviceInfo)
+			console.log(this.user, this.getDev)
 		},
 		async mounted() {
 			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
@@ -376,10 +397,10 @@
 						this.test['Model'] = `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
 					this.test['Description'] = `Product Description: ${this.device.Description}`
 					this.activate.audio = true
-
 					await this.espera('actionAudio')
 					this.activate.camera = true
 					await this.espera('actionCamera')
+					this.activate.camera = false
 					this.test['battery'] = battery.Status.includes('pass')
 						? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
 						: `Battery test FAIL`
@@ -391,12 +412,14 @@
 					}, 4000)
 					await this.espera('actionBrightness')
 					this.activate.brightness = false
-					let driver = await this.$cmd.executeScriptCode(drivers)
+					this.driver = await this.$cmd.executeScriptCode(drivers)
 					this.activate.drivers = true
 					await this.espera('actionDrivers')
-					if (driver.estatusDrivers == 'PASS') this.test['drivers'] = 'Device Manager Drivers Test PASS'
+					if (this.driver.estatusDrivers == 'PASS')
+						this.test['drivers'] = 'Device Manager Drivers Test PASS'
 					else this.test['drivers'] = 'Device Manager Drivers Test FAIL'
-					if (driver.estatusDrivers == 'PASS') this.test['display'] = 'Display Adapter Drivers Test PASS'
+					if (this.driver.estatusVideo == 'PASS')
+						this.test['display'] = 'Display Adapter Drivers Test PASS'
 					else this.test['display'] = 'Display Adapter Drivers Test FAIL'
 					this.activate.drivers = false
 					this.win = await this.$cmd.executeScriptCode(windows)
