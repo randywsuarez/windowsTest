@@ -10,8 +10,8 @@
 		/> -->
 
 		<!-- Elemento de video para mostrar la transmisión de la cámara -->
-		<video v-if="showVideo" ref="video" width="400" height="300" autoplay></video>
-		<img v-if="showCapturedImage" :src="capturedImage" alt="Captured Image" style="width: 80%" />
+		<video v-show="showVideo" ref="video" width="400" height="300" autoplay></video>
+		<img v-show="showCapturedImage" :src="capturedImage" alt="Captured Image" style="width: 80%" />
 
 		<!-- Contador regresivo -->
 		<div v-if="countdown > 0" class="countdown">{{ countdown }}</div>
@@ -41,6 +41,9 @@
 		mounted() {
 			this.initializeCamera()
 			this.startCountdown()
+			this.$parent.$on('stopCamera', () => {
+				this.stopCamera()
+			})
 		},
 		beforeDestroy() {
 			this.stopCamera()

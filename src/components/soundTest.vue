@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="">
 		<div class="botones-reproductor">
 			<q-btn
 				@click="toggleReproduccion"
@@ -89,6 +89,12 @@
 </script>
 
 <style scoped>
+	.reproductor-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		height: 30vh; /* Esto asegura que ocupe el 100% de la altura de la ventana */
+	}
 	.reproductor-card {
 		width: 250px;
 	}
@@ -123,7 +129,7 @@
 	.reproductor-actions {
 		padding: 15px;
 	}
-	.card {
+	/* .card {
 		border-radius: 15px;
 		overflow: hidden;
 		background: rgba(255, 255, 255, 0.1);
@@ -132,7 +138,7 @@
 		width: 90%;
 		position: relative;
 		margin-top: 25px;
-	}
+	} */
 	.q-card-section {
 		border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 	}

@@ -38,7 +38,7 @@ if ($allDevices) {
 }
 $driverError = $false
 $allDevices = Get-WmiObject -Class Win32_PnPEntity -Namespace "Root\\CIMV2" | Where-Object { $_.Caption -eq "Microsoft Basic Display Adapter" -or $_.Caption -eq "Standard VGA Graphics Adapter" -or $_.Caption -eq "Video Controller (VGA Compatible)" }
-Start-Process "devmgmt.msc"
+#Start-Process "devmgmt.msc"
 if ($allDevices) {
     do {
         $driverError = $true

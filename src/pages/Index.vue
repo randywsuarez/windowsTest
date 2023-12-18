@@ -6,110 +6,108 @@
 			:title="device.Description"
 			:subtitle="`${device.SKU} - ${device.Serial}`"
 		/>
-		<q-card class="card" v-if="activate.audio">
-			<q-card-section> <div class="text-h6">Audio Test</div> </q-card-section><q-separator />
-			<q-card-section class="reproductor-content">
-				<q-card-section>
-					<Reproductor
-						ref="reproductorRef"
-						id="audioTest"
-						@respuesta="sound = $event"
-						:autoplay="true"
-					/>
+		<div class="main">
+			<q-card class="card" v-if="activate.audio">
+				<q-card-section> <div class="text-h6">Audio Test</div> </q-card-section><q-separator />
+				<q-card-section class="reproductor-content">
+					<q-card-section>
+						<Reproductor
+							ref="reproductorRef"
+							id="audioTest"
+							@respuesta="sound = $event"
+							:autoplay="true"
+						/>
+					</q-card-section>
 				</q-card-section>
-			</q-card-section>
 
-			<q-card-actions align="right">
-				<q-btn
-					id="audioFail"
-					ref="audioFail"
-					flat
-					color="red"
-					label="FAIL"
-					@click="detenerReproduccion('fail')"
-				/>
-				<q-btn
-					id="audioPass"
-					ref="audioPass"
-					flat
-					color="green"
-					label="PASS"
-					@click="detenerReproduccion('pass')"
-				/>
-			</q-card-actions>
-		</q-card>
+				<q-card-actions align="right">
+					<q-btn
+						id="audioFail"
+						ref="audioFail"
+						flat
+						color="red"
+						label="FAIL"
+						@click="detenerReproduccion('fail')"
+					/>
+					<q-btn
+						id="audioPass"
+						ref="audioPass"
+						flat
+						color="green"
+						label="PASS"
+						@click="detenerReproduccion('pass')"
+					/>
+				</q-card-actions>
+			</q-card>
+			<q-card class="card" v-if="activate.camera">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Camera Test</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section>
+					<CameraCapture @capture-result="handleCaptureResult" :imageName="device.Serial" />
+				</q-card-section>
+				<q-card-actions align="right">
+					<q-btn flat color="negative" label="Fail" @click="handleAction('fail')" />
+					<q-btn flat color="positive" label="Pass" @click="handleAction('pass')" />
+				</q-card-actions>
+			</q-card>
 
-		<q-card class="card" v-if="activate.camera">
-			<q-card-section>
-				<q-card-section> <div class="text-h6">Camera Test</div> </q-card-section><q-separator />
-			</q-card-section>
-			<q-card-section>
-				<CameraCapture @capture-result="handleCaptureResult" :imageName="device.Serial" />
-			</q-card-section>
-			<q-card-actions align="right">
-				<q-btn flat color="negative" label="Fail" @click="handleAction('fail')" />
-				<q-btn flat color="positive" label="Pass" @click="handleAction('pass')" />
-			</q-card-actions>
-		</q-card>
+			<q-card class="card" v-if="activate.brightness">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Brightness Test</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center"> Is the brightness working? </q-card-section>
+				<q-card-actions align="right" v-if="showActions">
+					<q-btn
+						flat
+						color="negative"
+						label="Fail"
+						@click="test['brightness'] = 'Brightness test FAIL'"
+					/>
+					<q-btn
+						flat
+						color="positive"
+						label="Pass"
+						@click="test['brightness'] = 'Brightness test PASS'"
+					/>
+				</q-card-actions>
+			</q-card>
 
-		<q-card class="card" v-if="activate.brightness">
-			<q-card-section>
-				<q-card-section> <div class="text-h6">Brightness Test</div> </q-card-section><q-separator />
-			</q-card-section>
-			<q-card-section class="center"> Is the brightness working? </q-card-section>
-			<q-card-actions align="right" v-if="showActions">
-				<!-- <q-btn flat color="black" label="Repeat" @click="$cmd.executeScriptCode(getBrightness())" /> -->
-				<q-btn
-					flat
-					color="negative"
-					label="Fail"
-					@click="test['brightness'] = 'Brightness test FAIL'"
-				/>
-				<q-btn
-					flat
-					color="positive"
-					label="Pass"
-					@click="test['brightness'] = 'Brightness test PASS'"
-				/>
-			</q-card-actions>
-		</q-card>
+			<q-card class="card" v-if="activate.drivers">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Drivers Test</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center"> Is the Drivers working? </q-card-section>
+				<q-card-actions align="right">
+					<q-btn
+						flat
+						color="negative"
+						label="Fail"
+						@click="test['brightness'] = 'Brightness test FAIL'"
+					/>
+					<q-btn
+						flat
+						color="positive"
+						label="Pass"
+						@click="test['brightness'] = 'Brightness test PASS'"
+					/>
+				</q-card-actions>
+			</q-card>
 
-		<q-card class="card" v-if="activate.drivers">
-			<q-card-section>
-				<q-card-section> <div class="text-h6">Drivers Test</div> </q-card-section><q-separator />
-			</q-card-section>
-			<q-card-section class="center"> Is the Drivers working? </q-card-section>
-			<q-card-actions align="right">
-				<!-- <q-btn flat color="black" label="Repeat" @click="$cmd.executeScriptCode(getBrightness())" /> -->
-				<q-btn
-					flat
-					color="negative"
-					label="Fail"
-					@click="test['brightness'] = 'Brightness test FAIL'"
-				/>
-				<q-btn
-					flat
-					color="positive"
-					label="Pass"
-					@click="test['brightness'] = 'Brightness test PASS'"
-				/>
-			</q-card-actions>
-		</q-card>
-
-		<q-card class="card" v-if="activate.windows">
-			<q-card-section>
-				<q-card-section> <div class="text-h6">Windows Test</div> </q-card-section><q-separator />
-			</q-card-section>
-			<q-card-section class="center">
-				<div>{{ win.os }}</div>
-				<div>{{ win.keyWindows }}</div>
-			</q-card-section>
-			<q-card-actions align="right">
-				<!-- <q-btn flat color="black" label="Repeat" @click="$cmd.executeScriptCode(getBrightness())" /> -->
-				<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-				<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
-			</q-card-actions>
-		</q-card>
+			<q-card class="card" v-if="activate.windows">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Windows Test</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<div>{{ win.os }}</div>
+					<div>{{ win.keyWindows }}</div>
+				</q-card-section>
+				<q-card-actions align="right">
+					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
+					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+				</q-card-actions>
+			</q-card>
+		</div>
 
 		<!-- <q-card class="card" v-if="activate.keyboard">
 			<q-card-section>
@@ -173,10 +171,10 @@
         ISP Windows Test Ver:3.00
         Operator ID: ${this.user.id}
         Operator Name:${this.user.usuario}
-        Start Date: ${this.test.date}
+        Start Date: ${this.test.Date}
         Start Time: ${this.test.startTime}
         End Date: ${lastdate.date}
-        End Date: ${lastdate.time}
+        End Time: ${lastdate.time}
         ==============================Devices Information===================================
         ${this.test.Description}
         ${this.test.Model}
@@ -298,6 +296,7 @@
 				this.activate.camera = false
 			},
 			detenerReproduccion(r) {
+				this.$children[0].$emit('stopCamera')
 				if (r == 'pass') {
 					this.test['audio'] = 'Internal Speaker Test PASS '
 					this.activate.audio = false
@@ -312,7 +311,6 @@
 				return fetch('https://worldtimeapi.org/api/timezone/America/Chicago', options)
 					.then((response) => response.json())
 					.then((r) => {
-						console.log(r)
 						const date = r.datetime.split('T')[0]
 						const time = r.datetime.split('T')[1]
 						return {
@@ -338,17 +336,14 @@
 		},
 		async mounted() {
 			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
-			console.log(this.intDev)
 			await this.$cmd.executeScriptCode(getDeviceInfo).then(async (result) => {
 				if (result == false) {
 					console.error('Error ejecutando script:', error)
 				} else {
 					let battery = await this.$cmd.executeScriptCode(getBattery)
-					console.log('randy: ', battery)
 					let res = ''
 					for (let x of this.$env.project) {
 						let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
-						console.log(u.tenant, x.db)
 						res = await this.$rsDB(x.db)
 							.select('SerialNumber, ArrivedSKU, StationID')
 							.from('sfis_WorkTracking')
@@ -389,7 +384,6 @@
 					this.activate.brightness = false
 					let driver = await this.$cmd.executeScriptCode(drivers)
 					this.activate.drivers = true
-					console.log('randy: ', driver)
 					await this.espera()
 					if (driver.estatusDrivers == 'PASS') this.test['drivers'] = 'Device Manager Drivers Test PASS'
 					else this.test['drivers'] = 'Device Manager Drivers Test FAIL'
@@ -398,7 +392,6 @@
 					this.activate.drivers = false
 					this.win = await this.$cmd.executeScriptCode(windows)
 					this.activate.windows = true
-					console.log('randy: ', this.win)
 					await this.espera()
 					this.activate.windows = false
 					if (this.action == 'PASS' && this.win.activationStatus)
@@ -406,7 +399,6 @@
 					else this.test['windows'] = 'Windows Activation Test FAIL'
 					this.test['OS'] = this.win.os
 					this.test['keyWindows'] = this.win.keyWindows
-					console.log(this.test, this.intDev)
 					let txt = await this.report()
 					await this.$uploadTextFile(this.device.Serial, txt)
 				}
@@ -415,6 +407,10 @@
 	}
 </script>
 <style scoped>
+	.main {
+		display: flex;
+		justify-content: center;
+	}
 	.card {
 		border-radius: 15px;
 		overflow: hidden;
@@ -422,7 +418,6 @@
 		backdrop-filter: blur(10px);
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 		width: 90%;
-		position: relative;
 		margin-top: 25px;
 	}
 	.q-card-section {
