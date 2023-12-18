@@ -182,6 +182,8 @@
 				intDev: {},
 				getDev: {},
 				driver: {},
+				select: {},
+				file: '',
 			}
 		},
 		methods: {
@@ -358,6 +360,48 @@
 					cardActions.addEventListener('click', clickHandler)
 				})
 			},
+			async rsSave() {
+				let sh = await this.$rsDB(this.select.db)
+					.select('Serial')
+					.from('test_SnResults')
+					.where(`Serial = '${this.device.Serial}'`)
+					.execute()
+				if (sh.length) {
+					//update
+				} else {
+					//Insert
+				}
+			},
+			async upload() {
+				const form = new FormData()
+				form.append(
+					'',
+					'C:\\Users\\rwsr\\OneDrive - IspTekServices\\shared\\Test\\logsPass\\5CD145GY24_43N62UA#ABA_Pass.log'
+				)
+
+				const options = {
+					method: 'POST',
+					headers: {
+						cookie:
+							'.AspNetCore.Identity.Application=CfDJ8Cxxq86nzJFBvhGy7wbkkRbCdg75OCdp_FhHe51Lf0HqlKmLG7m90LPxH2yNF5z6GCuGLsq76VibegJZJhMhvT9fUic9GtnpATmeI0YfWTcvxdIuAM5eqLJs0ELESNperl_99n9WZZUiSqYg_wfh_mivHAbp8EAoQAFBTULxOC_KujrLvT8IgbKdyirlqV0tBiXp5Qi9RwYOoCw0VS5jFJjbNhA726Txx7bq0C6b5WHK2xrqQi-VwCbq1ji9_2lITC9h_MntfQZQpps4oVE7C02UXGr1gXgkNkw42PGM3DBxIEhcAubd3oy9XFT65edR-FiyCEkRKSzMJxXRPrwtyXGhrzzxRZztTgujg8jUdbDEsfnSTeRPyX3rixJkDotyp6TfwxqgKtwbPa172BMRnD6cXX6Z_WJwmbMdJyk6cq7Hm3V9RVDGje7e-1hzuIFPunAlLSLk9HrC971oKt6bpu0pnE8q23xtbYF_OSh3qTsGyj039P_LaL4FhoQcCgWg4iFosZ1zfry7s-jsCwxaA_JqGecri3oQWoVcE1Fa4m8iLdjZVUeeikkuDedKfi1XN2Ad8hSpIpbdO8u8oZOq3mMgn_OgerBtMX4Urv13VdfaTUtYhCNpu-1D8bYcM8j7DOrgxiW4QYvBM5uFYvWAvYNc1wIFRyb9Jn4VBkchrPPAUczEfeeci5tFUXrpCE_NtsZL2JCb5v6n5YzLsle8qOjv-zOiiddSFgOdCzIlRibrQGEEOidjvzDXAOimjWX3aN40fOWrb7RZ7Kd1LLzO8Hw3xMN5rlDjDhAhtzUQoMxvw4PMJDXQmB7Dq0NLADd36YW_gL578TP1_UpVzjrOS0A; ARRAffinity=32b86a1d14140b24bde88b7fd630b5ce6e301a4c0624226b941643661531cc59; ARRAffinitySameSite=32b86a1d14140b24bde88b7fd630b5ce6e301a4c0624226b941643661531cc59',
+						'Content-Type': 'multipart/form-data; boundary=---011000010111000001101001',
+						'User-Agent': 'insomnia/2023.5.8',
+						tenant: 'HPRefurbish',
+						Authorization:
+							'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoicmFuZHkiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBZG1pbiBSb2xlIiwiZXhwIjoxNzMzMzQ5NDg2LCJpc3MiOiJTRklTIn0.ZA9K7nTkVOfzifRMFoKj9oE4Pl9UUKTXfZqjvH61t2A',
+					},
+				}
+
+				options.body = form
+
+				fetch(
+					'https://sfiswebwebdev.azurewebsites.net/api/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=5CD30248DB&EmployeeID=753e9471-ba01-4877-8dc3-763fdf90213c&FileType=1',
+					options
+				)
+					.then((response) => response.json())
+					.then((response) => console.log(response))
+					.catch((err) => console.error(err))
+			},
 		},
 		async beforeCreate() {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
@@ -383,6 +427,7 @@
 							this.project['id'] = x.id
 							this.project['db'] = x.db
 							this.project['operator'] = u.id
+							this.select = { ...x, ...u }
 							break
 						}
 					}
@@ -432,7 +477,9 @@
 					this.test['OS'] = this.win.os
 					this.test['keyWindows'] = this.win.keyWindows
 					let txt = await this.report()
-					await this.$uploadTextFile(this.device.Serial, txt)
+					this.file = await this.$uploadTextFile(this.device.Serial, txt)
+					console.log(this.$textFile, this.$image)
+					console.log(sessionStorage.getItem('image'), sessionStorage.getItem('txt'))
 				}
 			})
 		},

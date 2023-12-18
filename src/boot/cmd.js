@@ -40,7 +40,7 @@ const CmdHelper = {
 
 			ps.on('end', (code) => {
 				try {
-					//console.log(outputData)
+					console.log(outputData)
 					const result = JSON.parse(outputData)
 					resolve(result)
 				} catch (parseError) {
