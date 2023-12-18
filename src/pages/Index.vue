@@ -134,6 +134,9 @@
 	import drivers from '../scripts/checkDrivers'
 	import windows from '../scripts/checkWindows'
 	import intenalDevices from '../scripts/hrvcInfo'
+	import getBattery from '../scripts/battery'
+	import getDeviceInfo from '../scripts/GetDeviceInfo'
+	import GetMntBringhtness from '../scripts/MonitorBrightness'
 	export default {
 		components: {
 			UserInfoGrid,
@@ -163,89 +166,42 @@
 			}
 		},
 		methods: {
-			getBrightness() {
+			async report() {
+				let res = (contieneFail = Object.values(this.test).includes('fail') ? 'FAIL' : 'PASS')
+				let lastdate = await this.DateTime()
 				return `
-        $brightnessMethods = Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods
-    $maxBrightness = 100
-    $minBrightness = 15
-    $steps = 10
-    for ($brightness = $maxBrightness; $brightness -ge $minBrightness; $brightness -= $maxBrightness / $steps) {
-        $brightnessMethods.WmiSetBrightness(1, [int]$brightness)
-        Start-Sleep -Milliseconds 400
-    }
-    for ($brightness = $minBrightness; $brightness -le $maxBrightness; $brightness += $maxBrightness / $steps) {
-        $brightnessMethods.WmiSetBrightness(1, [int]$brightness)
-        Start-Sleep -Milliseconds 400
-    }
-    Write-Host @{
-      Status = 'end'
-    }
-        `
-			},
-			getDevice() {
-				return `
-	      $description = (Get-WmiObject win32_computerSystem).Model
-	if (-not $description) {
-	    $description = "#NA"
-	}
-	$serial = (Get-WmiObject -Class Win32_BIOS).SerialNumber
-	$sku = (Get-WmiObject win32_computerSystem).SystemSKUNumber
-	$deviceInfo = @{
-	    Description = $description
-	    Serial = $serial
-	    SKU = $sku
-	}
-
-	$deviceInfoJson = $deviceInfo | ConvertTo-Json
-	$deviceInfoJson
-
-	        `
-			},
-			getBattery() {
-				return `
-        $batteryPresent = Get-WmiObject -Class Win32_Battery
-
-if ($batteryPresent) {
-    $InfoAlertPercent = 80
-    $WarnAlertPercent = 50
-    $CritAlertPercent = 70
-    $BatteryHealth = ""
-    & powercfg /batteryreport /XML /OUTPUT "batteryreport.xml" | Out-null
-
-    if (Test-Path $pathScript"batteryreport.xml") {
-        Start-Sleep 1
-        [xml]$b = Get-Content batteryreport.xml
-        if ($b.BatteryReport.Batteries.childnodes.count -gt 0) {
-            $batteryResults = @()
-            $b.BatteryReport.Batteries |
-            ForEach-Object {
-                $batteryHealth = [math]::floor([int64]$_.Battery.FullChargeCapacity / [int64]$_.Battery.DesignCapacity * 100)
-                $batteryResult = [PSCustomObject]@{
-                    DesignCapacity = $_.Battery.DesignCapacity
-                    FullChargeCapacity = $_.Battery.FullChargeCapacity
-                    BatteryHealth = $batteryHealth
-                    CycleCount = $_.Battery.CycleCount
-                    ID = $_.Battery.id
-                    Status = "pass"
-                }
-                $batteryResults += $batteryResult
-                if ($batteryHealth -le $CritAlertPercent) {
-                    $batteryResult.Status = "fail"
-                }
-            }
-            $jsonResult = $batteryResults | ConvertTo-Json
-            $jsonResult
-        }
-    }
-    Remove-Item "batteryreport.xml" -Force | Out-Null
-} else {
-    $jsonResultNoBattery = @{
-        Status = "NO BATTERY DETECTED"
-    } | ConvertTo-Json
-    $jsonResultNoBattery
-}
-
-        `
+        ISP Windows Test Ver:3.00
+        Operator ID: ${this.user.id}
+        Operator Name:${this.user.usuario}
+        Start Date: ${this.test.date}
+        Start Time: ${this.test.startTime}
+        End Date: ${lastdate.date}
+        End Date: ${lastdate.time}
+        ==============================Devices Information===================================
+        ${this.test.Description}
+        ${this.test.Model}
+        ${this.test.Serial}
+        Windows OS Name: ${this.test.OS}
+        Windows Product Key: ${this.test.keyWindows}
+        ${this.test.windows}
+        Hard Drive: ${this.test.HDD.Total}
+        ${this.intDev.HDD.Units.join('\n')}
+        Memory RAM: ${this.test.RAM.Total}
+        ${this.intDev.RAM.Modules.join('\n')}
+        GPU Verification PASS
+        ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
+        CPU
+        ${this.intDev.cpu}
+        =================================Test Status========================================
+        ${this.test.audio}
+        ${this.test.camera}
+        ${this.test.drivers}
+        ${this.test.display}
+        ${this.test.battery}
+        ${this.test.brightness}
+        ====================================Result==========================================
+        Test Result is ${res}
+      `
 			},
 			ramInfo(i) {
 				let objetos = i.map((item) => {
@@ -381,13 +337,13 @@ if ($batteryPresent) {
 			console.log(this.user)
 		},
 		async mounted() {
-			let getD = await this.getDevice()
 			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
-			await this.$cmd.executeScriptCode(getD).then(async (result) => {
+			console.log(this.intDev)
+			await this.$cmd.executeScriptCode(getDeviceInfo).then(async (result) => {
 				if (result == false) {
 					console.error('Error ejecutando script:', error)
 				} else {
-					let battery = await this.$cmd.executeScriptCode(this.getBattery())
+					let battery = await this.$cmd.executeScriptCode(getBattery)
 					console.log('randy: ', battery)
 					let res = ''
 					for (let x of this.$env.project) {
@@ -416,6 +372,7 @@ if ($batteryPresent) {
 						this.test['Model'] = `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
 					this.test['Description'] = `Product Description: ${this.device.Description}`
 					this.activate.audio = true
+
 					await this.espera()
 					this.activate.camera = true
 					await this.espera()
@@ -424,7 +381,7 @@ if ($batteryPresent) {
 						: `Battery test FAIL`
 
 					this.activate.brightness = true
-					this.$cmd.executeScriptCode(this.getBrightness())
+					this.$cmd.executeScriptCode(GetMntBringhtness)
 					setTimeout(() => {
 						this.showActions = true
 					}, 4000)
@@ -450,7 +407,7 @@ if ($batteryPresent) {
 					this.test['OS'] = this.win.os
 					this.test['keyWindows'] = this.win.keyWindows
 					console.log(this.test, this.intDev)
-
+					let txt
 					await this.$uploadTextFile(this.device.Serial, this.test)
 				}
 			})
