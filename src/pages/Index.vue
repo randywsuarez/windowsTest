@@ -167,7 +167,7 @@
 		},
 		methods: {
 			async report() {
-				let res = (contieneFail = Object.values(this.test).includes('fail') ? 'FAIL' : 'PASS')
+				let res = Object.values(this.test).includes('fail') ? 'FAIL' : 'PASS'
 				let lastdate = await this.DateTime()
 				return `
         ISP Windows Test Ver:3.00
@@ -184,9 +184,9 @@
         Windows OS Name: ${this.test.OS}
         Windows Product Key: ${this.test.keyWindows}
         ${this.test.windows}
-        Hard Drive: ${this.test.HDD.Total}
+        Hard Drive: ${this.intDev.HDD.Total}
         ${this.intDev.HDD.Units.join('\n')}
-        Memory RAM: ${this.test.RAM.Total}
+        Memory RAM: ${this.intDev.RAM.Total}
         ${this.intDev.RAM.Modules.join('\n')}
         GPU Verification PASS
         ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
@@ -407,8 +407,8 @@
 					this.test['OS'] = this.win.os
 					this.test['keyWindows'] = this.win.keyWindows
 					console.log(this.test, this.intDev)
-					let txt
-					await this.$uploadTextFile(this.device.Serial, this.test)
+					let txt = await this.report()
+					await this.$uploadTextFile(this.device.Serial, txt)
 				}
 			})
 		},
