@@ -21,6 +21,7 @@ module.exports = ({ Vue }) => {
 		try {
 			fs.writeFileSync(imagePath, buffer)
 			console.log(`Imagen guardada: ${imagePath}`)
+			sessionStorage.setItem('image', imagePath)
 		} catch (error) {
 			console.error('Error al guardar la imagen:', error)
 		}
@@ -45,6 +46,7 @@ module.exports = ({ Vue }) => {
 		try {
 			fs.writeFileSync(textFilePath, fileContent)
 			console.log(`Archivo de texto guardado: ${textFilePath}`)
+			sessionStorage.setItem('txt', textFilePath)
 		} catch (error) {
 			console.error('Error al guardar el archivo de texto:', error)
 		}
