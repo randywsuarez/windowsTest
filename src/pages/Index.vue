@@ -385,12 +385,20 @@
 					.where(`Serial = '${this.device.Serial}'`)
 					.execute()
 				if (sh.length) {
-					//update
+					console.log(sh)
+					let result = this.$rsDB(this.select.db)
+						.update('test_SnResults')
+						.set({})
+						.where(`Serial = '${this.device.Serial}'`)
+						.execute()
 				} else {
-					//Insert
+					let result = await this.$rsDB('nombre-de-la-base-de-datos')
+						.insert('test_SnResults')
+						.fields({ campo1: 'valor1', campo2: 'valor2' })
+						.execute()
 				}
 			},
-			async upload() {
+			async upload(file, serial, type) {
 				const form = new FormData()
 				form.append(
 					'',
@@ -498,6 +506,7 @@
 					this.file = await this.$uploadTextFile(this.device.Serial, txt)
 					console.log(this.$textFile, this.$imageFile)
 					console.log(sessionStorage.getItem('image'), sessionStorage.getItem('txt'))
+					//this.rsSave()
 				}
 			})
 		},
