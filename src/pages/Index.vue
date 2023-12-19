@@ -112,7 +112,7 @@
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
-			<!-- <q-card class="card" v-show="activate.battery">
+			<q-card class="card" v-show="activate.battery">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Battery Test</div> </q-card-section><q-separator />
 				</q-card-section>
@@ -120,11 +120,24 @@
 					<div>{{ win.os }}</div>
 					<div>{{ win.keyWindows }}</div>
 				</q-card-section>
-				<q-card-actions align="right" id="actionWindows">
+				<q-card-actions align="right" id="actionBattery">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
-			</q-card> -->
+			</q-card>
+			<q-card class="card" v-show="activate.gpu">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<div>{{ win.os }}</div>
+					<div>{{ win.keyWindows }}</div>
+				</q-card-section>
+				<q-card-actions align="right" id="actionBattery">
+					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
+					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+				</q-card-actions>
+			</q-card>
 		</div>
 
 		<!-- <q-card class="card" v-if="activate.keyboard">
@@ -176,6 +189,7 @@
 					drivers: false,
 					windows: false,
 					battery: false,
+					gpu: false,
 				},
 				showActions: false,
 				win: {},
