@@ -45,7 +45,11 @@
 					<q-card-section> <div class="text-h6">Camera Test</div> </q-card-section><q-separator />
 				</q-card-section>
 				<q-card-section>
-					<CameraCapture @capture-result="handleCaptureResult" :imageName="device.Serial" />
+					<CameraCapture
+						@capture-result="handleCaptureResult"
+						:imageName="device.Serial"
+						v-if="activate.camera"
+					/>
 				</q-card-section>
 				<q-card-actions align="right" id="actionCamera">
 					<q-btn flat color="negative" label="Fail" @click="test['camera'] = 'Webcam test FAIL'" />
@@ -492,7 +496,7 @@
 					this.test['keyWindows'] = this.win.keyWindows
 					let txt = await this.report()
 					this.file = await this.$uploadTextFile(this.device.Serial, txt)
-					console.log(this.$textFile, this.$image)
+					console.log(this.$textFile, this.$imageFile)
 					console.log(sessionStorage.getItem('image'), sessionStorage.getItem('txt'))
 				}
 			})
