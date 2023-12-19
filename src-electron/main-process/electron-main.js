@@ -1,4 +1,8 @@
-import { app, BrowserWindow, nativeTheme } from 'electron'
+import { app, BrowserWindow, nativeTheme, autoUpdater } from 'electron'
+import * as path from 'path'
+import * as url from 'url'
+// Agrega la línea para detectar si la aplicación se está ejecutando en modo de desarrollo
+const isDev = process.env.NODE_ENV === 'development'
 
 try {
 	if (process.platform === 'win32' && nativeTheme.shouldUseDarkColors === true) {
@@ -6,20 +10,15 @@ try {
 	}
 } catch (_) {}
 
-/**
- * Set `__statics` path to static files in production;
- * The reason we are setting it here is that the path needs to be evaluated at runtime
- */
-if (process.env.PROD) {
-	global.__statics = __dirname
+// Configuración de electron-updater
+autoUpdater.logger = require('electron-log')
+autoUpdater.logger.transports.file.level = 'info'
+
+function sendStatusToWindow(text) {
+	mainWindow.webContents.send('message', text)
 }
 
-let mainWindow
-
 function createWindow() {
-	/**
-	 * Initial window options
-	 */
 	mainWindow = new BrowserWindow({
 		width: 400,
 		height: 600,
@@ -28,20 +27,59 @@ function createWindow() {
 		webPreferences: {
 			nodeIntegration: true,
 			webSecurity: false,
-			// Change from /quasar.conf.js > electron > nodeIntegration;
-			// More info: https://quasar.dev/quasar-cli/developing-electron-apps/node-integration
 			nodeIntegration: process.env.QUASAR_NODE_INTEGRATION,
 			nodeIntegrationInWorker: process.env.QUASAR_NODE_INTEGRATION,
-
-			// More info: /quasar-cli/developing-electron-apps/electron-preload-script
-			// preload: path.resolve(__dirname, 'electron-preload.js')
 		},
 	})
 
-	mainWindow.loadURL(process.env.APP_URL)
+	// Cargar la URL de la aplicación
+	if (isDev) {
+		// En modo desarrollo, cargar desde el servidor de desarrollo
+		mainWindow.loadURL(process.env.APP_URL)
+	} else {
+		// En modo producción, cargar desde el archivo local
+		mainWindow.loadURL(
+			url.format({
+				pathname: path.join(__dirname, 'index.html'),
+				protocol: 'file:',
+				slashes: true,
+			})
+		)
+	}
 
 	mainWindow.on('closed', () => {
 		mainWindow = null
+	})
+
+	// Verificar actualizaciones al iniciar la aplicación (solo en producción)
+	if (!isDev) {
+		autoUpdater.checkForUpdatesAndNotify()
+	}
+
+	// Escuchar eventos de actualización
+	autoUpdater.on('checking-for-update', () => {
+		sendStatusToWindow('Checking for update...')
+	})
+
+	autoUpdater.on('update-available', (info) => {
+		sendStatusToWindow('Update available.')
+	})
+
+	autoUpdater.on('update-not-available', (info) => {
+		sendStatusToWindow('Update not available.')
+	})
+
+	autoUpdater.on('error', (err) => {
+		sendStatusToWindow(`Error in auto-updater: ${err.toString()}`)
+	})
+
+	autoUpdater.on('download-progress', (progressObj) => {
+		let logMessage = `Download speed: ${progressObj.bytesPerSecond} - Downloaded ${progressObj.percent}% (${progressObj.transferred}/${progressObj.total})`
+		sendStatusToWindow(logMessage)
+	})
+
+	autoUpdater.on('update-downloaded', (info) => {
+		sendStatusToWindow('Update downloaded; will install now')
 	})
 }
 
