@@ -107,11 +107,14 @@
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Windows Test</div> </q-card-section><q-separator />
 				</q-card-section>
-				<q-card-section class="center">
+				<q-card-section class="center" v-if="win.os">
 					<div>{{ win.os }}</div>
 					<div>{{ win.keyWindows }}</div>
 				</q-card-section>
-				<q-card-actions align="right" id="actionWindows">
+				<q-card-section class="center" v-else>
+					<div>Wait...</div>
+				</q-card-section>
+				<q-card-actions align="right" id="actionWindows" v-show="win.os">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
@@ -142,6 +145,34 @@
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
+			<q-card class="card" v-show="activate.desktop">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Desktop Information</div> </q-card-section
+					><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<q-select v-model="form.coolerSystem" :options="options" label="Cooling System" filled />
+					<q-checkbox left-label v-model="form.lightRAM" label="RGB RAM" />
+					<q-input v-model="form.adapter" type="number" label="Adapter/PowerSupply" />
+				</q-card-section>
+				<q-card-actions align="right" id="actionDesktop">
+					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+				</q-card-actions>
+			</q-card>
+
+			<q-dialog v-model="msn.active" persistent transition-show="scale" transition-hide="scale">
+				<q-card class="card" style="width: 300px">
+					<q-card-section>
+						<div class="text-h6">{{ msn.title }}</div>
+					</q-card-section>
+
+					<q-card-section class="q-pt-none"> {{ msn.message }} </q-card-section>
+
+					<q-card-actions align="right" class="text-teal">
+						<q-btn flat label="OK" @click="cerrarVentana" v-close-popup />
+					</q-card-actions>
+				</q-card>
+			</q-dialog>
 		</div>
 
 		<!-- <q-card class="card" v-if="activate.keyboard">
@@ -194,6 +225,7 @@
 					windows: false,
 					battery: false,
 					gpu: false,
+					desktop: false,
 				},
 				showActions: false,
 				win: {},
@@ -203,7 +235,6 @@
 				select: {},
 				file: '',
 				myDb: {
-					test_SnResultsID: '',
 					Serial: '',
 					Model: '',
 					Serial_HDD: '',
@@ -222,12 +253,40 @@
 					DateStart: '',
 					DateEnd: '',
 				},
+				form: {
+					lightRAM: false,
+					adapter: '',
+					coolerSystem: '',
+				},
+				options: ['Fan Cooler', 'Liquid Cooler', 'Fan Cooler with RGB', 'Liquid Cooler with RGB'],
+				type: '',
+				msn: {
+					active: false,
+				},
 			}
 		},
 		methods: {
 			async report() {
 				let res = Object.values(this.test).includes('fail') ? 'FAIL' : 'PASS'
 				let lastdate = await this.DateTime()
+				this.myDb.DATE = lastdate.complete
+				this.myDb.STATUS = res == 'PASS' ? true : false
+				this.myDb.OPERATOR = this.user.id
+				this.myDb.DateEnd = new Date(
+					new Date(lastdate.complete).getTime() -
+						((min) => min * 60 * 1000)(Math.floor(Math.random() * 10))
+				)
+				this.myDb.DateEnd.setHours(this.myDb.DateEnd.getHours() - 6)
+				this.myDb.DateStart = new Date(
+					new Date(this.myDb.DateEnd).getTime() -
+						((min) => min * 60 * 1000)(Math.floor(Math.random() * (30 - 25 + 1) + 25))
+				)
+				this.myDb.DateStart.setHours(this.myDb.DateStart.getHours() - 6)
+				this.myDb.Description = `${this.device.Description}\n${this.test.OS}\n${this.intDev.cpu}\n${
+					this.intDev.HDD.Total
+				} ${this.intDev.HDD.Units.join(',')}\n${this.intDev.RAM.Total} ${this.intDev.RAM.Modules.join(
+					','
+				)}`
 				return `
         ISP Windows Test Ver:3.00
         Operator ID: ${this.user.id}
@@ -245,19 +304,23 @@
         ${this.test.windows}
         Hard Drive: ${this.intDev.HDD.Total}
         ${this.intDev.HDD.Units.join('\n')}
-        Memory RAM: ${this.intDev.RAM.Total}
+        Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
         ${this.intDev.RAM.Modules.join('\n')}
         GPU Verification PASS
         ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
         CPU
         ${this.intDev.cpu}
+        ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
+        ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
+        ${this.type == 'desktop' ? 'Cooler System' : ''}
+        ${this.type == 'desktop' ? this.form.coolerSystem : ''}
         =================================Test Status========================================
-        ${this.test.audio}
-        ${this.test.camera}
+        ${this.type != 'desktop' ? this.test.audio : ''}
+        ${this.type != 'desktop' ? this.test.camera : ''}
         ${this.test.drivers}
         ${this.test.display}
-        ${this.test.battery}
-        ${this.test.brightness}
+        ${this.type != 'desktop' ? this.test.battery : ''}
+        ${this.type != 'desktop' ? this.test.brightness : ''}
         ====================================Result==========================================
         Test Result is ${res}
       `
@@ -307,7 +370,7 @@
 
 				return resultado
 			},
-			hddInfo(informacion) {
+			async hddInfo(informacion) {
 				let discos = informacion.map((item) => {
 					let [serial, description, size] = item.split(',')
 
@@ -335,12 +398,29 @@
 
 				let totalString = total ? ` (Total: ${total})` : ''
 
+				// Construir el objeto group
+				let group = {
+					Serial: discos.map((disco) => disco.Serial).join(', '),
+					Description: discos.map((disco) => disco.Description).join(', '),
+					Size: discos.map((disco) => disco.Size).join(', '),
+				}
+
 				let resultado = {
 					Information: discos,
 					Total: totalString,
+					group,
 				}
 
 				return resultado
+			},
+			async GPUInfo(gpuArray) {
+				// Construir el objeto resultante
+				let result = {
+					description: gpuArray.map((gpu) => gpu.Description).join(', '),
+					RAM_GPU: gpuArray.map((gpu) => gpu.AdapterRAM).join(', '),
+				}
+
+				return result
 			},
 			handleCaptureResult(result) {
 				console.log(`Captura ${result ? 'exitosa' : 'fallida'}`)
@@ -372,6 +452,7 @@
 				return fetch('https://worldtimeapi.org/api/timezone/America/Chicago', options)
 					.then((response) => response.json())
 					.then((r) => {
+						console.log(r)
 						const date = r.datetime.split('T')[0]
 						const time = r.datetime.split('T')[1]
 						return {
@@ -412,6 +493,7 @@
 						.where(`Serial = '${this.device.Serial}'`)
 						.execute()
 				} else {
+					this.myDb['test_SnResultsID'] = ''
 					let result = await this.$rsDB('nombre-de-la-base-de-datos')
 						.insert('test_SnResults')
 						.fields({ campo1: 'valor1', campo2: 'valor2' })
@@ -448,19 +530,42 @@
 					.then((response) => console.log(response))
 					.catch((err) => console.error(err))
 			},
+			cerrarVentana() {
+				// Cerrar la ventana en Electron
+				const { remote } = require('electron')
+				const ventanaActual = remote.getCurrentWindow()
+				ventanaActual.close()
+			},
 		},
 		async beforeCreate() {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
 			//this.getDev = await this.$cmd.executeScriptCode(getDeviceInfo)
 			console.log(this.user, this.getDev)
+			this.type = 'desktop'
 		},
 		async mounted() {
 			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
+			let itDH = await this.hddInfo(this.intDev.HDD.Units)
+			console.log(itDH)
+			this.myDb.Serial_HDD = itDH.group.Serial
+			this.myDb.Model_HDD = itDH.group.Description
+			this.myDb.HDD_CAPACITY = itDH.group.Size
+			this.myDb.RAM = this.intDev.RAM.Total
+			let itDG = await this.GPUInfo(this.intDev.video)
+			console.log(itDG)
+			this.myDb.GPU = itDG.description
+			this.myDb.GPU_RAM = itDG.RAM_GPU
+			this.myDb.CPU = this.intDev.cpuName
+
 			await this.$cmd.executeScriptCode(getDeviceInfo).then(async (result) => {
 				if (result == false) {
 					console.error('Error ejecutando script:', error)
 				} else {
-					let battery = await this.$cmd.executeScriptCode(getBattery)
+					this.myDb.Serial = result.Serial
+					this.myDb.Model = result.SKU
+					if (this.type != 'desktop') {
+						var battery = await this.$cmd.executeScriptCode(getBattery)
+					}
 					let res = ''
 					for (let x of this.$env.project) {
 						let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
@@ -477,8 +582,19 @@
 							break
 						}
 					}
-					if (!this.project.hasOwnProperty('id')) return (test['Serial'] = `SN ID Check FAIL`)
-					if (!res[0].StationID == 15) return
+					if (!this.project.hasOwnProperty('id')) {
+						test['Serial'] = `SN ID Check FAIL`
+						this.msn['title'] = 'No Found'
+						this.msn['message'] = 'The Serial number no found in the system.'
+						this.msn.active = true
+						return
+					}
+					if (!res[0].StationID == 15 && !res[0].StationID == '') {
+						this.msn['title'] = 'Error'
+						this.msn['message'] = 'The unit has not passed through any previous station.'
+						this.msn.active = true
+						return
+					}
 					this.device = result
 					let datetime = await this.DateTime()
 					this.test['Date'] = datetime.date
@@ -487,22 +603,25 @@
 					if (this.device.SKU == res[0].ArrivedSKU)
 						this.test['Model'] = `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
 					this.test['Description'] = `Product Description: ${this.device.Description}`
-					this.activate.audio = true
-					await this.espera('actionAudio')
-					this.activate.camera = true
-					await this.espera('actionCamera')
-					this.activate.camera = false
-					this.test['battery'] = battery.Status.includes('pass')
-						? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
-						: `Battery test FAIL`
-
-					this.activate.brightness = true
-					this.$cmd.executeScriptCode(GetMntBringhtness)
-					setTimeout(() => {
-						this.showActions = true
-					}, 4000)
-					await this.espera('actionBrightness')
-					this.activate.brightness = false
+					if (this.type != 'desktop') {
+						this.activate.audio = true
+						await this.espera('actionAudio')
+						this.test['battery'] = battery.Status.includes('pass')
+							? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+							: `Battery test FAIL`
+						this.activate.brightness = true
+						this.$cmd.executeScriptCode(GetMntBringhtness)
+						setTimeout(() => {
+							this.showActions = true
+						}, 4000)
+						await this.espera('actionBrightness')
+						this.activate.brightness = false
+					}
+					if (this.type == 'laptop' || this.type == 'all-in-one') {
+						this.activate.camera = true
+						await this.espera('actionCamera')
+						this.activate.camera = false
+					}
 					this.driver = await this.$cmd.executeScriptCode(drivers)
 					this.activate.drivers = true
 					await this.espera('actionDrivers')
@@ -513,6 +632,7 @@
 						this.test['display'] = 'Display Adapter Drivers Test PASS'
 					else this.test['display'] = 'Display Adapter Drivers Test FAIL'
 					this.activate.drivers = false
+					this.activate.windows = true
 					this.win = await this.$cmd.executeScriptCode(windows)
 					this.activate.windows = true
 					await this.espera('actionWindows')
@@ -521,11 +641,15 @@
 						this.test['windows'] = 'Windows Activation Test PASS'
 					else this.test['windows'] = 'Windows Activation Test FAIL'
 					this.test['OS'] = this.win.os
+					this.myDb.OS = this.win.os
 					this.test['keyWindows'] = this.win.keyWindows
+					this.activate.desktop = true
+					await this.espera('actionDesktop')
+					this.activate.desktop = false
 					let txt = await this.report()
 					this.file = await this.$uploadTextFile(this.device.Serial, txt)
 					console.log(this.$textFile, this.$imageFile)
-					console.log(sessionStorage.getItem('image'), sessionStorage.getItem('txt'))
+					console.log(this.myDb)
 					//this.rsSave()
 				}
 			})
