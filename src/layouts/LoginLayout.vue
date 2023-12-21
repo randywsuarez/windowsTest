@@ -129,7 +129,7 @@
 					}
 
 					// Realizar la solicitud fetch
-					fetch(`${s.url}/Login/Authenticate`, options)
+					fetch(`${s.url}/APP/Login/Authenticate`, options)
 						.then((response) => response.json())
 						.then((response) => data.push(response)) // Resolver la promesa con la respuesta
 						.catch((err) => reject(err)) // Rechazar la promesa con el error
