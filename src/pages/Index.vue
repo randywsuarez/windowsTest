@@ -269,19 +269,21 @@
 			async report() {
 				let res = Object.values(this.test).includes('fail') ? 'FAIL' : 'PASS'
 				let lastdate = await this.DateTime()
-				this.myDb.DATE = lastdate.complete
+				console.log(lastdate)
+				this.myDb.DATE = `'${lastdate.complete}'`
+				console.log(typeof this.myDb.DATE)
 				this.myDb.STATUS = res == 'PASS' ? true : false
 				this.myDb.OPERATOR = this.user.id
-				this.myDb.DateEnd = new Date(
+				this.myDb.DateEnd = `'${new Date(
 					new Date(lastdate.complete).getTime() -
 						((min) => min * 60 * 1000)(Math.floor(Math.random() * 10))
-				)
-				this.myDb.DateEnd.setHours(this.myDb.DateEnd.getHours() - 6)
-				this.myDb.DateStart = new Date(
+				)}'`
+				//this.myDb.DateEnd.setHours(this.myDb.DateEnd.getHours() - 6)
+				this.myDb.DateStart = `'${new Date(
 					new Date(this.myDb.DateEnd).getTime() -
 						((min) => min * 60 * 1000)(Math.floor(Math.random() * (30 - 25 + 1) + 25))
-				)
-				this.myDb.DateStart.setHours(this.myDb.DateStart.getHours() - 6)
+				)}'`
+				//this.myDb.DateStart.setHours(this.myDb.DateStart.getHours() - 6)
 				this.myDb.Description = `${this.device.Description}\n${this.test.OS}\n${this.intDev.cpu}\n${
 					this.intDev.HDD.Total
 				} ${this.intDev.HDD.Units.join(',')}\n${this.intDev.RAM.Total} ${this.intDev.RAM.Modules.join(
@@ -452,13 +454,16 @@
 				return fetch('https://worldtimeapi.org/api/timezone/America/Chicago', options)
 					.then((response) => response.json())
 					.then((r) => {
-						console.log(r)
-						const date = r.datetime.split('T')[0]
-						const time = r.datetime.split('T')[1]
+						console.log('fecha: ', r)
+						let comp = new Date(r.datetime)
+						//comp.setHours(comp.getHours() - 6)
+						let date = r.datetime.split('T')[0]
+						let time = r.datetime.split('T')[1]
+						console.log('fecha: ', comp, r.datetime)
 						return {
 							date: date,
 							time: time,
-							complete: new Date(r.datatime),
+							complete: comp,
 						}
 					})
 					.catch((err) => console.error(err))
@@ -487,29 +492,28 @@
 					.execute()
 				if (sh.length) {
 					console.log(sh)
-					let result = this.$rsDB(this.select.db)
+					let result = await this.$rsDB(this.select.db)
 						.update('test_SnResults')
-						.set({})
+						.set(this.myDb)
 						.where(`Serial = '${this.device.Serial}'`)
 						.execute()
+					console.log(result)
 				} else {
-					this.myDb['test_SnResultsID'] = ''
+					this.myDb['test_SnResultsID'] = 'NEWID()'
 					let result = await this.$rsDB(this.select.db)
 						.insert('test_SnResults')
 						.fields(this.myDb)
 						.execute()
+					console.log(result)
 				}
 			},
-			async upload(file, serial, type) {
-				const form = new FormData()
+			async upload(file, type) {
+				/* const form = new FormData()
 				form.append('', `${file}`)
 
 				const options = {
 					method: 'POST',
 					headers: {
-						cookie:
-							'.AspNetCore.Identity.Application=CfDJ8Cxxq86nzJFBvhGy7wbkkRbCdg75OCdp_FhHe51Lf0HqlKmLG7m90LPxH2yNF5z6GCuGLsq76VibegJZJhMhvT9fUic9GtnpATmeI0YfWTcvxdIuAM5eqLJs0ELESNperl_99n9WZZUiSqYg_wfh_mivHAbp8EAoQAFBTULxOC_KujrLvT8IgbKdyirlqV0tBiXp5Qi9RwYOoCw0VS5jFJjbNhA726Txx7bq0C6b5WHK2xrqQi-VwCbq1ji9_2lITC9h_MntfQZQpps4oVE7C02UXGr1gXgkNkw42PGM3DBxIEhcAubd3oy9XFT65edR-FiyCEkRKSzMJxXRPrwtyXGhrzzxRZztTgujg8jUdbDEsfnSTeRPyX3rixJkDotyp6TfwxqgKtwbPa172BMRnD6cXX6Z_WJwmbMdJyk6cq7Hm3V9RVDGje7e-1hzuIFPunAlLSLk9HrC971oKt6bpu0pnE8q23xtbYF_OSh3qTsGyj039P_LaL4FhoQcCgWg4iFosZ1zfry7s-jsCwxaA_JqGecri3oQWoVcE1Fa4m8iLdjZVUeeikkuDedKfi1XN2Ad8hSpIpbdO8u8oZOq3mMgn_OgerBtMX4Urv13VdfaTUtYhCNpu-1D8bYcM8j7DOrgxiW4QYvBM5uFYvWAvYNc1wIFRyb9Jn4VBkchrPPAUczEfeeci5tFUXrpCE_NtsZL2JCb5v6n5YzLsle8qOjv-zOiiddSFgOdCzIlRibrQGEEOidjvzDXAOimjWX3aN40fOWrb7RZ7Kd1LLzO8Hw3xMN5rlDjDhAhtzUQoMxvw4PMJDXQmB7Dq0NLADd36YW_gL578TP1_UpVzjrOS0A; ARRAffinity=32b86a1d14140b24bde88b7fd630b5ce6e301a4c0624226b941643661531cc59; ARRAffinitySameSite=32b86a1d14140b24bde88b7fd630b5ce6e301a4c0624226b941643661531cc59',
-						'Content-Type': 'multipart/form-data; boundary=---011000010111000001101001',
 						tenant: `${this.select.tenant}`,
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
@@ -523,7 +527,20 @@
 				)
 					.then((response) => response.json())
 					.then((response) => console.log(response))
-					.catch((err) => console.error(err))
+					.catch((err) => console.error(err)) */
+				this.$cmd
+					.savePS({
+						apiUrl: `${this.select.url}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
+						filePath: file,
+						tenant: this.select.tenant,
+						token: this.select.authToken,
+					})
+					.then((result) => {
+						console.log('Result:', result)
+					})
+					.catch((error) => {
+						console.error('Error:', error)
+					})
 			},
 			cerrarVentana() {
 				// Cerrar la ventana en Electron
@@ -646,7 +663,9 @@
 					this.file = await this.$uploadTextFile(this.device.Serial, txt)
 					console.log(this.$textFile, this.$imageFile)
 					console.log(this.myDb)
-					//this.rsSave()
+					await this.rsSave()
+					if (this.$textFile) await this.upload(this.$textFile.path, 1)
+					if (this.$imageFile) await this.upload(this.$imageFile.path, 2)
 				}
 			})
 		},

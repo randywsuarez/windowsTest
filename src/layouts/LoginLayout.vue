@@ -65,7 +65,7 @@
 					}
 
 					// Realizar la solicitud fetch
-					await fetch(`${s.url}/Login/Authenticate`, options)
+					await fetch(`${s.url}/APP/Login/Authenticate`, options)
 						.then((response) => response.json())
 						.then((response) => {
 							console.log(response)
