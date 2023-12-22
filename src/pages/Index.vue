@@ -511,26 +511,6 @@
 				}
 			},
 			async upload(file, type) {
-				/* let form = new FormData()
-				form.append('', `${file}`)
-
-				let options = {
-					method: 'POST',
-					headers: {
-						tenant: `${this.select.tenant}`,
-						Authorization: `Bearer ${this.select.authToken}`,
-					},
-				}
-
-				options.body = form
-
-				fetch(
-					`${this.select.url}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
-					options
-				)
-					.then((response) => response.json())
-					.then((response) => console.log(response))
-					.catch((err) => console.error(err)) */
 				this.$cmd
 					.savePS({
 						apiUrl: `${this.select.url}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
@@ -550,6 +530,27 @@
 				let { remote } = require('electron')
 				let ventanaActual = remote.getCurrentWindow()
 				ventanaActual.close()
+			},
+			async color() {
+				/* let info = await this.$db
+					.collection('configuration')
+					.conditions({
+						Model: this.device.SKU.includes('#') ? this.device.SKU.split('#')[0] : this.device.SKU,
+					})
+					.all_data()
+					.get()
+				if (info.length) {
+					this.myDb.COLOR = info[0].color
+				} else */
+				await this.$db
+					.funcAdmin('modules/pallets/partsurfer', {
+						serial: this.device.Serial,
+						prod_num: this.device.SKU.includes('#') ? this.device.SKU.split('#')[0] : this.device.SKU,
+					})
+					.then(async (v) => {
+						console.log(v)
+						this.myDb.COLOR = v.color
+					})
 			},
 		},
 		async beforeCreate() {
@@ -648,6 +649,7 @@
 						this.test['display'] = 'Display Adapter Drivers Test PASS'
 					else this.test['display'] = 'Display Adapter Drivers Test FAIL'
 					this.activate.drivers = false
+					this.color()
 					this.activate.windows = true
 					this.win = await this.$cmd.executeScriptCode(windows)
 					this.activate.windows = true
