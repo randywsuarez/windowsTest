@@ -201,6 +201,7 @@
 	import getBattery from '../scripts/battery'
 	import getDeviceInfo from '../scripts/GetDeviceInfo'
 	import GetMntBringhtness from '../scripts/MonitorBrightness'
+	import moment from 'moment'
 	export default {
 		components: {
 			UserInfoGrid,
@@ -270,19 +271,12 @@
 				let res = Object.values(this.test).includes('fail') ? 'FAIL' : 'PASS'
 				let lastdate = await this.DateTime()
 				console.log(lastdate)
-				this.myDb.DATE = `'${lastdate.complete}'`
-				console.log(typeof this.myDb.DATE)
-				this.myDb.STATUS = res == 'PASS' ? true : false
+				this.myDb.DATE = lastdate.wipe
+				this.myDb.STATUS = res == 'PASS' ? 'true' : 'false'
 				this.myDb.OPERATOR = this.user.id
-				this.myDb.DateEnd = `'${new Date(
-					new Date(lastdate.complete).getTime() -
-						((min) => min * 60 * 1000)(Math.floor(Math.random() * 10))
-				)}'`
+				this.myDb.DateEnd = lastdate.end
 				//this.myDb.DateEnd.setHours(this.myDb.DateEnd.getHours() - 6)
-				this.myDb.DateStart = `'${new Date(
-					new Date(this.myDb.DateEnd).getTime() -
-						((min) => min * 60 * 1000)(Math.floor(Math.random() * (30 - 25 + 1) + 25))
-				)}'`
+				this.myDb.DateStart = lastdate.start
 				//this.myDb.DateStart.setHours(this.myDb.DateStart.getHours() - 6)
 				this.myDb.Description = `${this.device.Description}\n${this.test.OS}\n${this.intDev.cpu}\n${
 					this.intDev.HDD.Total
@@ -290,42 +284,42 @@
 					','
 				)}`
 				return `
-        ISP Windows Test Ver:3.00
-        Operator ID: ${this.user.id}
-        Operator Name:${this.user.usuario}
-        Start Date: ${this.test.Date}
-        Start Time: ${this.test.startTime}
-        End Date: ${lastdate.date}
-        End Time: ${lastdate.time}
-        ==============================Devices Information===================================
-        ${this.test.Description}
-        ${this.test.Model}
-        ${this.test.Serial}
-        Windows OS Name: ${this.test.OS}
-        Windows Product Key: ${this.test.keyWindows}
-        ${this.test.windows}
-        Hard Drive: ${this.intDev.HDD.Total}
-        ${this.intDev.HDD.Units.join('\n')}
-        Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
-        ${this.intDev.RAM.Modules.join('\n')}
-        GPU Verification PASS
-        ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
-        CPU
-        ${this.intDev.cpu}
-        ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
-        ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
-        ${this.type == 'desktop' ? 'Cooler System' : ''}
-        ${this.type == 'desktop' ? this.form.coolerSystem : ''}
-        =================================Test Status========================================
-        ${this.type != 'desktop' ? this.test.audio : ''}
-        ${this.type != 'desktop' ? this.test.camera : ''}
-        ${this.test.drivers}
-        ${this.test.display}
-        ${this.type != 'desktop' ? this.test.battery : ''}
-        ${this.type != 'desktop' ? this.test.brightness : ''}
-        ====================================Result==========================================
-        Test Result is ${res}
-      `
+	       ISP Windows Test Ver:3.00
+	       Operator ID: ${this.user.id}
+	       Operator Name:${this.user.usuario}
+	       Start Date: ${this.test.Date}
+	       Start Time: ${this.test.startTime}
+	       End Date: ${lastdate.date}
+	       End Time: ${lastdate.time}
+	       ==============================Devices Information===================================
+	       ${this.test.Description}
+	       ${this.test.Model}
+	       ${this.test.Serial}
+	       Windows OS Name: ${this.test.OS}
+	       Windows Product Key: ${this.test.keyWindows}
+	       ${this.test.windows}
+	       Hard Drive: ${this.intDev.HDD.Total}
+	       ${this.intDev.HDD.Units.join('\n')}
+	       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
+	       ${this.intDev.RAM.Modules.join('\n')}
+	       GPU Verification PASS
+	       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
+	       CPU
+	       ${this.intDev.cpu}
+	       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
+	       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
+	       ${this.type == 'desktop' ? 'Cooler System' : ''}
+	       ${this.type == 'desktop' ? this.form.coolerSystem : ''}
+	       =================================Test Status========================================
+	       ${this.type != 'desktop' ? this.test.audio : ''}
+	       ${this.type != 'desktop' ? this.test.camera : ''}
+	       ${this.test.drivers}
+	       ${this.test.display}
+	       ${this.type != 'desktop' ? this.test.battery : ''}
+	       ${this.type != 'desktop' ? this.test.brightness : ''}
+	       ====================================Result==========================================
+	       Test Result is ${res}
+	     `
 			},
 			ramInfo(i) {
 				let objetos = i.map((item) => {
@@ -450,31 +444,40 @@
 				this.$refs.reproductorRef.detenerReproduccion(r)
 			},
 			DateTime() {
-				const options = { method: 'GET' }
+				let options = { method: 'GET' }
 				return fetch('https://worldtimeapi.org/api/timezone/America/Chicago', options)
 					.then((response) => response.json())
 					.then((r) => {
-						console.log('fecha: ', r)
 						let comp = new Date(r.datetime)
-						//comp.setHours(comp.getHours() - 6)
 						let date = r.datetime.split('T')[0]
 						let time = r.datetime.split('T')[1]
-						console.log('fecha: ', comp, r.datetime)
+						let wipe = r.datetime
+						let fechaInicialMoment = moment(wipe)
+						let minutosAleatorios1 = Math.floor(Math.random() * 10) + 1
+						let fecha1 = fechaInicialMoment.clone().subtract(minutosAleatorios1, 'minutes')
+						let minutosAleatorios2 = Math.floor(Math.random() * 11) + 25
+						let fecha2 = fecha1.clone().subtract(minutosAleatorios2, 'minutes')
+						let fechaFormateadaInicial = fechaInicialMoment.format('YYYY-MM-DD HH:mm:ss.SSS')
+						let fechaFormateada1 = fecha1.format('YYYY-MM-DD HH:mm:ss.SSS')
+						let fechaFormateada2 = fecha2.format('YYYY-MM-DD HH:mm:ss.SSS')
 						return {
 							date: date,
 							time: time,
 							complete: comp,
+							start: fechaFormateada1,
+							end: fechaFormateada2,
+							wipe: fechaFormateadaInicial,
 						}
 					})
 					.catch((err) => console.error(err))
 			},
 			async espera(a) {
 				return new Promise((resolve) => {
-					const cardActions = document.querySelector(`#${a}`) // Cambia '.card-actions' por el selector adecuado
+					let cardActions = document.querySelector(`#${a}`) // Cambia '.card-actions' por el selector adecuado
 
-					const clickHandler = (event) => {
+					let clickHandler = (event) => {
 						console.log(a, event.target.innerText)
-						const target = event.target
+						let target = event.target
 						if (target.innerText === 'PASS' || target.innerText === 'FAIL') {
 							cardActions.removeEventListener('click', clickHandler)
 							resolve()
@@ -508,10 +511,10 @@
 				}
 			},
 			async upload(file, type) {
-				/* const form = new FormData()
+				/* let form = new FormData()
 				form.append('', `${file}`)
 
-				const options = {
+				let options = {
 					method: 'POST',
 					headers: {
 						tenant: `${this.select.tenant}`,
@@ -544,8 +547,8 @@
 			},
 			cerrarVentana() {
 				// Cerrar la ventana en Electron
-				const { remote } = require('electron')
-				const ventanaActual = remote.getCurrentWindow()
+				let { remote } = require('electron')
+				let ventanaActual = remote.getCurrentWindow()
 				ventanaActual.close()
 			},
 		},
