@@ -65,7 +65,9 @@ FETCH NEXT ${limit} ROWS ONLY`
 		fields(fieldsObj) {
 			const fields = Object.keys(fieldsObj).join(', ')
 			const values = Object.values(fieldsObj)
-				.map((value) => (typeof value === 'string' ? `'${value}'` : value))
+				.map((value) =>
+					value === 'NEWID()' ? 'NEWID()' : typeof value === 'string' ? `'${value}'` : value
+				)
 				.join(', ')
 
 			this.query += ` (${fields}) VALUES (${values})`
