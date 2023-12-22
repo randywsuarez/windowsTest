@@ -89,25 +89,50 @@ const CmdHelper = {
 		return new Promise(async (resolve) => {
 			const fileName = path.basename(params.filePath)
 			const code = `
-      $headers = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-      $headers.Add("tenant", "${params.tenant}")
-      $headers.Add("Authorization", "Bearer ${params.token}")
-      $headers.Add("Cookie", "ARRAffinity=9392b2366e7e292b2d3d255a990371852c7f338d552708093b1d04da72aa9ba2; ARRAffinitySameSite=9392b2366e7e292b2d3d255a990371852c7f338d552708093b1d04da72aa9ba2")
+      # Parámetros
+$authorizationToken = "Bearer ${params.token}"
+$tenant = "${params.tenant}"
+$filePath = '${params.filePath}'
 
-      $multipartContent = [System.Net.Http.MultipartFormDataContent]::new()
-      $multipartFile = '${params.filePath}'
-      $FileStream = [System.IO.FileStream]::new($multipartFile, [System.IO.FileMode]::Open)
-      $fileHeader = [System.Net.Http.Headers.ContentDispositionHeaderValue]::new("form-data")
-      $fileHeader.Name = ""
-      $fileHeader.FileName = "${fileName}"
-      $fileContent = [System.Net.Http.StreamContent]::new($FileStream)
-      $fileContent.Headers.ContentDisposition = $fileHeader
-      $multipartContent.Add($fileContent)
+# Verificar si el archivo existe y se puede acceder
+if (Test-Path $filePath -PathType Leaf) {
+    # Verificar permisos de lectura para el archivo
+    try {
+        $fileContent = Get-Content $filePath -Raw -ErrorAction Stop
 
-      $body = $multipartContent
+        # URL
+        $url = '${params.apiUrl}'
 
-      $response = Invoke-RestMethod '${params.apiUrl}' -Method 'POST' -Headers $headers -Body $body
-      $response | ConvertTo-Json
+        # Encabezados
+        $headers = @{
+            "User-Agent"    = "insomnia/2023.5.8"
+            "tenant"        = $tenant
+            "Authorization" = $authorizationToken
+        }
+
+        # Construir el cuerpo de la solicitud
+        $boundary = [System.Guid]::NewGuid().ToString()
+        $CRLF = "\`r\`n"
+        $bodyLines = @()
+        $bodyLines += "--$boundary"
+        $bodyLines += 'Content-Disposition: form-data; name=""; filename="${fileName}"'
+        $bodyLines += 'Content-Type: text/plain'
+        $bodyLines += ''
+        $bodyLines += $fileContent
+        $bodyLines += "--$boundary--$CRLF"
+
+        $body = $bodyLines -join $CRLF
+
+        # Realizar la Solicitud con Invoke-RestMethod
+        $response = Invoke-RestMethod -Uri $url -Method POST -Headers $headers -Body $body -ContentType "multipart/form-data; boundary=$boundary"
+        #Write-Host $response
+        $response | ConvertTo-Json
+    } catch {
+        Write-Host "Error al leer el archivo: $_"
+    }
+} else {
+    Write-Host "El archivo no existe o no se puede acceder."
+}
     `
 			console.log(code)
 
