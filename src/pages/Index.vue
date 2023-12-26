@@ -1,12 +1,42 @@
 <template>
 	<q-page id="test" class="" style="padding-top: 10px">
 		<user-info-grid
+			v-show="activate.select"
 			:username="user.usuario"
 			:project="project.id"
 			:title="device.Description"
 			:subtitle="`${device.SKU} - ${device.Serial}`"
 		/>
 		<div class="main">
+			<q-card class="card" v-show="activate.type">
+				<q-card-section> <div class="text-h6">Select type</div> </q-card-section><q-separator />
+				<q-card-section class="reproductor-content">
+					<q-card-section class="row col">
+						<q-btn class="col-md-4 q-ma-sm"><img src="https://cdn.quasar.dev/img/avatar2.jpg" /></q-btn>
+						<q-btn class="col-md-4 q-ma-sm"><img src="https://cdn.quasar.dev/img/avatar2.jpg" /></q-btn>
+						<q-btn class="col-md-4 q-ma-sm"><img src="https://cdn.quasar.dev/img/avatar2.jpg" /></q-btn>
+					</q-card-section>
+				</q-card-section>
+
+				<q-card-actions align="right" ref="actionType" id="actionAudio">
+					<q-btn
+						id="audioFail"
+						ref="audioFail"
+						flat
+						color="red"
+						label="FAIL"
+						@click="detenerReproduccion('fail')"
+					/>
+					<q-btn
+						id="audioPass"
+						ref="audioPass"
+						flat
+						color="green"
+						label="PASS"
+						@click="detenerReproduccion('pass')"
+					/>
+				</q-card-actions>
+			</q-card>
 			<q-card class="card" v-show="activate.audio">
 				<q-card-section> <div class="text-h6">Audio Test</div> </q-card-section><q-separator />
 				<q-card-section class="reproductor-content">
@@ -218,6 +248,8 @@
 				sound: 'nada',
 				action: '',
 				activate: {
+					type: true,
+					select: false,
 					audio: false,
 					camera: false,
 					keyboard: true,
@@ -532,8 +564,8 @@
 				ventanaActual.close()
 			},
 			async color() {
-				/* let info = await this.$db
-					.collection('configuration')
+				let info = await this.$db
+					.collection('pcbHP')
 					.conditions({
 						Model: this.device.SKU.includes('#') ? this.device.SKU.split('#')[0] : this.device.SKU,
 					})
@@ -541,16 +573,17 @@
 					.get()
 				if (info.length) {
 					this.myDb.COLOR = info[0].color
-				} else */
-				await this.$db
-					.funcAdmin('modules/pallets/partsurfer', {
-						serial: this.device.Serial,
-						prod_num: this.device.SKU.includes('#') ? this.device.SKU.split('#')[0] : this.device.SKU,
-					})
-					.then(async (v) => {
-						console.log(v)
-						this.myDb.COLOR = v.color
-					})
+				} else
+					await this.$db
+						.funcAdmin('modules/pallets/partsurfer', {
+							serial: this.device.Serial,
+							prod_num: this.device.SKU.includes('#') ? this.device.SKU.split('#')[0] : this.device.SKU,
+						})
+						.then(async (v) => {
+							console.log(v)
+							this.myDb.COLOR = v.color
+							this.form.adapter = v.adapter
+						})
 			},
 		},
 		async beforeCreate() {
@@ -620,6 +653,7 @@
 					if (this.device.SKU == res[0].ArrivedSKU)
 						this.test['Model'] = `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
 					this.test['Description'] = `Product Description: ${this.device.Description}`
+					await this.espera('actionType')
 					if (this.type != 'desktop') {
 						this.activate.audio = true
 						await this.espera('actionAudio')
