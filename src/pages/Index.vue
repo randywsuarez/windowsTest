@@ -11,31 +11,23 @@
 			<q-card class="card" v-show="activate.type">
 				<q-card-section> <div class="text-h6">Select type</div> </q-card-section><q-separator />
 				<q-card-section class="reproductor-content">
-					<q-card-section class="row col">
-						<q-btn class="col-md-4 q-ma-sm"><img src="https://cdn.quasar.dev/img/avatar2.jpg" /></q-btn>
-						<q-btn class="col-md-4 q-ma-sm"><img src="https://cdn.quasar.dev/img/avatar2.jpg" /></q-btn>
-						<q-btn class="col-md-4 q-ma-sm"><img src="https://cdn.quasar.dev/img/avatar2.jpg" /></q-btn>
+					<q-card-section
+						class="row col"
+						ref="actionType"
+						id="actionType"
+						style="justify-content: center"
+					>
+						<q-btn class="col-md-4 q-ma-sm glow" @click="type = 'laptop'" id="laptop" ref="laptop"
+							><img src="022-laptop.png"
+						/></q-btn>
+						<q-btn class="col-md-4 q-ma-sm glow" id="desktop" ref="desktop"
+							><img src="023-pc.png"
+						/></q-btn>
+						<q-btn class="col-md-4 q-ma-sm glow" id="all-in-one" ref="all-in-one"
+							><img src="024-ux.png"
+						/></q-btn>
 					</q-card-section>
 				</q-card-section>
-
-				<q-card-actions align="right" ref="actionType" id="actionAudio">
-					<q-btn
-						id="audioFail"
-						ref="audioFail"
-						flat
-						color="red"
-						label="FAIL"
-						@click="detenerReproduccion('fail')"
-					/>
-					<q-btn
-						id="audioPass"
-						ref="audioPass"
-						flat
-						color="green"
-						label="PASS"
-						@click="detenerReproduccion('pass')"
-					/>
-				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.audio">
 				<q-card-section> <div class="text-h6">Audio Test</div> </q-card-section><q-separator />
@@ -162,19 +154,6 @@
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
-			<q-card class="card" v-show="activate.gpu">
-				<q-card-section>
-					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
-				</q-card-section>
-				<q-card-section class="center">
-					<div>{{ win.os }}</div>
-					<div>{{ win.keyWindows }}</div>
-				</q-card-section>
-				<q-card-actions align="right" id="actionBattery">
-					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
-				</q-card-actions>
-			</q-card>
 			<q-card class="card" v-show="activate.desktop">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Desktop Information</div> </q-card-section
@@ -186,6 +165,46 @@
 					<q-input v-model="form.adapter" type="number" label="Adapter/PowerSupply" />
 				</q-card-section>
 				<q-card-actions align="right" id="actionDesktop">
+					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+				</q-card-actions>
+			</q-card>
+			<q-card class="card" v-show="activate.gpu">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<q-table
+						class="card"
+						title="Treats"
+						:data="intDev.video"
+						dense
+						:columns="columns"
+						row-key="name"
+						binary-state-sort
+					>
+						<template v-slot:body="props">
+							<q-tr :props="props">
+								<q-td key="Description" :props="props">{{ props.row.Description }}</q-td>
+								<q-td key="AdapterRAM" :props="props">
+									{{ props.row.AdapterRAM }}
+									<q-popup-edit
+										class="card"
+										v-model="props.row.AdapterRAM"
+										title="Update RAM"
+										buttons
+										persistent
+										v-slot="scope"
+									>
+										<q-input type="text" v-model="scope.value" dense autofocus hint="Use buttons to close" />
+									</q-popup-edit>
+								</q-td>
+							</q-tr>
+						</template>
+					</q-table>
+				</q-card-section>
+
+				<q-card-actions align="right" id="actionGPU">
+					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
@@ -296,6 +315,22 @@
 				msn: {
 					active: false,
 				},
+				columns: [
+					{
+						name: 'Description',
+						label: 'Description',
+						field: 'Description',
+						align: 'left',
+						sortable: true,
+					},
+					{
+						name: 'AdapterRAM',
+						label: 'RAM',
+						field: 'AdapterRAM',
+						align: 'left',
+						sortable: true,
+					},
+				],
 			}
 		},
 		methods: {
@@ -505,10 +540,10 @@
 			},
 			async espera(a) {
 				return new Promise((resolve) => {
-					let cardActions = document.querySelector(`#${a}`) // Cambia '.card-actions' por el selector adecuado
-
+					let cardActions = document.querySelector(`#${a}`)
+					console.log(cardActions)
 					let clickHandler = (event) => {
-						console.log(a, event.target.innerText)
+						console.log(a, event)
 						let target = event.target
 						if (target.innerText === 'PASS' || target.innerText === 'FAIL') {
 							cardActions.removeEventListener('click', clickHandler)
@@ -517,6 +552,30 @@
 					}
 
 					cardActions.addEventListener('click', clickHandler)
+				})
+			},
+			async espera2(a) {
+				return new Promise((resolve) => {
+					let cardActions = document.querySelector(`#${a} #laptop`)
+					let cardActions2 = document.querySelector(`#${a} #desktop`)
+					let cardActions3 = document.querySelector(`#${a} #all-in-one`)
+					let clickHandler = (event) => {
+						let target = event.target.innerHTML ? event.target.innerHTML : event.target.src
+						if (
+							target.includes('laptop') ||
+							target.includes('desktop') ||
+							target.includes('all-in-one')
+						) {
+							cardActions.removeEventListener('click', clickHandler)
+							cardActions2.removeEventListener('click', clickHandler)
+							cardActions3.removeEventListener('click', clickHandler)
+							resolve()
+						}
+					}
+
+					cardActions.addEventListener('click', clickHandler)
+					cardActions2.addEventListener('click', clickHandler)
+					cardActions3.addEventListener('click', clickHandler)
 				})
 			},
 			async rsSave() {
@@ -545,6 +604,21 @@
 			async upload(file, type) {
 				this.$cmd
 					.savePS({
+						apiUrl: `${this.select.url}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
+						filePath: file,
+						tenant: this.select.tenant,
+						token: this.select.authToken,
+					})
+					.then((result) => {
+						console.log('Result:', result)
+					})
+					.catch((error) => {
+						console.error('Error:', error)
+					})
+			},
+			async uploadImg(file, type) {
+				this.$cmd
+					.saveImg({
 						apiUrl: `${this.select.url}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
 						filePath: file,
 						tenant: this.select.tenant,
@@ -601,19 +675,17 @@
 			this.myDb.HDD_CAPACITY = itDH.group.Size
 			this.myDb.RAM = this.intDev.RAM.Total
 			let itDG = await this.GPUInfo(this.intDev.video)
-			console.log(itDG)
-			this.myDb.GPU = itDG.description
-			this.myDb.GPU_RAM = itDG.RAM_GPU
-			this.myDb.CPU = this.intDev.cpuName
-
 			await this.$cmd.executeScriptCode(getDeviceInfo).then(async (result) => {
 				if (result == false) {
 					console.error('Error ejecutando script:', error)
 				} else {
 					this.myDb.Serial = result.Serial
 					this.myDb.Model = result.SKU
-					if (this.type != 'desktop') {
+					if (this.type == 'laptop') {
 						var battery = await this.$cmd.executeScriptCode(getBattery)
+						this.test['battery'] = battery.Status.includes('pass')
+							? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+							: `Battery test FAIL`
 					}
 					let res = ''
 					for (let x of this.$env.project) {
@@ -653,13 +725,12 @@
 					if (this.device.SKU == res[0].ArrivedSKU)
 						this.test['Model'] = `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
 					this.test['Description'] = `Product Description: ${this.device.Description}`
-					await this.espera('actionType')
+					await this.espera2('actionType')
+					this.activate.type = false
+					this.activate.select = true
 					if (this.type != 'desktop') {
 						this.activate.audio = true
 						await this.espera('actionAudio')
-						this.test['battery'] = battery.Status.includes('pass')
-							? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
-							: `Battery test FAIL`
 						this.activate.brightness = true
 						this.$cmd.executeScriptCode(GetMntBringhtness)
 						setTimeout(() => {
@@ -695,16 +766,26 @@
 					this.test['OS'] = this.win.os
 					this.myDb.OS = this.win.os
 					this.test['keyWindows'] = this.win.keyWindows
-					this.activate.desktop = true
-					await this.espera('actionDesktop')
-					this.activate.desktop = false
+
+					this.activate.gpu = true
+					await this.espera('actionGPU')
+					this.activate.gpu = false
+					console.log(itDG)
+					this.myDb.GPU = itDG.description
+					this.myDb.GPU_RAM = itDG.RAM_GPU
+					this.myDb.CPU = this.intDev.cpuName
+					if (this.type == 'desktop') {
+						this.activate.desktop = true
+						await this.espera('actionDesktop')
+						this.activate.desktop = false
+					}
 					let txt = await this.report()
 					this.file = await this.$uploadTextFile(this.device.Serial, txt)
 					console.log(this.$textFile, this.$imageFile)
 					console.log(this.myDb)
 					await this.rsSave()
 					if (this.$textFile) await this.upload(this.$textFile.path, 1)
-					if (this.$imageFile) await this.upload(this.$imageFile.path, 2)
+					if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
 				}
 			})
 		},
@@ -726,5 +807,23 @@
 	}
 	.q-card-section {
 		border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	}
+	.glow:hover {
+		animation-name: glowEffect;
+		animation-duration: 0.5s;
+		animation-timing-function: ease-in-out;
+		animation-iteration-count: infinite;
+	}
+
+	@keyframes glowEffect {
+		0% {
+			box-shadow: 0 0 10px rgba(0, 102, 255, 0.8);
+		}
+		50% {
+			box-shadow: 0 0 20px rgba(0, 102, 255, 0.6);
+		}
+		100% {
+			box-shadow: 0 0 10px rgba(0, 102, 255, 0.8);
+		}
 	}
 </style>

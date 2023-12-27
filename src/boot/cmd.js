@@ -165,6 +165,87 @@ if (Test-Path $filePath -PathType Leaf) {
 			})
 		})
 	},
+	saveImg: async (params) => {
+		return new Promise(async (resolve) => {
+			const fileName = path.basename(params.filePath)
+			const code = `
+      # Parámetros
+$authorizationToken = "Bearer ${params.token}"
+$tenant = "${params.tenant}"
+$filePath = '${params.filePath}'
+$fileName = '${fileName}'  # Asegúrate de tener esta variable definida
+
+# Verificar si el archivo existe y se puede acceder
+if (Test-Path $filePath -PathType Leaf) {
+    # Verificar permisos de lectura para el archivo
+    try {
+        $fileContent = [System.IO.File]::ReadAllBytes($filePath)
+
+        # URL
+        $url = '${params.apiUrl}'
+
+        # Encabezados
+        $headers = @{
+            "User-Agent"    = "insomnia/2023.5.8"
+            "tenant"        = $tenant
+            "Authorization" = $authorizationToken
+        }
+
+        # Construir el cuerpo de la solicitud
+        $boundary = [System.Guid]::NewGuid().ToString()
+        $CRLF = "\`r\`n"
+        $bodyLines = @()
+        $bodyLines += "--$boundary"
+        $bodyLines += 'Content-Disposition: form-data; name="file"; filename="${fileName}"'
+        $bodyLines += 'Content-Type: image/jpeg'  # Ajusta el tipo de contenido según el tipo de archivo
+        $bodyLines += ''
+        $bodyLines += [System.Text.Encoding]::Default.GetString($fileContent)
+        $bodyLines += "--$boundary--$CRLF"
+
+        $body = [System.Text.Encoding]::Default.GetBytes($bodyLines -join $CRLF)
+
+        # Realizar la Solicitud con Invoke-RestMethod
+        $response = Invoke-RestMethod -Uri $url -Method POST -Headers $headers -Body $body -ContentType "multipart/form-data; boundary=$boundary"
+        #Write-Host $response
+        $response | ConvertTo-Json
+    } catch {
+        Write-Host "Error al leer el archivo: $_"
+    }
+} else {
+    Write-Host "El archivo no existe o no se puede acceder."
+}
+`
+			console.log(code)
+
+			let ps = new PowerShell([code])
+			let outputData = ''
+
+			ps.on('output', (data) => {
+				outputData += data
+			})
+
+			ps.on('error-output', (data) => {
+				console.error(data)
+				resolve(false)
+			})
+
+			ps.on('end', (code) => {
+				try {
+					console.log(outputData)
+					const result = JSON.parse(outputData)
+					resolve(result)
+				} catch (parseError) {
+					console.error('Error parsing output as JSON:', parseError.message)
+					resolve(false)
+				}
+			})
+
+			ps.on('error', (err) => {
+				console.error(err)
+				resolve(false)
+			})
+		})
+	},
 }
 
 export default ({ app, router, Vue }) => {
