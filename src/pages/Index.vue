@@ -172,7 +172,7 @@
 				<q-card-section>
 					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
 				</q-card-section>
-				<q-card-section class="center">
+				<q-card-section class="center" v-if="myGpu.length">
 					<q-table
 						class="card"
 						title="Treats"
@@ -201,6 +201,9 @@
 							</q-tr>
 						</template>
 					</q-table>
+				</q-card-section>
+				<q-card-section class="center" v-else>
+					<div>Wait...</div>
 				</q-card-section>
 
 				<q-card-actions align="right" id="actionGPU">
@@ -250,6 +253,8 @@
 	import getBattery from '../scripts/battery'
 	import getDeviceInfo from '../scripts/GetDeviceInfo'
 	import GetMntBringhtness from '../scripts/MonitorBrightness'
+	import dxdiag from '../scripts/dxdiag'
+	import imaging from '../scripts/imaging'
 	import moment from 'moment'
 	export default {
 		components: {
@@ -331,6 +336,7 @@
 						sortable: true,
 					},
 				],
+				myGpu: [],
 			}
 		},
 		methods: {
@@ -372,7 +378,7 @@
 	       GPU Verification PASS
 	       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
 	       CPU
-	       ${this.intDev.cpu}
+	       ${this.intDev.cpu.join('\n')}
 	       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
 	       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
 	       ${this.type == 'desktop' ? 'Cooler System' : ''}
@@ -659,14 +665,66 @@
 							this.form.adapter = v.adapter
 						})
 			},
+			getGraphicsInfo(dxdiagContent) {
+				// Buscar el patrón para el nombre de la tarjeta gráfica
+				const cardNamePattern = /Card name: (.+)/g
+				const dedicatedMemoryPattern = /Dedicated Memory: (.+)/g
+
+				let match
+				const graphicsInfoArray = []
+
+				// Buscar todas las coincidencias para el nombre de la tarjeta gráfica
+				while ((match = cardNamePattern.exec(dxdiagContent)) !== null) {
+					const cardName = match[1].trim()
+
+					// Buscar la coincidencia correspondiente para la memoria dedicada
+					const dedicatedMemoryMatch = dedicatedMemoryPattern.exec(dxdiagContent)
+					const dedicatedMemoryString = dedicatedMemoryMatch
+						? dedicatedMemoryMatch[1].trim()
+						: 'No se encontró'
+
+					// Convertir la memoria dedicada a gigabytes y agregar "GB" como sufijo
+					const dedicatedMemoryInGB =
+						dedicatedMemoryString !== 'No se encontró'
+							? `${Math.round(parseFloat(dedicatedMemoryString.replace(' MB', '')) / 1024)} GB`
+							: 'No se encontró'
+
+					// Agregar la información al array
+					graphicsInfoArray.push({
+						Description: cardName,
+						AdapterRAM: dedicatedMemoryInGB,
+					})
+				}
+
+				return graphicsInfoArray
+			},
 		},
 		async beforeCreate() {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
-			//this.getDev = await this.$cmd.executeScriptCode(getDeviceInfo)
-			console.log(this.user, this.getDev)
-			this.type = 'desktop'
+
+			/* console.log(this.user, this.getDev)
+			this.type = 'desktop' */
 		},
 		async mounted() {
+			this.iTest = await this.$cmd.executeScriptCode(imaging)
+			if (!this.iTest.Organization)
+				this.$q
+					.dialog({
+						dark: true,
+						title: 'Status',
+						message: 'This unit did not go through the imaging process, do you want to continue?',
+						persistent: true,
+					})
+					.onOk(() => {
+						// console.log('OK')
+					})
+					.onCancel(() => {
+						this.cerrarVentana()
+						// console.log('Cancel')
+					})
+					.onDismiss(() => {
+						// console.log('I am triggered on both OK and Cancel')
+					})
 			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
 			let itDH = await this.hddInfo(this.intDev.HDD.Units)
 			console.log(itDH)
@@ -766,14 +824,19 @@
 					this.test['OS'] = this.win.os
 					this.myDb.OS = this.win.os
 					this.test['keyWindows'] = this.win.keyWindows
-
+					//this.myGpu.then((v) => (this.myGpu = v))
+					console.log('myGpu: ', this.myGpu)
+					//this.myGpu = await this.getGraphicsInfo(this.myGpu.result.value)
 					this.activate.gpu = true
+					this.myGpu = await this.$cmd.getDx({
+						Serial: this.device.Serial,
+					})
 					await this.espera('actionGPU')
 					this.activate.gpu = false
 					console.log(itDG)
 					this.myDb.GPU = itDG.description
 					this.myDb.GPU_RAM = itDG.RAM_GPU
-					this.myDb.CPU = this.intDev.cpuName
+					this.myDb.CPU = this.intDev.cpuName.join('\n')
 					if (this.type == 'desktop') {
 						this.activate.desktop = true
 						await this.espera('actionDesktop')
