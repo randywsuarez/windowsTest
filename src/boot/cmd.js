@@ -53,9 +53,21 @@ const CmdHelper = {
 		})
 	},
 
-	executeScriptCode: async (code) => {
+	executeScriptCode: async (code, parameters = {}, param = false) => {
 		return new Promise(async (resolve) => {
-			let ps = new PowerShell([code])
+			if (param) {
+				var textFilePath = path.join(
+					process.cwd().split(path.sep)[0] + path.sep,
+					'..',
+					parameters.fileName // Agrega la extensión .txt al nombre del archivo
+				)
+				parameters.fileName = textFilePath
+				console.log('Param: ', parameters.fileName)
+			}
+			let ps = new PowerShell([
+				code,
+				...Object.entries(parameters).map(([key, value]) => `-${key} '${value}'`),
+			])
 			let outputData = ''
 
 			ps.on('output', (data) => {
@@ -84,7 +96,6 @@ const CmdHelper = {
 			})
 		})
 	},
-
 	savePS: async (params) => {
 		return new Promise(async (resolve) => {
 			const fileName = path.basename(params.filePath)
@@ -233,6 +244,96 @@ if (Test-Path $filePath -PathType Leaf) {
 				try {
 					console.log(outputData)
 					const result = JSON.parse(outputData)
+					resolve(result)
+				} catch (parseError) {
+					console.error('Error parsing output as JSON:', parseError.message)
+					resolve(false)
+				}
+			})
+
+			ps.on('error', (err) => {
+				console.error(err)
+				resolve(false)
+			})
+		})
+	},
+	getDx: async (params) => {
+		return new Promise(async (resolve) => {
+			function getGraphicsInfo(dxdiagContent) {
+				// Buscar el patrón para el nombre de la tarjeta gráfica
+				const cardNamePattern = /Card name: (.+)/g
+				const dedicatedMemoryPattern = /Dedicated Memory: (.+)/g
+
+				let match
+				const graphicsInfoArray = []
+
+				// Buscar todas las coincidencias para el nombre de la tarjeta gráfica
+				while ((match = cardNamePattern.exec(dxdiagContent)) !== null) {
+					const cardName = match[1].trim()
+
+					// Buscar la coincidencia correspondiente para la memoria dedicada
+					const dedicatedMemoryMatch = dedicatedMemoryPattern.exec(dxdiagContent)
+					const dedicatedMemoryString = dedicatedMemoryMatch
+						? dedicatedMemoryMatch[1].trim()
+						: 'No se encontró'
+
+					// Convertir la memoria dedicada a gigabytes o megabytes y agregar el sufijo correspondiente
+					let dedicatedMemoryValue
+					if (dedicatedMemoryString !== 'No se encontró') {
+						const memoryInMB = parseFloat(dedicatedMemoryString.replace(' MB', ''))
+						dedicatedMemoryValue =
+							memoryInMB >= 1024 ? `${Math.round(memoryInMB / 1024)} GB` : `${memoryInMB} MB`
+					} else {
+						dedicatedMemoryValue = 'No se encontró'
+					}
+
+					// Agregar la información al array
+					graphicsInfoArray.push({
+						Description: cardName,
+						AdapterRAM: dedicatedMemoryValue,
+					})
+				}
+
+				return graphicsInfoArray
+			}
+			var textFilePath = path.join(
+				process.cwd().split(path.sep)[0] + path.sep,
+				'..',
+				params.Serial // Agrega la extensión .txt al nombre del archivo
+			)
+			const code = `
+      $fileName = "${textFilePath}.txt"
+dxdiag /t $fileName
+
+# Esperar hasta que el archivo exista
+while (-not (Test-Path $fileName)) {
+    Start-Sleep -Seconds 1
+}
+$contenido = Get-Content -Path $fileName -Raw
+
+# Mostrar el contenido en formato JSON en la consola
+$contenido
+`
+			console.log(code)
+
+			let ps = new PowerShell([code])
+			let outputData = ''
+
+			ps.on('output', (data) => {
+				//console.log(outputData.length)
+				outputData += data
+			})
+
+			ps.on('error-output', (data) => {
+				console.error(data)
+				resolve(false)
+			})
+
+			ps.on('end', (code) => {
+				try {
+					console.log(outputData.length)
+					let result = getGraphicsInfo(outputData)
+					console.log(result)
 					resolve(result)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)

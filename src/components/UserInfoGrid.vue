@@ -55,7 +55,7 @@
 			},
 			imageSrc: {
 				type: String,
-				default: 'Logo.png', // Imagen por defecto
+				default: 'logo.png', // Imagen por defecto
 			},
 			// Agrega más propiedades según sea necesario
 		},

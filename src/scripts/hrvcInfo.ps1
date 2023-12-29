@@ -1,6 +1,6 @@
 ﻿$Information = @{
-    cpu = ""
-    cpuName = ""
+    cpu = @()
+    cpuName = @()
     video = @()  # Inicializamos como un array
     RAM = @{
         Total = ""
@@ -16,20 +16,20 @@ function ConvertBytesToStandardSize {
         [Parameter(Mandatory=$true)]
         [long]$Bytes
     )
-    
+
     $standardSizes = @(34359738368, 68719476736, 137438953472, 274877906944, 549755813888, 1099511627776, 2199023255552, 4398046511104, 8796093022208)
     $closestSize = $standardSizes[0]  # Inicializa con el primer tamaño estándar
     $minDiff = [math]::Abs($Bytes - $closestSize)
 
     foreach ($size in $standardSizes) {
         $diff = [math]::Abs($Bytes - $size)
-        
+
         if ($diff -lt $minDiff) {
             $closestSize = $size
             $minDiff = $diff
         }
     }
-    
+
     if ($closestSize -gt 549755813888) {
         $closestSize = $closestSize / (1024*1024*1024*1024)
         return "$closestSize TB"
@@ -40,9 +40,12 @@ function ConvertBytesToStandardSize {
 }
 
 # Obtener información de la CPU
-$cpu = Get-WmiObject -Class Win32_Processor
-$Information.cpuName = $cpu.Name
-$Information.cpu = "$($cpu.Name) ($($cpu.MaxClockSpeed) GHz, $($cpu.L3CacheSize) MB L3 cache, $($cpu.NumberOfCores) cores, $($cpu.NumberOfLogicalProcessors) threads)"
+$cpus = Get-WmiObject -Class Win32_Processor
+
+foreach ($cpu in $cpus) {
+    $Information.cpuName += $cpu.Name
+    $Information.cpu += "$($cpu.Name) ($($cpu.MaxClockSpeed) GHz, $($cpu.L3CacheSize) MB L3 cache, $($cpu.NumberOfCores) cores, $($cpu.NumberOfLogicalProcessors) threads)"
+}
 
 # Obtener solo las tarjetas de video reales
 $videoControllers = Get-WmiObject -Class Win32_VideoController | Where-Object { $_.VideoProcessor -notmatch "RDP" } | Select-Object Description, AdapterRAM
