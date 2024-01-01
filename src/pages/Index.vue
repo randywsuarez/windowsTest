@@ -6,6 +6,7 @@
 			:project="project.id"
 			:title="device.Description"
 			:subtitle="`${device.SKU} - ${device.Serial}`"
+			:imageSrc="device.img ? device.img : 'logo.png'"
 		/>
 		<div class="main">
 			<q-card class="card" v-show="activate.type">
@@ -206,7 +207,7 @@
 					<div>Wait...</div>
 				</q-card-section>
 
-				<q-card-actions align="right" id="actionGPU">
+				<q-card-actions align="right" id="actionGPU" v-show="myGpu.length">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
@@ -266,7 +267,9 @@
 		data() {
 			return {
 				user: {},
-				device: {},
+				device: {
+					img: '',
+				},
 				test: {},
 				project: {},
 				sound: 'nada',
@@ -617,6 +620,8 @@
 					})
 					.then((result) => {
 						console.log('Result:', result)
+						if (result._isSuccess) return true
+						else return false
 					})
 					.catch((error) => {
 						console.error('Error:', error)
@@ -632,6 +637,8 @@
 					})
 					.then((result) => {
 						console.log('Result:', result)
+						if (result._isSuccess) return true
+						else return false
 					})
 					.catch((error) => {
 						console.error('Error:', error)
@@ -643,7 +650,7 @@
 				let ventanaActual = remote.getCurrentWindow()
 				ventanaActual.close()
 			},
-			async color() {
+			async infoHP() {
 				let info = await this.$db
 					.collection('pcbHP')
 					.conditions({
@@ -652,6 +659,7 @@
 					.all_data()
 					.get()
 				if (info.length) {
+					this.device.img = info[0].img
 					this.myDb.COLOR = info[0].color
 				} else
 					await this.$db
@@ -698,6 +706,21 @@
 
 				return graphicsInfoArray
 			},
+			async saveMng() {
+				let search = this.$db
+					.get('devices')
+					.conditions({
+						Serial: this.device.Serial,
+					})
+					.limit(1)
+					.all_data()
+					.get()
+				if (search.length) {
+					//update
+				} else {
+					//insert
+				}
+			},
 		},
 		async beforeCreate() {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
@@ -706,7 +729,9 @@
 			this.type = 'desktop' */
 		},
 		async mounted() {
+			this.$q.loading.show()
 			this.iTest = await this.$cmd.executeScriptCode(imaging)
+			this.$q.loading.hide()
 			if (!this.iTest.Organization)
 				this.$q
 					.dialog({
@@ -725,6 +750,10 @@
 					.onDismiss(() => {
 						// console.log('I am triggered on both OK and Cancel')
 					})
+			this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
+				'YYYY-MM-DD HH:mm:ss.SSS'
+			)
+
 			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
 			let itDH = await this.hddInfo(this.intDev.HDD.Units)
 			console.log(itDH)
@@ -732,11 +761,12 @@
 			this.myDb.Model_HDD = itDH.group.Description
 			this.myDb.HDD_CAPACITY = itDH.group.Size
 			this.myDb.RAM = this.intDev.RAM.Total
-			let itDG = await this.GPUInfo(this.intDev.video)
 			await this.$cmd.executeScriptCode(getDeviceInfo).then(async (result) => {
 				if (result == false) {
 					console.error('Error ejecutando script:', error)
 				} else {
+					this.device = result
+					await this.infoHP()
 					this.myDb.Serial = result.Serial
 					this.myDb.Model = result.SKU
 					if (this.type == 'laptop') {
@@ -775,7 +805,6 @@
 						this.msn.active = true
 						return
 					}
-					this.device = result
 					let datetime = await this.DateTime()
 					this.test['Date'] = datetime.date
 					this.test['startTime'] = datetime.time
@@ -812,7 +841,6 @@
 						this.test['display'] = 'Display Adapter Drivers Test PASS'
 					else this.test['display'] = 'Display Adapter Drivers Test FAIL'
 					this.activate.drivers = false
-					this.color()
 					this.activate.windows = true
 					this.win = await this.$cmd.executeScriptCode(windows)
 					this.activate.windows = true
@@ -825,12 +853,19 @@
 					this.myDb.OS = this.win.os
 					this.test['keyWindows'] = this.win.keyWindows
 					//this.myGpu.then((v) => (this.myGpu = v))
-					console.log('myGpu: ', this.myGpu)
 					//this.myGpu = await this.getGraphicsInfo(this.myGpu.result.value)
 					this.activate.gpu = true
-					this.myGpu = await this.$cmd.getDx({
-						Serial: this.device.Serial,
-					})
+					if (this.intDev.video.some((obj) => obj.AdapterRAM.includes('4'))) {
+						this.myGpu = await this.$cmd.getDx({
+							Serial: this.device.Serial,
+						})
+						this.intDev.video = this.intDev.video.map((objA) => {
+							const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
+							return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
+						})
+						console.log('myGpu: ', this.myGpu)
+					} else this.myGpu = this.intDev.video
+					let itDG = await this.GPUInfo(this.myGpu)
 					await this.espera('actionGPU')
 					this.activate.gpu = false
 					console.log(itDG)
@@ -842,13 +877,38 @@
 						await this.espera('actionDesktop')
 						this.activate.desktop = false
 					}
+					this.$q.loading.show()
 					let txt = await this.report()
 					this.file = await this.$uploadTextFile(this.device.Serial, txt)
+					console.log(typeof this.$textFile, typeof this.$imageFile)
 					console.log(this.$textFile, this.$imageFile)
 					console.log(this.myDb)
 					await this.rsSave()
-					if (this.$textFile) await this.upload(this.$textFile.path, 1)
-					if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
+					let resUp = {
+						txt: false,
+						img: false,
+					}
+					if (this.$textFile) resUp.txt = await this.upload(this.$textFile.path, 1)
+					if (this.$imageFile) resUp.img = await this.uploadImg(this.$imageFile.path, 2)
+
+					if (this.$textFile && !resUp.txt) {
+						this.msn['title'] = 'Error'
+						this.msn['message'] =
+							'Oops. The log could not be uploaded to the system. Call the system administrator.'
+						this.$q.loading.hide()
+						this.msn.active = true
+						return
+					}
+
+					if (this.$imageFile && !resUp.img) {
+						this.msn['title'] = 'Error'
+						this.msn['message'] =
+							'Oops. The image could not be uploaded to the system. Call the system administrator.'
+						this.$q.loading.hide()
+						this.msn.active = true
+						return
+					}
+					this.$q.loading.hide()
 				}
 			})
 		},

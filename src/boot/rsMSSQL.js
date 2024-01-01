@@ -17,7 +17,7 @@ export default async ({ Vue }) => {
 
 		async executeQuery(query) {
 			try {
-				console.log(this.config)
+				//console.log(this.config)
 				const pool = await new sql.ConnectionPool(this.config).connect()
 				const request = pool.request()
 
@@ -101,7 +101,7 @@ FETCH NEXT ${limit} ROWS ONLY`
 		}
 
 		async execute() {
-			console.log(this.query)
+			//console.log(this.query)
 			return this.executeQuery(this.query)
 		}
 	}

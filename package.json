@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.16.4",
-    "axios": "^1.2.1",
+    "axios": "^1.6.2",
     "core-js": "^3.6.5",
     "moment": "^2.29.4",
     "mssql": "7.3.5",
@@ -21,6 +21,7 @@
     "node-powershell": "^5.0.1",
     "powershell": "^2.3.2",
     "quasar": "^1.0.0",
+    "socket.io-client": "^4.7.2",
     "vue-i18n": "8"
   },
   "devDependencies": {

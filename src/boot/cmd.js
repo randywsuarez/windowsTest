@@ -314,7 +314,7 @@ $contenido = Get-Content -Path $fileName -Raw
 # Mostrar el contenido en formato JSON en la consola
 $contenido
 `
-			console.log(code)
+			//console.log(code)
 
 			let ps = new PowerShell([code])
 			let outputData = ''
@@ -331,9 +331,9 @@ $contenido
 
 			ps.on('end', (code) => {
 				try {
-					console.log(outputData.length)
+					//console.log(outputData.length)
 					let result = getGraphicsInfo(outputData)
-					console.log(result)
+					//console.log(result)
 					resolve(result)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
