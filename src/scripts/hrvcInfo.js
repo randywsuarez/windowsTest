@@ -163,7 +163,7 @@ if ($hddUnits) {
     $Information.HDD.Units = $hddUnitArray
     #$Information.HDD.Units = "$($cpu.Name)"
 }
-Write-Host ($hddUnitArray | ConvertTo-Json)
+#Write-Host ($hddUnitArray | ConvertTo-Json)
 # Convertir a JSON y mostrar el resultado
 Write-Host ($Information | ConvertTo-Json)
 

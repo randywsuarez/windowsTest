@@ -53,22 +53,11 @@ const CmdHelper = {
 		})
 	},
 
-	executeScriptCode: async (code, parameters = {}, param = false) => {
+	executeScriptCode: async (code) => {
 		return new Promise(async (resolve) => {
-			if (param) {
-				var textFilePath = path.join(
-					process.cwd().split(path.sep)[0] + path.sep,
-					'..',
-					parameters.fileName // Agrega la extensión .txt al nombre del archivo
-				)
-				parameters.fileName = textFilePath
-				console.log('Param: ', parameters.fileName)
-			}
-			let ps = new PowerShell([
-				code,
-				...Object.entries(parameters).map(([key, value]) => `-${key} '${value}'`),
-			])
+			let ps = new PowerShell([[code]])
 			let outputData = ''
+			console.log(code)
 
 			ps.on('output', (data) => {
 				outputData += data
