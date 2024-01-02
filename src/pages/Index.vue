@@ -721,6 +721,165 @@
 					//insert
 				}
 			},
+			async myTest() {
+				this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
+				let itDH = await this.hddInfo(this.intDev.HDD.Units)
+				console.log(itDH)
+				this.myDb.Serial_HDD = itDH.group.Serial
+				this.myDb.Model_HDD = itDH.group.Description
+				this.myDb.HDD_CAPACITY = itDH.group.Size
+				this.myDb.RAM = this.intDev.RAM.Total
+				await this.$cmd.executeScriptCode(getDeviceInfo).then(async (result) => {
+					if (result == false) {
+						console.error('Error ejecutando script:', error)
+					} else {
+						this.device = result
+						await this.infoHP()
+						this.myDb.Serial = result.Serial
+						this.myDb.Model = result.SKU
+						if (this.type == 'laptop') {
+							var battery = await this.$cmd.executeScriptCode(getBattery)
+							this.test['battery'] = battery.Status.includes('pass')
+								? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+								: `Battery test FAIL`
+						}
+						let res = ''
+						for (let x of this.$env.project) {
+							let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
+							res = await this.$rsDB(x.db)
+								.select('SerialNumber, ArrivedSKU, StationID')
+								.from('sfis_WorkTracking')
+								.where(`SerialNumber = '${result.Serial}'`)
+								.execute()
+							if (res.length) {
+								this.project['id'] = x.id
+								this.project['db'] = x.db
+								this.project['operator'] = u.id
+								this.select = { ...x, ...u }
+								console.log(this.select)
+								break
+							}
+						}
+						if (!this.project.hasOwnProperty('id')) {
+							test['Serial'] = `SN ID Check FAIL`
+							this.msn['title'] = 'No Found'
+							this.msn['message'] = 'The Serial number no found in the system.'
+							this.msn.active = true
+							return
+						}
+						if (!res[0].StationID == 15 && !res[0].StationID == '') {
+							this.msn['title'] = 'Error'
+							this.msn['message'] = 'The unit has not passed through any previous station.'
+							this.msn.active = true
+							return
+						}
+						let datetime = await this.DateTime()
+						this.test['Date'] = datetime.date
+						this.test['startTime'] = datetime.time
+						this.test['Serial'] = `SN ID Check PASS, SNID: ${this.device.Serial}`
+						if (this.device.SKU == res[0].ArrivedSKU)
+							this.test['Model'] = `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
+						this.test['Description'] = `Product Description: ${this.device.Description}`
+						await this.espera2('actionType')
+						this.activate.type = false
+						this.activate.select = true
+						if (this.type != 'desktop') {
+							this.activate.audio = true
+							await this.espera('actionAudio')
+							this.activate.brightness = true
+							this.$cmd.executeScriptCode(GetMntBringhtness)
+							setTimeout(() => {
+								this.showActions = true
+							}, 4000)
+							await this.espera('actionBrightness')
+							this.activate.brightness = false
+						}
+						if (this.type == 'laptop' || this.type == 'all-in-one') {
+							this.activate.camera = true
+							await this.espera('actionCamera')
+							this.activate.camera = false
+						}
+						this.driver = await this.$cmd.executeScriptCode(drivers)
+						this.activate.drivers = true
+						await this.espera('actionDrivers')
+						if (this.driver.estatusDrivers == 'PASS')
+							this.test['drivers'] = 'Device Manager Drivers Test PASS'
+						else this.test['drivers'] = 'Device Manager Drivers Test FAIL'
+						if (this.driver.estatusVideo == 'PASS')
+							this.test['display'] = 'Display Adapter Drivers Test PASS'
+						else this.test['display'] = 'Display Adapter Drivers Test FAIL'
+						this.activate.drivers = false
+						this.activate.windows = true
+						this.win = await this.$cmd.executeScriptCode(windows)
+						this.activate.windows = true
+						await this.espera('actionWindows')
+						this.activate.windows = false
+						if (this.action == 'PASS' && this.win.activationStatus)
+							this.test['windows'] = 'Windows Activation Test PASS'
+						else this.test['windows'] = 'Windows Activation Test FAIL'
+						this.test['OS'] = this.win.os
+						this.myDb.OS = this.win.os
+						this.test['keyWindows'] = this.win.keyWindows
+						//this.myGpu.then((v) => (this.myGpu = v))
+						//this.myGpu = await this.getGraphicsInfo(this.myGpu.result.value)
+						this.activate.gpu = true
+						if (this.intDev.video.some((obj) => obj.AdapterRAM.includes('4'))) {
+							this.myGpu = await this.$cmd.getDx({
+								Serial: this.device.Serial,
+							})
+							this.intDev.video = this.intDev.video.map((objA) => {
+								const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
+								return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
+							})
+							console.log('myGpu: ', this.myGpu)
+						} else this.myGpu = this.intDev.video
+						let itDG = await this.GPUInfo(this.myGpu)
+						await this.espera('actionGPU')
+						this.activate.gpu = false
+						console.log(itDG)
+						this.myDb.GPU = itDG.description
+						this.myDb.GPU_RAM = itDG.RAM_GPU
+						this.myDb.CPU = this.intDev.cpuName.join('\n')
+						if (this.type == 'desktop') {
+							this.activate.desktop = true
+							await this.espera('actionDesktop')
+							this.activate.desktop = false
+						}
+						this.$q.loading.show()
+						let txt = await this.report()
+						this.file = await this.$uploadTextFile(this.device.Serial, txt)
+						console.log(typeof this.$textFile, typeof this.$imageFile)
+						console.log(this.$textFile, this.$imageFile)
+						console.log(this.myDb)
+						await this.rsSave()
+						let resUp = {
+							txt: false,
+							img: false,
+						}
+						if (this.$textFile) resUp.txt = await this.upload(this.$textFile.path, 1)
+						if (this.$imageFile) resUp.img = await this.uploadImg(this.$imageFile.path, 2)
+
+						if (!this.$textFile.name && !resUp.txt) {
+							this.msn['title'] = 'Error'
+							this.msn['message'] =
+								'Oops. The log could not be uploaded to the system. Call the system administrator.'
+							this.$q.loading.hide()
+							this.msn.active = true
+							return
+						}
+
+						if (!this.$imageFile.name && !resUp.img) {
+							this.msn['title'] = 'Error'
+							this.msn['message'] =
+								'Oops. The image could not be uploaded to the system. Call the system administrator.'
+							this.$q.loading.hide()
+							this.msn.active = true
+							return
+						}
+						this.$q.loading.hide()
+					}
+				})
+			},
 		},
 		async beforeCreate() {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
@@ -741,7 +900,10 @@
 						persistent: true,
 					})
 					.onOk(() => {
-						// console.log('OK')
+						this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
+							'YYYY-MM-DD HH:mm:ss.SSS'
+						)
+						this.myTest()
 					})
 					.onCancel(() => {
 						this.cerrarVentana()
@@ -750,167 +912,6 @@
 					.onDismiss(() => {
 						// console.log('I am triggered on both OK and Cancel')
 					})
-			this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
-				'YYYY-MM-DD HH:mm:ss.SSS'
-			)
-
-			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
-			let itDH = await this.hddInfo(this.intDev.HDD.Units)
-			console.log(itDH)
-			this.myDb.Serial_HDD = itDH.group.Serial
-			this.myDb.Model_HDD = itDH.group.Description
-			this.myDb.HDD_CAPACITY = itDH.group.Size
-			this.myDb.RAM = this.intDev.RAM.Total
-			await this.$cmd.executeScriptCode(getDeviceInfo).then(async (result) => {
-				if (result == false) {
-					console.error('Error ejecutando script:', error)
-				} else {
-					this.device = result
-					await this.infoHP()
-					this.myDb.Serial = result.Serial
-					this.myDb.Model = result.SKU
-					if (this.type == 'laptop') {
-						var battery = await this.$cmd.executeScriptCode(getBattery)
-						this.test['battery'] = battery.Status.includes('pass')
-							? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
-							: `Battery test FAIL`
-					}
-					let res = ''
-					for (let x of this.$env.project) {
-						let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
-						res = await this.$rsDB(x.db)
-							.select('SerialNumber, ArrivedSKU, StationID')
-							.from('sfis_WorkTracking')
-							.where(`SerialNumber = '${result.Serial}'`)
-							.execute()
-						if (res.length) {
-							this.project['id'] = x.id
-							this.project['db'] = x.db
-							this.project['operator'] = u.id
-							this.select = { ...x, ...u }
-							console.log(this.select)
-							break
-						}
-					}
-					if (!this.project.hasOwnProperty('id')) {
-						test['Serial'] = `SN ID Check FAIL`
-						this.msn['title'] = 'No Found'
-						this.msn['message'] = 'The Serial number no found in the system.'
-						this.msn.active = true
-						return
-					}
-					if (!res[0].StationID == 15 && !res[0].StationID == '') {
-						this.msn['title'] = 'Error'
-						this.msn['message'] = 'The unit has not passed through any previous station.'
-						this.msn.active = true
-						return
-					}
-					let datetime = await this.DateTime()
-					this.test['Date'] = datetime.date
-					this.test['startTime'] = datetime.time
-					this.test['Serial'] = `SN ID Check PASS, SNID: ${this.device.Serial}`
-					if (this.device.SKU == res[0].ArrivedSKU)
-						this.test['Model'] = `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
-					this.test['Description'] = `Product Description: ${this.device.Description}`
-					await this.espera2('actionType')
-					this.activate.type = false
-					this.activate.select = true
-					if (this.type != 'desktop') {
-						this.activate.audio = true
-						await this.espera('actionAudio')
-						this.activate.brightness = true
-						this.$cmd.executeScriptCode(GetMntBringhtness)
-						setTimeout(() => {
-							this.showActions = true
-						}, 4000)
-						await this.espera('actionBrightness')
-						this.activate.brightness = false
-					}
-					if (this.type == 'laptop' || this.type == 'all-in-one') {
-						this.activate.camera = true
-						await this.espera('actionCamera')
-						this.activate.camera = false
-					}
-					this.driver = await this.$cmd.executeScriptCode(drivers)
-					this.activate.drivers = true
-					await this.espera('actionDrivers')
-					if (this.driver.estatusDrivers == 'PASS')
-						this.test['drivers'] = 'Device Manager Drivers Test PASS'
-					else this.test['drivers'] = 'Device Manager Drivers Test FAIL'
-					if (this.driver.estatusVideo == 'PASS')
-						this.test['display'] = 'Display Adapter Drivers Test PASS'
-					else this.test['display'] = 'Display Adapter Drivers Test FAIL'
-					this.activate.drivers = false
-					this.activate.windows = true
-					this.win = await this.$cmd.executeScriptCode(windows)
-					this.activate.windows = true
-					await this.espera('actionWindows')
-					this.activate.windows = false
-					if (this.action == 'PASS' && this.win.activationStatus)
-						this.test['windows'] = 'Windows Activation Test PASS'
-					else this.test['windows'] = 'Windows Activation Test FAIL'
-					this.test['OS'] = this.win.os
-					this.myDb.OS = this.win.os
-					this.test['keyWindows'] = this.win.keyWindows
-					//this.myGpu.then((v) => (this.myGpu = v))
-					//this.myGpu = await this.getGraphicsInfo(this.myGpu.result.value)
-					this.activate.gpu = true
-					if (this.intDev.video.some((obj) => obj.AdapterRAM.includes('4'))) {
-						this.myGpu = await this.$cmd.getDx({
-							Serial: this.device.Serial,
-						})
-						this.intDev.video = this.intDev.video.map((objA) => {
-							const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
-							return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
-						})
-						console.log('myGpu: ', this.myGpu)
-					} else this.myGpu = this.intDev.video
-					let itDG = await this.GPUInfo(this.myGpu)
-					await this.espera('actionGPU')
-					this.activate.gpu = false
-					console.log(itDG)
-					this.myDb.GPU = itDG.description
-					this.myDb.GPU_RAM = itDG.RAM_GPU
-					this.myDb.CPU = this.intDev.cpuName.join('\n')
-					if (this.type == 'desktop') {
-						this.activate.desktop = true
-						await this.espera('actionDesktop')
-						this.activate.desktop = false
-					}
-					this.$q.loading.show()
-					let txt = await this.report()
-					this.file = await this.$uploadTextFile(this.device.Serial, txt)
-					console.log(typeof this.$textFile, typeof this.$imageFile)
-					console.log(this.$textFile, this.$imageFile)
-					console.log(this.myDb)
-					await this.rsSave()
-					let resUp = {
-						txt: false,
-						img: false,
-					}
-					if (this.$textFile) resUp.txt = await this.upload(this.$textFile.path, 1)
-					if (this.$imageFile) resUp.img = await this.uploadImg(this.$imageFile.path, 2)
-
-					if (this.$textFile && !resUp.txt) {
-						this.msn['title'] = 'Error'
-						this.msn['message'] =
-							'Oops. The log could not be uploaded to the system. Call the system administrator.'
-						this.$q.loading.hide()
-						this.msn.active = true
-						return
-					}
-
-					if (this.$imageFile && !resUp.img) {
-						this.msn['title'] = 'Error'
-						this.msn['message'] =
-							'Oops. The image could not be uploaded to the system. Call the system administrator.'
-						this.$q.loading.hide()
-						this.msn.active = true
-						return
-					}
-					this.$q.loading.hide()
-				}
-			})
 		},
 	}
 </script>

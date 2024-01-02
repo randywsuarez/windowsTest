@@ -101,7 +101,7 @@ FETCH NEXT ${limit} ROWS ONLY`
 		}
 
 		async execute() {
-			//console.log(this.query)
+			console.log(this.query)
 			return this.executeQuery(this.query)
 		}
 	}

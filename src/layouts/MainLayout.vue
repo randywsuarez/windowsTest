@@ -2,14 +2,7 @@
 	<q-layout view="lHh Lpr lFf" class="main-layout">
 		<q-header class="main-header">
 			<q-toolbar>
-				<!-- <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="leftDrawerOpen = !leftDrawerOpen"
-        /> -->
+				<q-btn flat dense round icon="logout" @click="cerrarSesion" />
 
 				<q-toolbar-title>Windows Test - ISPT Services</q-toolbar-title>
 
@@ -137,6 +130,31 @@
 				const { remote } = require('electron')
 				const ventanaActual = remote.getCurrentWindow()
 				ventanaActual.close()
+			},
+			cerrarSesion() {
+				let dbNombre = 'NeDB'
+				let vm = this
+
+				// Intenta eliminar la base de datos
+				let solicitudEliminacion = window.indexedDB.deleteDatabase(dbNombre)
+
+				// Manejar el éxito
+				solicitudEliminacion.onsuccess = function () {
+					console.log('Base de datos eliminada con éxito')
+					vm.$router.push('/login')
+				}
+
+				// Manejar el error
+				solicitudEliminacion.onerror = function (event) {
+					console.error('Error al intentar eliminar la base de datos: ', event.target.errorCode)
+				}
+
+				// Manejar el evento de bloqueo, si existe
+				solicitudEliminacion.onblocked = function () {
+					console.log(
+						'La eliminación de la base de datos está bloqueada, cierra otras pestañas o aplicaciones que puedan estar utilizando la base de datos.'
+					)
+				}
 			},
 		},
 	}
