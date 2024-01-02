@@ -212,6 +212,25 @@
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
+			<q-card class="card" v-show="activate.done">
+				<q-card-section> <div class="text-h6">Done</div> </q-card-section><q-separator />
+				<q-card-section class="reproductor-content">
+					<q-card-section
+						class="row col"
+						ref="actionType"
+						id="actionType"
+						style="justify-content: center"
+					>
+						<div class="col-12 justify-center">
+							<svg width="100%" id="barcode"></svg>
+						</div>
+						<div class="col-12 justify-center">
+							<svg width="100%" id="barcode2"></svg>
+						</div>
+						<q-btn flat color="positive" label="Shutdown" @click="sdDevice" />
+					</q-card-section>
+				</q-card-section>
+			</q-card>
 
 			<q-dialog v-model="msn.active" persistent transition-show="scale" transition-hide="scale">
 				<q-card class="card" style="width: 300px">
@@ -254,9 +273,9 @@
 	import getBattery from '../scripts/battery'
 	import getDeviceInfo from '../scripts/GetDeviceInfo'
 	import GetMntBringhtness from '../scripts/MonitorBrightness'
-	import dxdiag from '../scripts/dxdiag'
 	import imaging from '../scripts/imaging'
 	import moment from 'moment'
+	import JsBarcode from 'jsbarcode'
 	export default {
 		components: {
 			UserInfoGrid,
@@ -286,6 +305,7 @@
 					battery: false,
 					gpu: false,
 					desktop: false,
+					done: false,
 				},
 				showActions: false,
 				win: {},
@@ -721,6 +741,9 @@
 					//insert
 				}
 			},
+			async sdDevice() {
+				await this.$cmd.executeScriptCode(['Stop-Computer -ComputerName localhost'])
+			},
 			async myTest() {
 				this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
 				let itDH = await this.hddInfo(this.intDev.HDD.Units)
@@ -877,6 +900,27 @@
 							return
 						}
 						this.$q.loading.hide()
+						this.activate.done = true
+						JsBarcode('#barcode', this.device.Serial, {
+							format: 'CODE128',
+							lineColor: '#000',
+							width: 1,
+							height: 100,
+							displayValue: true,
+							//text: this.form.serial,
+							textAlign: 'center',
+							fontSize: 12,
+						})
+						JsBarcode('#barcode2', this.device.SKU, {
+							format: 'CODE128',
+							lineColor: '#000',
+							width: 1,
+							height: 100,
+							displayValue: true,
+							//text: this.form.sku,
+							textAlign: 'center',
+							fontSize: 12,
+						})
 					}
 				})
 			},

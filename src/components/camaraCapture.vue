@@ -11,7 +11,7 @@
 
 		<!-- Elemento de video para mostrar la transmisión de la cámara -->
 		<video v-show="showVideo" ref="video" width="400" height="300" autoplay></video>
-		<img v-show="showCapturedImage" :src="capturedImage" alt="Captured Image" style="width: 80%" />
+		<img v-show="showCapturedImage" :src="capturedImage" alt="Captured Image" style="width: 200px" />
 
 		<!-- Contador regresivo -->
 		<div v-if="countdown > 0" class="countdown">{{ countdown }}</div>
