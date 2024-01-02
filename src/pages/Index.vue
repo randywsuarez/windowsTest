@@ -9,15 +9,42 @@
 			:imageSrc="device.img ? device.img : 'logo.png'"
 		/>
 		<div class="main">
+			<q-card class="card" v-show="activate.comparation">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Check</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center col row">
+					<q-input
+						v-model="check.serial"
+						type="text"
+						label="Serial"
+						:prefix="miniSerial"
+						:placeholder="miniSerial"
+						hint="Write the last 2 digits"
+					/>
+					<q-toggle
+						size="50px"
+						v-model="check.sku"
+						:val="true"
+						:label="`Is the SKU ${device.SKU} correct?`"
+					/>
+				</q-card-section>
+
+				<q-card-actions align="right" id="actionComparation">
+					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
+					<q-btn
+						flat
+						color="positive"
+						label="Pass"
+						@click="action = 'PASS'"
+						v-show="device.Serial == `${miniSerial}${check.serial}` && check.sku"
+					/>
+				</q-card-actions>
+			</q-card>
 			<q-card class="card" v-show="activate.type">
 				<q-card-section> <div class="text-h6">Select type</div> </q-card-section><q-separator />
 				<q-card-section class="reproductor-content">
-					<q-card-section
-						class="row col"
-						ref="actionType"
-						id="actionType"
-						style="justify-content: center"
-					>
+					<q-card-section class="row col" id="actionType" style="justify-content: center">
 						<q-btn class="col-md-4 q-ma-sm glow" @click="type = 'laptop'" id="laptop" ref="laptop"
 							><img src="022-laptop.png"
 						/></q-btn>
@@ -147,8 +174,7 @@
 					<q-card-section> <div class="text-h6">Battery Test</div> </q-card-section><q-separator />
 				</q-card-section>
 				<q-card-section class="center">
-					<div>{{ win.os }}</div>
-					<div>{{ win.keyWindows }}</div>
+					<pre>{{ battery }}</pre>
 				</q-card-section>
 				<q-card-actions align="right" id="actionBattery">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
@@ -216,16 +242,16 @@
 				<q-card-section> <div class="text-h6">Done</div> </q-card-section><q-separator />
 				<q-card-section class="reproductor-content">
 					<q-card-section
-						class="row col"
-						ref="actionType"
-						id="actionType"
+						class="row col justify-center"
+						ref="actionDone"
+						id="actionDone"
 						style="justify-content: center"
 					>
 						<div class="col-12 justify-center">
-							<svg width="100%" id="barcode"></svg>
+							<svg width="75%" id="barcode"></svg>
 						</div>
 						<div class="col-12 justify-center">
-							<svg width="100%" id="barcode2"></svg>
+							<svg width="75%" id="barcode2"></svg>
 						</div>
 						<q-btn flat color="positive" label="Shutdown" @click="sdDevice" />
 					</q-card-section>
@@ -293,6 +319,9 @@
 				project: {},
 				sound: 'nada',
 				action: '',
+				check: {
+					sku: false,
+				},
 				activate: {
 					type: true,
 					select: false,
@@ -306,6 +335,7 @@
 					gpu: false,
 					desktop: false,
 					done: false,
+					comparation: false,
 				},
 				showActions: false,
 				win: {},
@@ -314,6 +344,7 @@
 				driver: {},
 				select: {},
 				file: '',
+				miniSerial: '',
 				myDb: {
 					Serial: '',
 					Model: '',
@@ -516,6 +547,8 @@
 			},
 			handleCaptureResult(result) {
 				console.log(`Captura ${result ? 'exitosa' : 'fallida'}`)
+
+				this.$children[0].$emit('stopCamera')
 				// Realizar acciones adicionales según el resultado de la captura
 				if (result) {
 					// Acciones después de una captura exitosa
@@ -529,7 +562,6 @@
 				this.activate.camera = false
 			},
 			detenerReproduccion(r) {
-				this.$children[0].$emit('stopCamera')
 				if (r == 'pass') {
 					this.test['audio'] = 'Internal Speaker Test PASS '
 					this.activate.audio = false
@@ -570,9 +602,9 @@
 			async espera(a) {
 				return new Promise((resolve) => {
 					let cardActions = document.querySelector(`#${a}`)
-					console.log(cardActions)
+					//console.log(cardActions)
 					let clickHandler = (event) => {
-						console.log(a, event)
+						//console.log(a, event)
 						let target = event.target
 						if (target.innerText === 'PASS' || target.innerText === 'FAIL') {
 							cardActions.removeEventListener('click', clickHandler)
@@ -666,6 +698,7 @@
 			},
 			cerrarVentana() {
 				// Cerrar la ventana en Electron
+				this.sdDevice()
 				let { remote } = require('electron')
 				let ventanaActual = remote.getCurrentWindow()
 				ventanaActual.close()
@@ -745,6 +778,7 @@
 				await this.$cmd.executeScriptCode(['Stop-Computer -ComputerName localhost'])
 			},
 			async myTest() {
+				this.$q.loading.show()
 				this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
 				let itDH = await this.hddInfo(this.intDev.HDD.Units)
 				console.log(itDH)
@@ -757,13 +791,14 @@
 						console.error('Error ejecutando script:', error)
 					} else {
 						this.device = result
+						this.miniSerial = this.device.Serial.slice(0, -2)
 						await this.infoHP()
 						this.myDb.Serial = result.Serial
 						this.myDb.Model = result.SKU
 						if (this.type == 'laptop') {
-							var battery = await this.$cmd.executeScriptCode(getBattery)
-							this.test['battery'] = battery.Status.includes('pass')
-								? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+							this.battery = await this.$cmd.executeScriptCode(getBattery)
+							this.test['battery'] = this.battery.Status.includes('pass')
+								? `Battery test PASS, Design Capacity = ${this.battery.DesignCapacity}, Full Charge Capacity= ${this.battery.FullChargeCapacity}, Battery Health= ${this.battery.BatteryHealth}%, Cycle Count= ${this.battery.CycleCount} ID= ${this.battery.ID}`
 								: `Battery test FAIL`
 						}
 						let res = ''
@@ -803,8 +838,13 @@
 						if (this.device.SKU == res[0].ArrivedSKU)
 							this.test['Model'] = `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
 						this.test['Description'] = `Product Description: ${this.device.Description}`
+						this.$q.loading.hide()
+						this.activate.type = true
 						await this.espera2('actionType')
 						this.activate.type = false
+						this.activate.comparation = true
+						await this.espera('actionComparation')
+						this.activate.comparation = false
 						this.activate.select = true
 						if (this.type != 'desktop') {
 							this.activate.audio = true
@@ -956,6 +996,12 @@
 					.onDismiss(() => {
 						// console.log('I am triggered on both OK and Cancel')
 					})
+			else {
+				this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
+					'YYYY-MM-DD HH:mm:ss.SSS'
+				)
+				this.myTest()
+			}
 		},
 	}
 </script>
