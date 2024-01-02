@@ -35,7 +35,7 @@
 				videoStream: null,
 				selectedCamera: null,
 				cameras: [],
-				countdown: 2, // Inicia el contador regresivo en 5 segundos
+				countdown: 5, // Inicia el contador regresivo en 5 segundos
 			}
 		},
 		mounted() {
@@ -121,10 +121,10 @@
 				this.capturedImage = imageDataURL
 				this.showCapturedImage = true
 				this.showVideo = false
-				this.stopCamera()
 				console.log(this.imageName)
 				if (this.imageName) {
 					this.$uploadImage(`${this.imageName}.jpg`, imageDataURL)
+					this.stopCamera()
 				}
 			},
 		},
