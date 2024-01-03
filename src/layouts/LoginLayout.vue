@@ -71,7 +71,7 @@
 							console.log(response)
 							res.push(response)
 						}) // Resolver la promesa con la respuesta
-						.catch((err) => reject(err)) // Rechazar la promesa con el error
+						.catch((err) => console.error(err)) // Rechazar la promesa con el error
 				}
 				console.log(res.length)
 				if (res.length) {
@@ -132,7 +132,7 @@
 					fetch(`${s.url}/APP/Login/Authenticate`, options)
 						.then((response) => response.json())
 						.then((response) => data.push(response)) // Resolver la promesa con la respuesta
-						.catch((err) => reject(err)) // Rechazar la promesa con el error
+						.catch((err) => console.error(err)) // Rechazar la promesa con el error
 				}
 				console.log()
 				return data
