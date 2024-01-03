@@ -16,6 +16,7 @@
 				<q-card-section class="center col row">
 					<q-input
 						v-model="check.serial"
+						@input="handleInputChange"
 						type="text"
 						label="Serial"
 						:prefix="miniSerial"
@@ -318,6 +319,7 @@
 				test: {},
 				project: {},
 				sound: 'nada',
+				battery: {},
 				action: '',
 				check: {
 					sku: false,
@@ -394,6 +396,10 @@
 			}
 		},
 		methods: {
+			handleInputChange() {
+				// Convierte el valor a mayúsculas
+				this.check.serial = this.check.serial.toUpperCase()
+			},
 			async report() {
 				let res = Object.values(this.test).includes('fail') ? 'FAIL' : 'PASS'
 				let lastdate = await this.DateTime()
@@ -819,13 +825,15 @@
 							}
 						}
 						if (!this.project.hasOwnProperty('id')) {
+							this.$q.loading.hide()
 							test['Serial'] = `SN ID Check FAIL`
 							this.msn['title'] = 'No Found'
 							this.msn['message'] = 'The Serial number no found in the system.'
 							this.msn.active = true
 							return
 						}
-						if (!res[0].StationID == 15 && !res[0].StationID == '') {
+						if (!res[0].StationID == 15 && !res[0].StationID) {
+							this.$q.loading.hide()
 							this.msn['title'] = 'Error'
 							this.msn['message'] = 'The unit has not passed through any previous station.'
 							this.msn.active = true
