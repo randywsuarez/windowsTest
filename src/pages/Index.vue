@@ -319,7 +319,7 @@
 				test: {},
 				project: {},
 				sound: 'nada',
-				battery: {},
+				battery: '',
 				action: '',
 				check: {
 					sku: false,
@@ -802,10 +802,11 @@
 						this.myDb.Serial = result.Serial
 						this.myDb.Model = result.SKU
 						if (this.type == 'laptop') {
-							this.battery = await this.$cmd.executeScriptCode(getBattery)
-							this.test['battery'] = this.battery.Status.includes('pass')
-								? `Battery test PASS, Design Capacity = ${this.battery.DesignCapacity}, Full Charge Capacity= ${this.battery.FullChargeCapacity}, Battery Health= ${this.battery.BatteryHealth}%, Cycle Count= ${this.battery.CycleCount} ID= ${this.battery.ID}`
+							let battery = await this.$cmd.executeScriptCode(getBattery)
+							this.test['battery'] = battery.Status.includes('pass')
+								? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
 								: `Battery test FAIL`
+							this.battery = this.test['battery']
 						}
 						let res = ''
 						for (let x of this.$env.project) {

@@ -83,6 +83,13 @@ const CmdHelper = {
 				console.error(err)
 				resolve(false)
 			})
+			/* await ps.addCommand('Start-Process')
+			await ps.addArgument('powershell.exe')
+			await ps.addArgument('-Verb')
+			await ps.addArgument('RunAs')
+			await ps.addArgument('-ArgumentList')
+			await ps.addArgument(`-NoProfile -ExecutionPolicy Bypass -Command "& {${code}}"`)
+			await ps.invoke() */
 		})
 	},
 	savePS: async (params) => {
