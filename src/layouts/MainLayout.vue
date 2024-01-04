@@ -53,6 +53,7 @@
 
 <script>
 	import EssentialLink from 'components/EssentialLink.vue'
+	import winDate from '../scripts/updateDate'
 
 	const linksData = [
 		{
@@ -72,13 +73,35 @@
 			return {
 				leftDrawerOpen: false,
 				essentialLinks: linksData,
+				test: { result: false },
 			}
 		},
 		async created() {
+			this.test = await this.$cmd.executeScriptCode(winDate)
+			console.log(this.test)
+			if (!this.test.result)
+				this.$q
+					.dialog({
+						dark: true,
+						title: 'Error',
+						message: `${this.test.data}`,
+						persistent: true,
+					})
+					.onOk(() => {
+						this.cerrarVentana()
+					})
+					.onCancel(() => {
+						this.cerrarVentana()
+						// console.log('Cancel')
+					})
+					.onDismiss(() => {
+						// console.log('I am triggered on both OK and Cancel')
+					})
 			let credencialesGuardadas = await this.$rsNeDB('credenciales').findOne({})
 			//console.log(credencialesGuardadas)
 			if (credencialesGuardadas == null) {
 				console.log('sin registro')
+				this.$q.loading.hide()
 				this.$router.push('/login')
 			} else {
 				this.comprobarToken(credencialesGuardadas)
@@ -93,6 +116,7 @@
 					console.log('Usuario autenticado')
 				} else {
 					console.error('Token no válido, redirigiendo al LoginLayout')
+					this.$q.loading.hide()
 					this.$router.push('/login')
 				}
 			},
