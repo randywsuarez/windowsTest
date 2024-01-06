@@ -24,6 +24,24 @@
 		<div :class="['close-button', colorClass]" @click="cerrarVentana">
 			<q-icon name="close" size="24px" color="white" />
 		</div>
+		<q-dialog v-model="isDialogVisible" class="login-card" persistent>
+			<q-card>
+				<q-card-section>
+					<div class="text-h6">Without Internet</div>
+				</q-card-section>
+
+				<q-card-section>
+					<div class="q-pa-md text-h6">
+						There is no Internet conection. Please verify your connection.
+					</div>
+				</q-card-section>
+
+				<!-- Puedes personalizar los botones según tus necesidades -->
+				<q-card-actions align="right">
+					<!-- <q-btn label="Cerrar" color="primary" @click="closeDialog" /> -->
+				</q-card-actions>
+			</q-card>
+		</q-dialog>
 	</q-layout>
 </template>
 
@@ -36,6 +54,9 @@
 				contrasena: '',
 				recordarCredenciales: true,
 				colorIndex: 0,
+				hasInternet: navigator.onLine,
+				isDialogVisible: false,
+				checkInterval: null,
 			}
 		},
 		computed: {
@@ -45,6 +66,29 @@
 			},
 		},
 		methods: {
+			checkInternetConnection() {
+				this.hasInternet = navigator.onLine
+
+				if (!this.hasInternet && !this.isDialogVisible) {
+					// Si no hay conexión y el diálogo no está visible, muestra el diálogo
+					this.isDialogVisible = true
+				} else if (this.hasInternet && this.isDialogVisible) {
+					// Si hay conexión y el diálogo está visible, cierra el diálogo
+					this.isDialogVisible = false
+				}
+			},
+			closeDialog() {
+				// Método para cerrar el diálogo manualmente
+				this.isDialogVisible = false
+			},
+			startInternetCheckInterval() {
+				// Inicia el intervalo para verificar la conexión cada 5 segundos (puedes ajustar el valor)
+				this.checkInterval = setInterval(this.checkInternetConnection, 5000)
+			},
+			stopInternetCheckInterval() {
+				// Detiene el intervalo cuando ya no es necesario
+				clearInterval(this.checkInterval)
+			},
 			async iniciarSesion() {
 				this.$q.loading.show()
 				// Hacer la solicitud de inicio de sesión (simulación)
@@ -81,12 +125,13 @@
 						// Guardar credenciales en la colección 'credenciales'
 						console.log('entro')
 						for (let a of res) {
-							await this.$rsNeDB('credenciales').insert({
+							let res = await this.$rsNeDB('credenciales').insert({
 								usuario: this.usuario,
 								authToken: a.AuthToken,
 								id: a.Id,
 								tenant: a.tenant,
 							})
+							console.log(res)
 							await this.$rsNeDB('user').insert({
 								userName: this.usuario,
 								password: this.contrasena,
@@ -176,7 +221,14 @@
 				this.colorIndex++
 			},
 		},
-		created() {},
+		created() {
+			console.log(this.hasInternet)
+			this.startInternetCheckInterval()
+		},
+		beforeDestroy() {
+			// Detiene el intervalo antes de destruir el componente para evitar fugas de memoria
+			this.stopInternetCheckInterval()
+		},
 		mounted() {
 			// Iniciar la animación cada 2 segundos
 			this.intervalId = setInterval(() => {

@@ -827,7 +827,7 @@
 						}
 						if (!this.project.hasOwnProperty('id')) {
 							this.$q.loading.hide()
-							test['Serial'] = `SN ID Check FAIL`
+							this.test['Serial'] = `SN ID Check FAIL`
 							this.msn['title'] = 'No Found'
 							this.msn['message'] = 'The Serial number no found in the system.'
 							this.msn.active = true
