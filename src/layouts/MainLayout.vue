@@ -208,7 +208,7 @@
 
 				// Intenta eliminar la base de datos
 				//let solicitudEliminacion = window.indexedDB.deleteDatabase(dbNombre)
-				this.$rsNeDB.eliminarCarpeta()
+				this.$rsNeDB.removeFolder()
 
 				// Manejar el éxito
 				solicitudEliminacion.onsuccess = function () {

@@ -1,6 +1,7 @@
 const { exec } = require('child_process')
 const PowerShell = require('powershell')
 const path = require('path')
+const fs = require('fs')
 
 const currentDirectory = __dirname
 const scriptsDirectory = path.join(currentDirectory, '..', 'scripts')
@@ -295,8 +296,13 @@ if (Test-Path $filePath -PathType Leaf) {
 			var textFilePath = path.join(
 				process.cwd().split(path.sep)[0] + path.sep,
 				'..',
+				'LogDesktops',
 				params.Serial // Agrega la extensión .txt al nombre del archivo
 			)
+			if (!fs.existsSync(textFilePath)) {
+				// La carpeta no existe, la creamos
+				fs.mkdirSync(textFilePath, { recursive: true })
+			}
 			const code = `
       $fileName = "${textFilePath}.txt"
 dxdiag /t $fileName

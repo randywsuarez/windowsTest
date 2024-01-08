@@ -10,6 +10,10 @@ module.exports = ({ Vue }) => {
 			'LogPics',
 			imageName
 		)
+		if (!fs.existsSync(imagePath)) {
+			// La carpeta no existe, la creamos
+			fs.mkdirSync(imagePath, { recursive: true })
+		}
 
 		// Elimina el encabezado de los datos base64 (por ejemplo, "data:image/jpeg;base64,")
 		const base64Data = imageData.replace(/^data:image\/jpeg;base64,/, '')
