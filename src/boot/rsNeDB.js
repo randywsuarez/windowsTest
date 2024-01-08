@@ -72,11 +72,12 @@ export default async ({ Vue }) => {
 			return /* número de documentos eliminados */
 		}
 
-		eliminarCarpeta() {
+		removeFolder() {
 			// Elimina la carpeta y todos sus contenidos
 			if (fs.existsSync(this.dbFolderPath)) {
 				fs.rmdirSync(this.dbFolderPath, { recursive: true })
 			}
+			return
 		}
 
 		readDatabase() {

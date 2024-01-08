@@ -44,18 +44,20 @@
 			</q-card>
 			<q-card class="card" v-show="activate.type">
 				<q-card-section> <div class="text-h6">Select type</div> </q-card-section><q-separator />
-				<q-card-section class="reproductor-content">
-					<q-card-section class="row col" id="actionType" style="justify-content: center">
-						<q-btn class="col-md-4 q-ma-sm glow" @click="type = 'laptop'" id="laptop" ref="laptop"
-							><img src="022-laptop.png"
-						/></q-btn>
-						<q-btn class="col-md-4 q-ma-sm glow" id="desktop" ref="desktop"
-							><img src="023-pc.png"
-						/></q-btn>
-						<q-btn class="col-md-4 q-ma-sm glow" id="all-in-one" ref="all-in-one"
-							><img src="024-ux.png"
-						/></q-btn>
-					</q-card-section>
+				<q-card-section class="row col" id="actionType" style="justify-content: center">
+					<q-btn class="col-md-4 q-ma-sm glow" @click="type = 'laptop'" id="laptop" ref="laptop"
+						><img src="022-laptop.png"
+					/></q-btn>
+					<q-btn class="col-md-4 q-ma-sm glow" @click="type = 'desktop'" id="desktop" ref="desktop"
+						><img src="desktop.png"
+					/></q-btn>
+					<q-btn
+						class="col-md-4 q-ma-sm glow"
+						@click="type = 'all-in-one'"
+						id="all-in-one"
+						ref="all-in-one"
+						><img src="all-in-one.png"
+					/></q-btn>
 				</q-card-section>
 			</q-card>
 			<q-card class="card" v-show="activate.audio">
@@ -431,6 +433,7 @@
 	       Windows OS Name: ${this.test.OS}
 	       Windows Product Key: ${this.test.keyWindows}
 	       ${this.test.windows}
+	        ${this.test.color ? `Color: ${this.test.color}` : ''}
 	       Hard Drive: ${this.intDev.HDD.Total}
 	       ${this.intDev.HDD.Units.join('\n')}
 	       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
@@ -448,11 +451,11 @@
 	       ${this.type != 'desktop' ? this.test.camera : ''}
 	       ${this.test.drivers}
 	       ${this.test.display}
-	       ${this.type != 'desktop' ? this.test.battery : ''}
+	       ${this.type == 'laptop' ? this.test.battery : ''}
 	       ${this.type != 'desktop' ? this.test.brightness : ''}
 	       ====================================Result==========================================
 	       Test Result is ${res}
-	     `
+	     `.replace(/^\s*[\r\n]/gm, '')
 			},
 			ramInfo(i) {
 				let objetos = i.map((item) => {
@@ -628,6 +631,7 @@
 					let cardActions3 = document.querySelector(`#${a} #all-in-one`)
 					let clickHandler = (event) => {
 						let target = event.target.innerHTML ? event.target.innerHTML : event.target.src
+						console.log('target: ', target)
 						if (
 							target.includes('laptop') ||
 							target.includes('desktop') ||
@@ -719,7 +723,7 @@
 					.get()
 				if (info.length) {
 					this.device.img = info[0].img
-					this.myDb.COLOR = info[0].color
+					this.myDb.COLOR = info[0].color ? info[0].color : ''
 				} else
 					await this.$db
 						.funcAdmin('modules/pallets/partsurfer', {
@@ -728,9 +732,10 @@
 						})
 						.then(async (v) => {
 							console.log(v)
-							this.myDb.COLOR = v.color
+							this.myDb.COLOR = v.color ? v.color : ''
 							this.form.adapter = v.adapter
 						})
+				this.test['color'] = this.myDb.COLOR
 			},
 			getGraphicsInfo(dxdiagContent) {
 				// Buscar el patrón para el nombre de la tarjeta gráfica
@@ -806,6 +811,7 @@
 							this.test['battery'] = battery.Status.includes('pass')
 								? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
 								: `Battery test FAIL`
+							console.log('bateria: ', this.test.battery)
 							this.battery = this.test['battery']
 						}
 						let res = ''
@@ -931,7 +937,7 @@
 						if (this.$textFile) resUp.txt = await this.upload(this.$textFile.path, 1)
 						if (this.$imageFile) resUp.img = await this.uploadImg(this.$imageFile.path, 2)
 
-						if (!this.$textFile.name && !resUp.txt) {
+						if (this.$textFile && !resUp.txt) {
 							this.msn['title'] = 'Error'
 							this.msn['message'] =
 								'Oops. The log could not be uploaded to the system. Call the system administrator.'
@@ -940,7 +946,7 @@
 							return
 						}
 
-						if (!this.$imageFile.name && !resUp.img) {
+						if (this.$imageFile && !resUp.img) {
 							this.msn['title'] = 'Error'
 							this.msn['message'] =
 								'Oops. The image could not be uploaded to the system. Call the system administrator.'

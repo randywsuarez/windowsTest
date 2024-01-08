@@ -11,12 +11,28 @@
 						<q-img src="logo.png" />
 
 						<!-- Campos del formulario -->
-						<q-input v-model="usuario" label="User" />
-						<q-input v-model="contrasena" label="Password" type="password" />
-						<q-checkbox v-model="recordarCredenciales" label="RememberMe" />
+						<div class="row col">
+							<q-input v-model="usuario" label="User" class="col-12" />
+							<q-input
+								v-model="contrasena"
+								label="Password"
+								:type="isPwd ? 'password' : 'text'"
+								@keyup.enter="iniciarSesion"
+								class="col-12"
+							>
+								<template v-slot:append>
+									<q-icon
+										:name="isPwd ? 'visibility_off' : 'visibility'"
+										class="cursor-pointer"
+										@click="isPwd = !isPwd"
+									/>
+								</template>
+							</q-input>
+							<!-- <q-checkbox v-model="recordarCredenciales" label="RememberMe" /> -->
+						</div>
 
 						<!-- Botón de inicio de sesión -->
-						<q-btn @click="iniciarSesion" label="Sign On" />
+						<q-btn @click="iniciarSesion" label="Sign On" style="margin-top: 20px" />
 					</div>
 				</q-card-section>
 			</q-card>
@@ -57,6 +73,7 @@
 				hasInternet: navigator.onLine,
 				isDialogVisible: false,
 				checkInterval: null,
+				isPwd: true,
 			}
 		},
 		computed: {
@@ -112,7 +129,6 @@
 					await fetch(`${s.url}/APP/Login/Authenticate`, options)
 						.then((response) => response.json())
 						.then((response) => {
-							console.log(response)
 							res.push(response)
 						}) // Resolver la promesa con la respuesta
 						.catch((err) => console.error(err)) // Rechazar la promesa con el error
@@ -140,7 +156,7 @@
 							})
 						}
 						const documentos = await this.$rsNeDB('user').findOne({
-							userName: 'randy',
+							userName: this.usuario,
 						})
 
 						console.log('Documentos:', documentos)
@@ -150,6 +166,20 @@
 					this.$router.push('/')
 				} else {
 					this.$q.loading.hide()
+					this.$q
+						.dialog({
+							dark: true,
+							title: 'Error',
+							message: `Incorrect username and/or password`,
+							persistent: false,
+						})
+						.onOk(() => {})
+						.onCancel(() => {
+							// console.log('Cancel')
+						})
+						.onDismiss(() => {
+							// console.log('I am triggered on both OK and Cancel')
+						})
 					// Inicio de sesión fallido
 					console.error('Inicio de sesión fallido. Verifica usuario y contraseña.')
 				}
@@ -230,6 +260,7 @@
 			this.stopInternetCheckInterval()
 		},
 		mounted() {
+			this.$q.loading.hide()
 			// Iniciar la animación cada 2 segundos
 			this.intervalId = setInterval(() => {
 				this.colorIndex++
