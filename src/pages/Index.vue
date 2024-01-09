@@ -396,6 +396,7 @@
 					},
 				],
 				myGpu: [],
+				info: {},
 			}
 		},
 		methods: {
@@ -681,14 +682,14 @@
 					})
 					.then((result) => {
 						console.log('Result:', result)
-						if (this.$textFile && !result) {
+						/* if (this.$textFile && !result) {
 							this.msn['title'] = 'Error'
 							this.msn['message'] =
 								'Oops. The log could not be uploaded to the system. Call the system administrator.'
 							this.$q.loading.hide()
 							this.msn.active = true
 							return
-						}
+						} */
 						return result
 					})
 					.catch((error) => {
@@ -705,14 +706,14 @@
 					})
 					.then((result) => {
 						console.log('Result:', result)
-						if (this.$imageFile && !result) {
+						/* if (this.$imageFile && !result) {
 							this.msn['title'] = 'Error'
 							this.msn['message'] =
 								'Oops. The image could not be uploaded to the system. Call the system administrator.'
 							this.$q.loading.hide()
 							this.msn.active = true
 							return
-						}
+						} */
 						return result
 					})
 					.catch((error) => {
@@ -793,9 +794,9 @@
 					.all_data()
 					.get()
 				if (search.length) {
-					//update
+					await this.$db.doc(`devices/${search._id}`).update(this.form)
 				} else {
-					//insert
+					await this.$db.doc('devices').add(this.form)
 				}
 			},
 			async sdDevice() {
@@ -815,6 +816,7 @@
 						console.error('Error ejecutando script:', error)
 					} else {
 						this.device = result
+						this.info = { ...this.info, ...this.device }
 						this.miniSerial = this.device.Serial.slice(0, -2)
 						await this.infoHP()
 						this.myDb.Serial = result.Serial
@@ -870,6 +872,7 @@
 								: `Battery test FAIL`
 							console.log('bateria: ', this.test.battery)
 							this.battery = this.test['battery']
+							this.info = { ...this.info, battery }
 						}
 						this.activate.comparation = true
 						await this.espera('actionComparation')
@@ -903,6 +906,7 @@
 						this.activate.drivers = false
 						this.activate.windows = true
 						this.win = await this.$cmd.executeScriptCode(windows)
+						this.info = { ...this.info, ...this.win }
 						this.activate.windows = true
 						await this.espera('actionWindows')
 						this.activate.windows = false
@@ -928,24 +932,34 @@
 						let itDG = await this.GPUInfo(this.myGpu)
 						await this.espera('actionGPU')
 						this.activate.gpu = false
-						console.log(itDG)
 						this.myDb.GPU = itDG.description
 						this.myDb.GPU_RAM = itDG.RAM_GPU
 						this.myDb.CPU = this.intDev.cpuName.join('\n')
 						if (this.type == 'desktop') {
 							this.activate.desktop = true
 							await this.espera('actionDesktop')
+							this.info = {
+								...this.info,
+								...this.form,
+							}
 							this.activate.desktop = false
+						}
+						this.info = {
+							...this.info,
+							video: itDG,
+							cpuName: this.intDev.cpuName,
+							cpuName: this.intDev.cpu,
+							cpuName: this.intDev.cpu,
+							RAM: this.intDev.RAM,
+							HDD: this.intDev.HDD,
 						}
 						this.$q.loading.show()
 						let txt = await this.report()
 						this.file = await this.$uploadTextFile(this.device.Serial, txt)
-						console.log(typeof this.$textFile, typeof this.$imageFile)
-						console.log(this.$textFile, this.$imageFile)
-						console.log(this.myDb)
 						if (this.$textFile) await this.upload(this.$textFile.path, 1)
 						if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
 						await this.rsSave()
+						await this.saveMng()
 						this.$q.loading.hide()
 						this.activate.done = true
 						JsBarcode('#barcode', this.device.Serial, {
@@ -1007,6 +1021,7 @@
 				this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
 					'YYYY-MM-DD HH:mm:ss.SSS'
 				)
+				this.info = this.iTest
 				this.myTest()
 			}
 		},

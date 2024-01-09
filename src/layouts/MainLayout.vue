@@ -111,7 +111,7 @@
 						persistent: true,
 					})
 					.onOk(() => {
-						//this.cerrarVentana()
+						this.cerrarVentana()
 					})
 					.onCancel(() => {
 						this.cerrarVentana()
