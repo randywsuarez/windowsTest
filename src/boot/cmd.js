@@ -293,16 +293,13 @@ if (Test-Path $filePath -PathType Leaf) {
 
 				return graphicsInfoArray
 			}
-			var textFilePath = path.join(
-				process.cwd().split(path.sep)[0] + path.sep,
-				'..',
-				'LogDesktops',
-				params.Serial // Agrega la extensión .txt al nombre del archivo
-			)
+			var textFilePath = path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'LogDesktops')
 			if (!fs.existsSync(textFilePath)) {
 				// La carpeta no existe, la creamos
 				fs.mkdirSync(textFilePath, { recursive: true })
 			}
+
+			textFilePath = path.join(textFilePath, params.Serial)
 			const code = `
       $fileName = "${textFilePath}.txt"
 dxdiag /t $fileName
