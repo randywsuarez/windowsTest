@@ -101,7 +101,8 @@ FETCH NEXT ${limit} ROWS ONLY`
 		}
 
 		async execute() {
-			console.log(this.query)
+			sessionStorage.setItem('result', this.query)
+			//console.log()
 			return this.executeQuery(this.query)
 		}
 	}
