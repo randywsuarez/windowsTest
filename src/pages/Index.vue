@@ -20,7 +20,7 @@
 						type="text"
 						label="Serial"
 						:prefix="miniSerial"
-						:placeholder="miniSerial"
+						placeholder="XX"
 						hint="Write the last 2 digits"
 					/>
 					<q-toggle
@@ -305,6 +305,7 @@
 	import imaging from '../scripts/imaging'
 	import moment from 'moment'
 	import JsBarcode from 'jsbarcode'
+	import { SessionStorage } from 'quasar'
 	export default {
 		components: {
 			UserInfoGrid,
@@ -419,43 +420,43 @@
 					','
 				)}`
 				return `
-	       ISP Windows Test Ver:3.00
-	       Operator ID: ${this.user.id}
-	       Operator Name:${this.user.usuario}
-	       Start Date: ${this.test.Date}
-	       Start Time: ${this.test.startTime}
-	       End Date: ${lastdate.date}
-	       End Time: ${lastdate.time}
-	       ==============================Devices Information===================================
-	       ${this.test.Description}
-	       ${this.test.Model}
-	       ${this.test.Serial}
-	       Windows OS Name: ${this.test.OS}
-	       Windows Product Key: ${this.test.keyWindows}
-	       ${this.test.windows}
-	        ${this.test.color ? `Color: ${this.test.color}` : ''}
-	       Hard Drive: ${this.intDev.HDD.Total}
-	       ${this.intDev.HDD.Units.join('\n')}
-	       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
-	       ${this.intDev.RAM.Modules.join('\n')}
-	       GPU Verification PASS
-	       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
-	       CPU
-	       ${this.intDev.cpu.join('\n')}
-	       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
-	       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
-	       ${this.type == 'desktop' ? 'Cooler System' : ''}
-	       ${this.type == 'desktop' ? this.form.coolerSystem : ''}
-	       =================================Test Status========================================
-	       ${this.type != 'desktop' ? this.test.audio : ''}
-	       ${this.type != 'desktop' ? this.test.camera : ''}
-	       ${this.test.drivers}
-	       ${this.test.display}
-	       ${this.type == 'laptop' ? this.test.battery : ''}
-	       ${this.type != 'desktop' ? this.test.brightness : ''}
-	       ====================================Result==========================================
-	       Test Result is ${res}
-	     `.replace(/^\s*[\r\n]/gm, '')
+		       ISP Windows Test Ver:3.00
+		       Operator ID: ${this.user.id}
+		       Operator Name:${this.user.usuario}
+		       Start Date: ${this.test.Date}
+		       Start Time: ${this.test.startTime}
+		       End Date: ${lastdate.date}
+		       End Time: ${lastdate.time}
+		       ==============================Devices Information===================================
+		       ${this.test.Description}
+		       ${this.test.Model}
+		       ${this.test.Serial}
+		       Windows OS Name: ${this.test.OS}
+		       Windows Product Key: ${this.test.keyWindows}
+		       ${this.test.windows}
+		        ${this.test.color ? `Color: ${this.test.color}` : ''}
+		       Hard Drive: ${this.intDev.HDD.Total}
+		       ${this.intDev.HDD.Units.join('\n')}
+		       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
+		       ${this.intDev.RAM.Modules.join('\n')}
+		       GPU Verification PASS
+		       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
+		       CPU
+		       ${this.intDev.cpu.join('\n')}
+		       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
+		       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
+		       ${this.type == 'desktop' ? 'Cooler System' : ''}
+		       ${this.type == 'desktop' ? this.form.coolerSystem : ''}
+		       =================================Test Status========================================
+		       ${this.type != 'desktop' ? this.test.audio : ''}
+		       ${this.type != 'desktop' ? this.test.camera : ''}
+		       ${this.test.drivers}
+		       ${this.test.display}
+		       ${this.type == 'laptop' ? this.test.battery : ''}
+		       ${this.type != 'desktop' ? this.test.brightness : ''}
+		       ====================================Result==========================================
+		       Test Result is ${res}
+		     `.replace(/^\s*[\r\n]/gm, '')
 			},
 			ramInfo(i) {
 				let objetos = i.map((item) => {
@@ -656,24 +657,22 @@
 					.where(`Serial = '${this.device.Serial}'`)
 					.execute()
 				if (sh.length) {
-					console.log(sh)
+					//console.log(sh)
 					let result = await this.$rsDB(this.select.db)
 						.update('test_SnResults')
 						.set(this.myDb)
 						.where(`Serial = '${this.device.Serial}'`)
 						.execute()
-					console.log(result)
 				} else {
 					this.myDb['test_SnResultsID'] = 'NEWID()'
 					let result = await this.$rsDB(this.select.db)
 						.insert('test_SnResults')
 						.fields(this.myDb)
 						.execute()
-					console.log(result)
 				}
 			},
 			async upload(file, type) {
-				this.$cmd
+				await this.$cmd
 					.savePS({
 						apiUrl: `${this.select.url}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
 						filePath: file,
@@ -682,8 +681,15 @@
 					})
 					.then((result) => {
 						console.log('Result:', result)
-						if (result._isSuccess) return true
-						else return false
+						if (this.$textFile && !result) {
+							this.msn['title'] = 'Error'
+							this.msn['message'] =
+								'Oops. The log could not be uploaded to the system. Call the system administrator.'
+							this.$q.loading.hide()
+							this.msn.active = true
+							return
+						}
+						return result
 					})
 					.catch((error) => {
 						console.error('Error:', error)
@@ -699,8 +705,15 @@
 					})
 					.then((result) => {
 						console.log('Result:', result)
-						if (result._isSuccess) return true
-						else return false
+						if (this.$imageFile && !result) {
+							this.msn['title'] = 'Error'
+							this.msn['message'] =
+								'Oops. The image could not be uploaded to the system. Call the system administrator.'
+							this.$q.loading.hide()
+							this.msn.active = true
+							return
+						}
+						return result
 					})
 					.catch((error) => {
 						console.error('Error:', error)
@@ -806,14 +819,6 @@
 						await this.infoHP()
 						this.myDb.Serial = result.Serial
 						this.myDb.Model = result.SKU
-						if (this.type == 'laptop') {
-							let battery = await this.$cmd.executeScriptCode(getBattery)
-							this.test['battery'] = battery.Status.includes('pass')
-								? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
-								: `Battery test FAIL`
-							console.log('bateria: ', this.test.battery)
-							this.battery = this.test['battery']
-						}
 						let res = ''
 						for (let x of this.$env.project) {
 							let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
@@ -857,6 +862,15 @@
 						this.activate.type = true
 						await this.espera2('actionType')
 						this.activate.type = false
+						if (this.type == 'laptop') {
+							var battery = await this.$cmd.executeScriptCode(getBattery)
+							console.log('battery: ', battery)
+							this.test['battery'] = battery.Status.includes('pass')
+								? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+								: `Battery test FAIL`
+							console.log('bateria: ', this.test.battery)
+							this.battery = this.test['battery']
+						}
 						this.activate.comparation = true
 						await this.espera('actionComparation')
 						this.activate.comparation = false
@@ -929,31 +943,9 @@
 						console.log(typeof this.$textFile, typeof this.$imageFile)
 						console.log(this.$textFile, this.$imageFile)
 						console.log(this.myDb)
+						if (this.$textFile) await this.upload(this.$textFile.path, 1)
+						if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
 						await this.rsSave()
-						let resUp = {
-							txt: false,
-							img: false,
-						}
-						if (this.$textFile) resUp.txt = await this.upload(this.$textFile.path, 1)
-						if (this.$imageFile) resUp.img = await this.uploadImg(this.$imageFile.path, 2)
-
-						if (this.$textFile && !resUp.txt) {
-							this.msn['title'] = 'Error'
-							this.msn['message'] =
-								'Oops. The log could not be uploaded to the system. Call the system administrator.'
-							this.$q.loading.hide()
-							this.msn.active = true
-							return
-						}
-
-						if (this.$imageFile && !resUp.img) {
-							this.msn['title'] = 'Error'
-							this.msn['message'] =
-								'Oops. The image could not be uploaded to the system. Call the system administrator.'
-							this.$q.loading.hide()
-							this.msn.active = true
-							return
-						}
 						this.$q.loading.hide()
 						this.activate.done = true
 						JsBarcode('#barcode', this.device.Serial, {
@@ -984,7 +976,7 @@
 			this.user = await this.$rsNeDB('credenciales').findOne({})
 
 			/* console.log(this.user, this.getDev)
-			this.type = 'desktop' */
+				this.type = 'desktop' */
 		},
 		async mounted() {
 			this.$q.loading.show()

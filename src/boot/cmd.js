@@ -58,7 +58,7 @@ const CmdHelper = {
 		return new Promise(async (resolve) => {
 			let ps = new PowerShell([[code]])
 			let outputData = ''
-			console.log(code)
+			//console.log(code)
 
 			ps.on('output', (data) => {
 				outputData += data
@@ -142,7 +142,7 @@ if (Test-Path $filePath -PathType Leaf) {
     Write-Host "El archivo no existe o no se puede acceder."
 }
     `
-			console.log(code)
+			//console.log(code)
 
 			let ps = new PowerShell([code])
 			let outputData = ''
@@ -158,9 +158,9 @@ if (Test-Path $filePath -PathType Leaf) {
 
 			ps.on('end', (code) => {
 				try {
-					console.log(outputData)
 					const result = JSON.parse(outputData)
-					resolve(result)
+					console.log('txt upload: ', result._isSuccess)
+					resolve(result._isSuccess)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
 					resolve(false)
@@ -223,7 +223,7 @@ if (Test-Path $filePath -PathType Leaf) {
     Write-Host "El archivo no existe o no se puede acceder."
 }
 `
-			console.log(code)
+			//console.log(code)
 
 			let ps = new PowerShell([code])
 			let outputData = ''
@@ -239,9 +239,9 @@ if (Test-Path $filePath -PathType Leaf) {
 
 			ps.on('end', (code) => {
 				try {
-					console.log(outputData)
 					const result = JSON.parse(outputData)
-					resolve(result)
+					console.log('img upload: ', result._isSuccess)
+					resolve(result._isSuccess)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
 					resolve(false)
