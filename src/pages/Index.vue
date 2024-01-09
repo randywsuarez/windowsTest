@@ -184,6 +184,18 @@
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
+			<q-card class="card" v-show="activate.mousepad">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Mouse Pad Test</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<mouse-pad />
+				</q-card-section>
+				<q-card-actions align="right" id="actionMousePad">
+					<q-btn flat color="negative" label="Fail" @click="test['mousepad'] = 'Mouse pad test FAIL'" />
+					<q-btn flat color="positive" label="Pass" @click="test['mousepad'] = 'Mouse pad test PASS'" />
+				</q-card-actions>
+			</q-card>
 			<q-card class="card" v-show="activate.desktop">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Desktop Information</div> </q-card-section
@@ -303,15 +315,16 @@
 	import getDeviceInfo from '../scripts/GetDeviceInfo'
 	import GetMntBringhtness from '../scripts/MonitorBrightness'
 	import imaging from '../scripts/imaging'
+	import MousePad from '../components/MousePad.vue'
 	import moment from 'moment'
 	import JsBarcode from 'jsbarcode'
-	import { SessionStorage } from 'quasar'
 	export default {
 		components: {
 			UserInfoGrid,
 			Reproductor,
 			CameraCapture,
 			keyboard,
+			MousePad,
 		},
 		data() {
 			return {
@@ -341,6 +354,7 @@
 					desktop: false,
 					done: false,
 					comparation: false,
+					mousepad: false,
 				},
 				showActions: false,
 				win: {},
@@ -421,7 +435,7 @@
 					','
 				)}`
 				return `
-		       ISP Windows Test Ver:3.00
+		       ISP Windows Test Ver:3.00 - ${this.project.id}
 		       Operator ID: ${this.user.id}
 		       Operator Name:${this.user.usuario}
 		       Start Date: ${this.test.Date}
@@ -432,7 +446,7 @@
 		       ${this.test.Description}
 		       ${this.test.Model}
 		       ${this.test.Serial}
-		       Windows OS Name: ${this.test.OS}
+		       Windows OS Name: ${this.test.OS} (${!this.iTest.Organization ? 'A' : 'M'})
 		       Windows Product Key: ${this.test.keyWindows}
 		       ${this.test.windows}
 		        ${this.test.color ? `Color: ${this.test.color}` : ''}
@@ -786,7 +800,7 @@
 			},
 			async saveMng() {
 				let search = this.$db
-					.get('devices')
+					.collection('devices')
 					.conditions({
 						Serial: this.device.Serial,
 					})
@@ -794,9 +808,9 @@
 					.all_data()
 					.get()
 				if (search.length) {
-					await this.$db.doc(`devices/${search._id}`).update(this.form)
+					await this.$db.doc(`devices/${search._id}`).update(this.info)
 				} else {
-					await this.$db.doc('devices').add(this.form)
+					await this.$db.doc('devices').add(this.info)
 				}
 			},
 			async sdDevice() {
@@ -864,19 +878,28 @@
 						this.activate.type = true
 						await this.espera2('actionType')
 						this.activate.type = false
-						if (this.type == 'laptop') {
-							var battery = await this.$cmd.executeScriptCode(getBattery)
-							console.log('battery: ', battery)
-							this.test['battery'] = battery.Status.includes('pass')
-								? `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
-								: `Battery test FAIL`
-							console.log('bateria: ', this.test.battery)
-							this.battery = this.test['battery']
-							this.info = { ...this.info, battery }
-						}
 						this.activate.comparation = true
 						await this.espera('actionComparation')
 						this.activate.comparation = false
+						if (this.type == 'laptop') {
+							var battery = await this.$cmd.executeScriptCode(getBattery)
+							this.battery = this.test['battery']
+							this.info = { ...this.info, battery }
+							if (battery.Status.includes('fail')) {
+								this.test[
+									'battery'
+								] = `Battery test FAIL, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+								this.activate.battery = true
+								await this.espera('actionBattery')
+								this.activate.battery = false
+							} else
+								this.test[
+									'battery'
+								] = `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+							this.activate.mousepad = true
+							await this.espera('actionMousePad')
+							this.activate.mousepad = false
+						}
 						this.activate.select = true
 						if (this.type != 'desktop') {
 							this.activate.audio = true
@@ -958,6 +981,10 @@
 						this.file = await this.$uploadTextFile(this.device.Serial, txt)
 						if (this.$textFile) await this.upload(this.$textFile.path, 1)
 						if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
+						this.info = {
+							...this.info,
+							report: txt,
+						}
 						await this.rsSave()
 						await this.saveMng()
 						this.$q.loading.hide()
@@ -1008,6 +1035,7 @@
 						this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
 							'YYYY-MM-DD HH:mm:ss.SSS'
 						)
+						this.info = this.iTest
 						this.myTest()
 					})
 					.onCancel(() => {
