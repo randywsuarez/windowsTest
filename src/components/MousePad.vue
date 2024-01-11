@@ -7,7 +7,7 @@
 		@click="handleLeftClick"
 		@mounted="handleMount"
 	>
-		<div class="col row" style="height: 90px; background-color: #f0f0f0">
+		<div class="col row" style="height: 200px; background-color: #f0f0f0">
 			<div class="col-12" style="height: 50px"></div>
 			<div
 				class="col-6 miboton"
@@ -60,7 +60,7 @@
 		background-color: #f0f0f0;
 	}
 	.miboton {
-		height: 40px;
+		height: 100px;
 		border-radius: 5px;
 		border: black;
 		background-color: grey;

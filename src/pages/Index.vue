@@ -446,7 +446,7 @@
 		       ${this.test.Description}
 		       ${this.test.Model}
 		       ${this.test.Serial}
-		       Windows OS Name: ${this.test.OS} (${!this.iTest.Organization ? 'A' : 'M'})
+		       Windows OS Name: ${this.test.OS} (${this.iTest.Organization ? 'A' : 'M'})
 		       Windows Product Key: ${this.test.keyWindows}
 		       ${this.test.windows}
 		        ${this.test.color ? `Color: ${this.test.color}` : ''}
@@ -750,8 +750,20 @@
 					.all_data()
 					.get()
 				if (info.length) {
-					this.device.img = info[0].img
-					this.myDb.COLOR = info[0].color ? info[0].color : ''
+					if (info[0].hasOwnProperty('COLOR') && info[0].color) {
+						this.device.img = info[0].img
+						this.myDb.COLOR = info[0].color ? info[0].color : ''
+					} else
+						await this.$db
+							.funcAdmin('modules/pallets/partsurfer', {
+								serial: this.device.Serial,
+								prod_num: this.device.SKU.includes('#') ? this.device.SKU.split('#')[0] : this.device.SKU,
+							})
+							.then(async (v) => {
+								console.log(v)
+								this.myDb.COLOR = v.color ? v.color : ''
+								this.form.adapter = v.adapter
+							})
 				} else
 					await this.$db
 						.funcAdmin('modules/pallets/partsurfer', {
@@ -764,6 +776,7 @@
 							this.form.adapter = v.adapter
 						})
 				this.test['color'] = this.myDb.COLOR
+				this.info['COLOR'] = this.myDb.COLOR
 			},
 			getGraphicsInfo(dxdiagContent) {
 				// Buscar el patrón para el nombre de la tarjeta gráfica
@@ -811,6 +824,24 @@
 					await this.$db.doc(`devices/${search._id}`).update(this.info)
 				} else {
 					await this.$db.doc('devices').add(this.info)
+				}
+				let intDB = this.myDb
+				intDB['project'] = this.project.id
+				intDB['OPERATOR'] = this.user.usuario
+				intDB['TYPE'] = this.type.toUpperCase()
+				intDB['PROCESSED'] = this.iTest.Organization ? 'A' : 'M'
+				let test = this.$db
+					.collection('test_SnResults')
+					.conditions({
+						Serial: this.device.Serial,
+					})
+					.limit(1)
+					.all_data()
+					.get()
+				if (test.length) {
+					await this.$db.doc(`test_SnResults/${test._id}`).update(intDB)
+				} else {
+					await this.$db.doc('test_SnResults').add(intDB)
 				}
 			},
 			async sdDevice() {
