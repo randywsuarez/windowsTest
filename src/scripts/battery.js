@@ -36,7 +36,7 @@ if ($batteryPresent) {
     Remove-Item "batteryreport.xml" -Force | Out-Null
 } else {
     $jsonResultNoBattery = @{
-        Status = "NO BATTERY DETECTED"
+        Status = "fail"
     } | ConvertTo-Json
     $jsonResultNoBattery
 }
