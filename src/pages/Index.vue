@@ -776,7 +776,6 @@
 							this.form.adapter = v.adapter
 						})
 				this.test['color'] = this.myDb.COLOR
-				this.info['COLOR'] = this.myDb.COLOR
 			},
 			getGraphicsInfo(dxdiagContent) {
 				// Buscar el patrón para el nombre de la tarjeta gráfica
