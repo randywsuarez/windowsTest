@@ -20,8 +20,8 @@ function sendStatusToWindow(text) {
 
 function createWindow() {
 	mainWindow = new BrowserWindow({
-		width: 400,
-		height: 600,
+		width: 700,
+		height: 700,
 		frame: false,
 		useContentSize: true,
 		webPreferences: {

@@ -8,15 +8,31 @@
 				<q-card-section>
 					<div class="login-content">
 						<!-- Puedes agregar tu logo si lo deseas -->
-						<q-img src="/Logo.png" />
+						<q-img src="logo.png" />
 
 						<!-- Campos del formulario -->
-						<q-input v-model="usuario" label="User" />
-						<q-input v-model="contrasena" label="Password" type="password" />
-						<q-checkbox v-model="recordarCredenciales" label="RememberMe" />
+						<div class="row col">
+							<q-input v-model="usuario" label="User" class="col-12" />
+							<q-input
+								v-model="contrasena"
+								label="Password"
+								:type="isPwd ? 'password' : 'text'"
+								@keyup.enter="iniciarSesion"
+								class="col-12"
+							>
+								<template v-slot:append>
+									<q-icon
+										:name="isPwd ? 'visibility_off' : 'visibility'"
+										class="cursor-pointer"
+										@click="isPwd = !isPwd"
+									/>
+								</template>
+							</q-input>
+							<!-- <q-checkbox v-model="recordarCredenciales" label="RememberMe" /> -->
+						</div>
 
 						<!-- Botón de inicio de sesión -->
-						<q-btn @click="iniciarSesion" label="Sign On" />
+						<q-btn @click="iniciarSesion" label="Sign On" style="margin-top: 20px" />
 					</div>
 				</q-card-section>
 			</q-card>
@@ -24,6 +40,24 @@
 		<div :class="['close-button', colorClass]" @click="cerrarVentana">
 			<q-icon name="close" size="24px" color="white" />
 		</div>
+		<q-dialog v-model="isDialogVisible" class="login-card" persistent>
+			<q-card>
+				<q-card-section>
+					<div class="text-h6">Without Internet</div>
+				</q-card-section>
+
+				<q-card-section>
+					<div class="q-pa-md text-h6">
+						There is no Internet conection. Please verify your connection.
+					</div>
+				</q-card-section>
+
+				<!-- Puedes personalizar los botones según tus necesidades -->
+				<q-card-actions align="right">
+					<!-- <q-btn label="Cerrar" color="primary" @click="closeDialog" /> -->
+				</q-card-actions>
+			</q-card>
+		</q-dialog>
 	</q-layout>
 </template>
 
@@ -36,6 +70,10 @@
 				contrasena: '',
 				recordarCredenciales: true,
 				colorIndex: 0,
+				hasInternet: navigator.onLine,
+				isDialogVisible: false,
+				checkInterval: null,
+				isPwd: true,
 			}
 		},
 		computed: {
@@ -45,6 +83,29 @@
 			},
 		},
 		methods: {
+			checkInternetConnection() {
+				this.hasInternet = navigator.onLine
+
+				if (!this.hasInternet && !this.isDialogVisible) {
+					// Si no hay conexión y el diálogo no está visible, muestra el diálogo
+					this.isDialogVisible = true
+				} else if (this.hasInternet && this.isDialogVisible) {
+					// Si hay conexión y el diálogo está visible, cierra el diálogo
+					this.isDialogVisible = false
+				}
+			},
+			closeDialog() {
+				// Método para cerrar el diálogo manualmente
+				this.isDialogVisible = false
+			},
+			startInternetCheckInterval() {
+				// Inicia el intervalo para verificar la conexión cada 5 segundos (puedes ajustar el valor)
+				this.checkInterval = setInterval(this.checkInternetConnection, 5000)
+			},
+			stopInternetCheckInterval() {
+				// Detiene el intervalo cuando ya no es necesario
+				clearInterval(this.checkInterval)
+			},
 			async iniciarSesion() {
 				this.$q.loading.show()
 				// Hacer la solicitud de inicio de sesión (simulación)
@@ -65,13 +126,12 @@
 					}
 
 					// Realizar la solicitud fetch
-					await fetch(`${s.url}/Login/Authenticate`, options)
+					await fetch(`${s.url}/APP/Login/Authenticate`, options)
 						.then((response) => response.json())
 						.then((response) => {
-							console.log(response)
 							res.push(response)
 						}) // Resolver la promesa con la respuesta
-						.catch((err) => reject(err)) // Rechazar la promesa con el error
+						.catch((err) => console.error(err)) // Rechazar la promesa con el error
 				}
 				console.log(res.length)
 				if (res.length) {
@@ -81,12 +141,13 @@
 						// Guardar credenciales en la colección 'credenciales'
 						console.log('entro')
 						for (let a of res) {
-							await this.$rsNeDB('credenciales').insert({
+							let res = await this.$rsNeDB('credenciales').insert({
 								usuario: this.usuario,
 								authToken: a.AuthToken,
 								id: a.Id,
 								tenant: a.tenant,
 							})
+							console.log(res)
 							await this.$rsNeDB('user').insert({
 								userName: this.usuario,
 								password: this.contrasena,
@@ -95,7 +156,7 @@
 							})
 						}
 						const documentos = await this.$rsNeDB('user').findOne({
-							userName: 'randy',
+							userName: this.usuario,
 						})
 
 						console.log('Documentos:', documentos)
@@ -105,6 +166,20 @@
 					this.$router.push('/')
 				} else {
 					this.$q.loading.hide()
+					this.$q
+						.dialog({
+							dark: true,
+							title: 'Error',
+							message: `Incorrect username and/or password`,
+							persistent: false,
+						})
+						.onOk(() => {})
+						.onCancel(() => {
+							// console.log('Cancel')
+						})
+						.onDismiss(() => {
+							// console.log('I am triggered on both OK and Cancel')
+						})
 					// Inicio de sesión fallido
 					console.error('Inicio de sesión fallido. Verifica usuario y contraseña.')
 				}
@@ -129,10 +204,10 @@
 					}
 
 					// Realizar la solicitud fetch
-					fetch(`${s.url}/Login/Authenticate`, options)
+					fetch(`${s.url}/APP/Login/Authenticate`, options)
 						.then((response) => response.json())
 						.then((response) => data.push(response)) // Resolver la promesa con la respuesta
-						.catch((err) => reject(err)) // Rechazar la promesa con el error
+						.catch((err) => console.error(err)) // Rechazar la promesa con el error
 				}
 				console.log()
 				return data
@@ -176,8 +251,16 @@
 				this.colorIndex++
 			},
 		},
-		created() {},
+		created() {
+			console.log(this.hasInternet)
+			this.startInternetCheckInterval()
+		},
+		beforeDestroy() {
+			// Detiene el intervalo antes de destruir el componente para evitar fugas de memoria
+			this.stopInternetCheckInterval()
+		},
 		mounted() {
+			this.$q.loading.hide()
 			// Iniciar la animación cada 2 segundos
 			this.intervalId = setInterval(() => {
 				this.colorIndex++

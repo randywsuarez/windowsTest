@@ -1,7 +1,7 @@
 export default `
 $Information = @{
-    cpu = ""
-    cpuName = ""
+    cpu = @()
+    cpuName = @()
     video = @()  # Inicializamos como un array
     RAM = @{
         Total = ""
@@ -41,9 +41,12 @@ function ConvertBytesToStandardSize {
 }
 
 # Obtener información de la CPU
-$cpu = Get-WmiObject -Class Win32_Processor
-$Information.cpuName = $cpu.Name
-$Information.cpu = "$($cpu.Name) ($($cpu.MaxClockSpeed) GHz, $($cpu.L3CacheSize) MB L3 cache, $($cpu.NumberOfCores) cores, $($cpu.NumberOfLogicalProcessors) threads)"
+$cpus = Get-WmiObject -Class Win32_Processor
+
+foreach ($cpu in $cpus) {
+    $Information.cpuName += $cpu.Name
+    $Information.cpu += "$($cpu.Name) ($($cpu.MaxClockSpeed) GHz, $($cpu.L3CacheSize) MB L3 cache, $($cpu.NumberOfCores) cores, $($cpu.NumberOfLogicalProcessors) threads)"
+}
 
 # Obtener solo las tarjetas de video reales
 $videoControllers = Get-WmiObject -Class Win32_VideoController | Where-Object { $_.VideoProcessor -notmatch "RDP" } | Select-Object Description, AdapterRAM
@@ -163,4 +166,5 @@ if ($hddUnits) {
 #Write-Host ($hddUnitArray | ConvertTo-Json)
 # Convertir a JSON y mostrar el resultado
 Write-Host ($Information | ConvertTo-Json)
+
 `

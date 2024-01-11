@@ -11,7 +11,7 @@
 
 		<!-- Elemento de video para mostrar la transmisión de la cámara -->
 		<video v-show="showVideo" ref="video" width="400" height="300" autoplay></video>
-		<img v-show="showCapturedImage" :src="capturedImage" alt="Captured Image" style="width: 80%" />
+		<img v-show="showCapturedImage" :src="capturedImage" alt="Captured Image" style="width: 200px" />
 
 		<!-- Contador regresivo -->
 		<div v-if="countdown > 0" class="countdown">{{ countdown }}</div>
@@ -35,7 +35,7 @@
 				videoStream: null,
 				selectedCamera: null,
 				cameras: [],
-				countdown: 2, // Inicia el contador regresivo en 5 segundos
+				countdown: 5, // Inicia el contador regresivo en 5 segundos
 			}
 		},
 		mounted() {
@@ -121,10 +121,10 @@
 				this.capturedImage = imageDataURL
 				this.showCapturedImage = true
 				this.showVideo = false
-				this.stopCamera()
 				console.log(this.imageName)
 				if (this.imageName) {
 					this.$uploadImage(`${this.imageName}.jpg`, imageDataURL)
+					this.stopCamera()
 				}
 			},
 		},

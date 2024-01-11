@@ -17,7 +17,7 @@ export default async ({ Vue }) => {
 
 		async executeQuery(query) {
 			try {
-				console.log(this.config)
+				//console.log(this.config)
 				const pool = await new sql.ConnectionPool(this.config).connect()
 				const request = pool.request()
 
@@ -65,7 +65,9 @@ FETCH NEXT ${limit} ROWS ONLY`
 		fields(fieldsObj) {
 			const fields = Object.keys(fieldsObj).join(', ')
 			const values = Object.values(fieldsObj)
-				.map((value) => (typeof value === 'string' ? `'${value}'` : value))
+				.map((value) =>
+					value === 'NEWID()' ? 'NEWID()' : typeof value === 'string' ? `'${value}'` : value
+				)
 				.join(', ')
 
 			this.query += ` (${fields}) VALUES (${values})`
@@ -99,7 +101,8 @@ FETCH NEXT ${limit} ROWS ONLY`
 		}
 
 		async execute() {
-			console.log(this.query)
+			sessionStorage.setItem('result', this.query)
+			//console.log()
 			return this.executeQuery(this.query)
 		}
 	}
