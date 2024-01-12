@@ -846,6 +846,19 @@
 			async sdDevice() {
 				await this.$cmd.executeScriptCode(['Stop-Computer -ComputerName localhost'])
 			},
+			async checkDevice() {
+				let res = await this.$rsDB(this.project.db)
+					.select('Serial')
+					.from('test_SnResults')
+					.where(`Serial = '${this.device.Serial}'`)
+					.limit(1)
+					.execute()
+				if (res.length)
+					this.$q.notify({
+						type: 'negative',
+						message: `This unit was tested previously.`,
+					})
+			},
 			async myTest() {
 				this.$q.loading.show()
 				this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
@@ -897,6 +910,7 @@
 							this.msn.active = true
 							return
 						}
+						await this.checkDevice()
 						let datetime = await this.DateTime()
 						this.test['Date'] = datetime.date
 						this.test['startTime'] = datetime.time
