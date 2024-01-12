@@ -838,9 +838,11 @@
 					.all_data()
 					.get()
 				if (test.length) {
-					await this.$db.doc(`test_SnResults/${test._id}`).update(intDB)
+					let r = await this.$db.doc(`test_SnResults/${test._id}`).update(intDB)
+					console.log(r)
 				} else {
-					await this.$db.doc('test_SnResults').add(intDB)
+					let r = await this.$db.doc('test_SnResults').add(intDB)
+					console.log(r)
 				}
 			},
 			async sdDevice() {
