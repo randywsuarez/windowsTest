@@ -3,17 +3,17 @@ const path = require('path')
 
 module.exports = ({ Vue }) => {
 	Vue.prototype.$uploadImage = function (imageName, imageData) {
-		// ... (tu código actual)
-		const imagePath = path.join(
-			process.cwd().split(path.sep)[0] + path.sep,
-			'..',
-			'LogPics',
-			imageName
-		)
-		if (!fs.existsSync(imagePath)) {
-			// La carpeta no existe, la creamos
-			fs.mkdirSync(imagePath, { recursive: true })
+		// Ruta del directorio donde se guardarán las imágenes
+		const imagesDirectory = path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'LogPics')
+
+		// Crea el directorio si no existe
+		if (!fs.existsSync(imagesDirectory)) {
+			fs.mkdirSync(imagesDirectory, { recursive: true })
+			console.log(`Directorio creado: ${imagesDirectory}`)
 		}
+
+		// Ruta completa para guardar la imagen
+		const imagePath = path.join(imagesDirectory, imageName)
 
 		// Elimina el encabezado de los datos base64 (por ejemplo, "data:image/jpeg;base64,")
 		const base64Data = imageData.replace(/^data:image\/jpeg;base64,/, '')
