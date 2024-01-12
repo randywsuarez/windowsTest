@@ -5,11 +5,11 @@ export default {
 		password: 'Sf1s@R3ad_1st#2023prod',
 	},
 	project: [
-		{
+		/* {
 			db: 'SFisDB_DEV',
 			id: 'HPRefurbish',
 			url: 'https://sfiswebwebdev.azurewebsites.net/api',
-		},
+		}, */
 		{
 			db: 'SfisDB',
 			id: 'HPRefurbish',
