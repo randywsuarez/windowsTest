@@ -52,7 +52,8 @@ export default async ({ Vue }) => {
 		}
 
 		limit(limit) {
-			this.query += ` OFFSET 0 ROWS
+			this.query += ` ORDER BY 1
+OFFSET 0 ROWS
 FETCH NEXT ${limit} ROWS ONLY`
 			return this
 		}
