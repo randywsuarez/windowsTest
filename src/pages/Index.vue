@@ -811,7 +811,7 @@
 				return graphicsInfoArray
 			},
 			async saveMng() {
-				let search = this.$db
+				let search = await this.$db
 					.collection('devices')
 					.conditions({
 						Serial: this.device.Serial,
@@ -820,7 +820,7 @@
 					.all_data()
 					.get()
 				if (search.length) {
-					await this.$db.doc(`devices/${search._id}`).update(this.info)
+					await this.$db.doc(`devices/${search[0]._id}`).update(this.info)
 				} else {
 					await this.$db.doc('devices').add(this.info)
 				}
@@ -829,7 +829,7 @@
 				intDB['OPERATOR'] = this.user.usuario
 				intDB['TYPE'] = this.type.toUpperCase()
 				intDB['PROCESSED'] = this.iTest.Organization ? 'A' : 'M'
-				let test = this.$db
+				let test = await this.$db
 					.collection('test_SnResults')
 					.conditions({
 						Serial: this.device.Serial,
@@ -837,8 +837,10 @@
 					.limit(1)
 					.all_data()
 					.get()
+				console.log('test: ', test.length)
 				if (test.length) {
-					let r = await this.$db.doc(`test_SnResults/${test._id}`).update(intDB)
+					console.log(test[0]._id)
+					let r = await this.$db.doc(`test_SnResults/${test[0]._id}`).update(intDB)
 					console.log(r)
 				} else {
 					let r = await this.$db.doc('test_SnResults').add(intDB)

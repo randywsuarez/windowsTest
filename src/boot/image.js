@@ -23,9 +23,9 @@ module.exports = ({ Vue }) => {
 
 		// Guarda el buffer como un archivo JPG dentro del directorio
 		try {
-			fs.writeFileSync(imageFilePath, buffer)
-			console.log(`Imagen guardada: ${imageFilePath}`)
-			sessionStorage.setItem('image', imageFilePath)
+			fs.writeFileSync(imagePath, buffer)
+			console.log(`Imagen guardada: ${imagePath}`)
+			sessionStorage.setItem('image', imagePath)
 		} catch (error) {
 			// Agrega más información al mensaje de error
 			console.error('Error al guardar la imagen:', error.message)
