@@ -73,6 +73,7 @@
 <script>
 	import EssentialLink from 'components/EssentialLink.vue'
 	import winDate from '../scripts/updateDate'
+	import UpdateService from '../utils/updateService'
 
 	const linksData = [
 		{
@@ -228,6 +229,45 @@
 					)
 				}
 			},
+		},
+		mounted() {
+			const updateService = new UpdateService()
+
+			setInterval(async () => {
+				const actualizacionDisponible = await updateService.verificarActualizacion()
+
+				if (actualizacionDisponible) {
+					this.$q
+						.dialog({
+							title: 'Update',
+							color: 'positive',
+							message: `New version available!`,
+							persistent: true,
+							OK: 'Update',
+						})
+						.onOk(async () => {
+							this.$q.loading.show({
+								message: 'Descargando y actualizando...',
+							})
+							const exito = await updateService.descargarYDescomprimir()
+
+							if (exito) {
+								// Actualización exitosa, puedes realizar acciones adicionales si es necesario
+								this.$q.loading.hide()
+
+								//window.location.reload(true) // Recargar la aplicación después de la actualización
+							} else {
+								this.$q.loading.hide()
+								this.$q.notify({
+									color: 'negative',
+									message: 'Error al descargar o descomprimir la actualización.',
+								})
+							}
+						})
+						.onCancel(() => {})
+						.onDismiss(() => {})
+				}
+			}, 10000)
 		},
 		beforeDestroy() {
 			// Detiene el intervalo antes de destruir el componente para evitar fugas de memoria
