@@ -4,6 +4,13 @@ export default {
 		user: 'sfis_test',
 		password: 'Sf1s@R3ad_1st#2023prod',
 	},
+	localDB: {
+		server: '192.168.0.6',
+		user: 'rsuarez',
+		password: 'isp2023#',
+		table: 'npi_06_test_snresults',
+	},
+
 	project: [
 		/* {
 			db: 'SFisDB_DEV',
@@ -24,5 +31,10 @@ export default {
 	mongodb: {
 		dev: 'http://localhost:4300/api',
 		server: 'http://192.168.0.9:4300/api',
+	},
+	version: '1.0.1',
+	github: {
+		user: 'randywsuarez',
+		repository: 'windowsTest',
 	},
 }
