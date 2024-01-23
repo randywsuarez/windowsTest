@@ -21,6 +21,8 @@ class UpdateService {
 			)
 			const ultimaVersion = response.data.tag_name
 
+			console.log(response.data)
+
 			if (this.compararVersiones(ultimaVersion, this.versionActual) > 0) {
 				return true // Hay una nueva versión disponible
 			} else {

@@ -247,7 +247,7 @@
 						})
 						.onOk(async () => {
 							this.$q.loading.show({
-								message: 'Descargando y actualizando...',
+								message: 'Downloading and updating...',
 							})
 							const exito = await updateService.descargarYDescomprimir()
 
@@ -260,7 +260,7 @@
 								this.$q.loading.hide()
 								this.$q.notify({
 									color: 'negative',
-									message: 'Error al descargar o descomprimir la actualización.',
+									message: 'Error downloading or unzipping the update.',
 								})
 							}
 						})

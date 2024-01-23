@@ -32,7 +32,7 @@ export default {
 		dev: 'http://localhost:4300/api',
 		server: 'http://192.168.0.9:4300/api',
 	},
-	version: '1.0.1',
+	version: '1.0.0',
 	github: {
 		user: 'randywsuarez',
 		repository: 'windowsTest',
