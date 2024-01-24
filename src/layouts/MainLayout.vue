@@ -74,6 +74,7 @@
 	import EssentialLink from 'components/EssentialLink.vue'
 	import winDate from '../scripts/updateDate'
 	import UpdateService from '../utils/updateService'
+	import env from '../utils/env'
 
 	const linksData = [
 		{
@@ -97,6 +98,7 @@
 				hasInternet: navigator.onLine,
 				isDialogVisible: false,
 				checkInterval: null,
+				intervalId: null,
 			}
 		},
 		async created() {
@@ -231,12 +233,13 @@
 			},
 		},
 		mounted() {
-			const updateService = new UpdateService()
+			const updateService = new UpdateService(env.github.user, env.github.repository, env.version)
 
-			setInterval(async () => {
+			this.intervalId = setInterval(async () => {
 				const actualizacionDisponible = await updateService.verificarActualizacion()
 
 				if (actualizacionDisponible) {
+					clearInterval(this.intervalId)
 					this.$q
 						.dialog({
 							title: 'Update',
