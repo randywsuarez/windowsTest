@@ -1,6 +1,7 @@
 // updateService.js
 const axios = require('axios')
 const fs = require('fs')
+const fsPromises = require('fs').promises
 const AdmZip = require('adm-zip')
 const path = require('path')
 const env = require('./env')
@@ -41,7 +42,9 @@ class UpdateService {
 			// Verificar si existe un archivo previo en la carpeta de destino y eliminarlo
 			const rutaArchivo = path.join(this.carpetaDestino, this.archivoDescarga)
 			try {
-				await fs.unlink(rutaArchivo)
+				await fsPromises.access(rutaArchivo)
+				// Si el archivo existe, lo eliminamos
+				await fsPromises.unlink(rutaArchivo)
 				console.log(`Archivo previo eliminado: ${this.archivoDescarga}`)
 			} catch (unlinkError) {
 				// Si no se pudo eliminar, puede ser porque el archivo no existe, no es un problema
@@ -49,18 +52,21 @@ class UpdateService {
 
 			// Descargar el archivo update.zip
 			const zipResponse = await fetch(
-				`https://github.com/${this.usuario}/${this.repositorio}/releases/download/${version}/${this.archivoDescarga}`
+				`https://github.com/${this.usuario}/${this.repositorio}/releases/download/${version}/${this.archivoDescarga}`,
+				{ follow: 5 } // Máximo número de redirecciones permitidas
 			)
-			const zipData = await zipResponse.arrayBuffer()
 
 			// Crear o verificar la existencia de la carpeta de destino
-			if (!fs.existsSync(this.carpetaDestino)) {
-				await fs.mkdir(this.carpetaDestino, { recursive: true })
+			try {
+				await fsPromises.access(this.carpetaDestino)
+			} catch (accessError) {
+				// Si la carpeta no existe, la creamos
+				await fsPromises.mkdir(this.carpetaDestino, { recursive: true })
 				console.log(`Directorio creado: ${this.carpetaDestino}`)
 			}
 
 			// Guardar el nuevo archivo update.zip en la carpeta de destino
-			await fs.writeFile(rutaArchivo, Buffer.from(zipData))
+			await fsPromises.writeFile(rutaArchivo, Buffer.from(await zipResponse.arrayBuffer()))
 
 			// Descomprimir el archivo update.zip
 			const zip = new AdmZip(rutaArchivo)
