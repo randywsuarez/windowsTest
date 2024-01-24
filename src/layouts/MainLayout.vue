@@ -238,7 +238,7 @@
 			this.intervalId = setInterval(async () => {
 				const actualizacionDisponible = await updateService.verificarActualizacion()
 
-				if (actualizacionDisponible) {
+				if (actualizacionDisponible.result) {
 					clearInterval(this.intervalId)
 					this.$q
 						.dialog({
@@ -252,7 +252,7 @@
 							this.$q.loading.show({
 								message: 'Downloading and updating...',
 							})
-							const exito = await updateService.descargarYDescomprimir()
+							const exito = await updateService.descargarYDescomprimir(actualizacionDisponible.version)
 
 							if (exito) {
 								// Actualización exitosa, puedes realizar acciones adicionales si es necesario

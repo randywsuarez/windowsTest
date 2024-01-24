@@ -26,9 +26,9 @@ class UpdateService {
 			const ultimaVersion = data.tag_name
 
 			if (this.compararVersiones(ultimaVersion, this.versionActual) > 0) {
-				return true // Hay una nueva versión disponible
+				return { result: true, version: ultimaVersion } // Hay una nueva versión disponible
 			} else {
-				return false // La versión actual es la más reciente
+				return { result: false } // La versión actual es la más reciente
 			}
 		} catch (error) {
 			console.error('Error al verificar la actualización:', error.message)
@@ -36,7 +36,7 @@ class UpdateService {
 		}
 	}
 
-	async descargarYDescomprimir() {
+	async descargarYDescomprimir(version) {
 		try {
 			// Verificar si existe un archivo previo en la carpeta de destino y eliminarlo
 			const rutaArchivo = path.join(this.carpetaDestino, this.archivoDescarga)
@@ -49,7 +49,7 @@ class UpdateService {
 
 			// Descargar el archivo update.zip
 			const zipResponse = await fetch(
-				`https://github.com/${this.usuario}/${this.repositorio}/releases/download/latest/${this.archivoDescarga}`
+				`https://github.com/${this.usuario}/${this.repositorio}/releases/download/${version}/${this.archivoDescarga}`
 			)
 			const zipData = await zipResponse.arrayBuffer()
 
