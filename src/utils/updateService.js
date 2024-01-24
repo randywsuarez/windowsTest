@@ -6,22 +6,24 @@ const path = require('path')
 const env = require('./env')
 
 class UpdateService {
-	constructor() {
-		this.usuario = env.github.user
-		this.repositorio = env.github.repository
-		this.versionActual = env.version
+	constructor(user, repository, version) {
+		this.usuario = user
+		this.repositorio = repository
+		this.versionActual = version
 		this.archivoDescarga = 'update.zip'
 		this.carpetaDestino = path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'update')
 	}
 
 	async verificarActualizacion() {
 		try {
-			const response = await axios.get(
+			console.log('verificarActualizacion')
+			const response = await fetch(
 				`https://api.github.com/repos/${this.usuario}/${this.repositorio}/releases/latest`
 			)
-			const ultimaVersion = response.data.tag_name
+			const data = await response.json()
+			console.log(data)
 
-			console.log(response.data)
+			const ultimaVersion = data.tag_name
 
 			if (this.compararVersiones(ultimaVersion, this.versionActual) > 0) {
 				return true // Hay una nueva versión disponible
@@ -38,25 +40,27 @@ class UpdateService {
 		try {
 			// Verificar si existe un archivo previo en la carpeta de destino y eliminarlo
 			const rutaArchivo = path.join(this.carpetaDestino, this.archivoDescarga)
-			if (fs.existsSync(rutaArchivo)) {
-				fs.unlinkSync(rutaArchivo)
+			try {
+				await fs.unlink(rutaArchivo)
 				console.log(`Archivo previo eliminado: ${this.archivoDescarga}`)
+			} catch (unlinkError) {
+				// Si no se pudo eliminar, puede ser porque el archivo no existe, no es un problema
 			}
 
 			// Descargar el archivo update.zip
-			const zipResponse = await axios({
-				url: `https://github.com/${this.usuario}/${this.repositorio}/releases/download/latest/${this.archivoDescarga}`,
-				responseType: 'arraybuffer',
-			})
+			const zipResponse = await fetch(
+				`https://github.com/${this.usuario}/${this.repositorio}/releases/download/latest/${this.archivoDescarga}`
+			)
+			const zipData = await zipResponse.arrayBuffer()
 
 			// Crear o verificar la existencia de la carpeta de destino
 			if (!fs.existsSync(this.carpetaDestino)) {
-				fs.mkdirSync(this.carpetaDestino, { recursive: true })
+				await fs.mkdir(this.carpetaDestino, { recursive: true })
 				console.log(`Directorio creado: ${this.carpetaDestino}`)
 			}
 
 			// Guardar el nuevo archivo update.zip en la carpeta de destino
-			fs.writeFileSync(rutaArchivo, zipResponse.data)
+			await fs.writeFile(rutaArchivo, Buffer.from(zipData))
 
 			// Descomprimir el archivo update.zip
 			const zip = new AdmZip(rutaArchivo)
