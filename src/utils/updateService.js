@@ -72,9 +72,13 @@ class UpdateService {
 			const zip = new AdmZip(rutaArchivo)
 			zip.extractAllTo(this.carpetaDestino, /*overwrite*/ true)
 
-			return true // Descarga y descompresión exitosas
+			// Eliminar el archivo update.zip después de descomprimirlo
+			await fsPromises.unlink(rutaArchivo)
+			console.log(`Archivo update.zip eliminado después de descomprimir`)
+
+			return true // Descarga, descompresión y eliminación exitosas
 		} catch (error) {
-			console.error('Error al descargar y descomprimir el archivo:', error.message)
+			console.error('Error al descargar, descomprimir o eliminar el archivo:', error.message)
 			return false
 		}
 	}
