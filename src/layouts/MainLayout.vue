@@ -257,6 +257,7 @@
 							if (exito) {
 								// Actualización exitosa, puedes realizar acciones adicionales si es necesario
 								this.$q.loading.hide()
+								await this.$cmd.update()
 
 								//window.location.reload(true) // Recargar la aplicación después de la actualización
 							} else {

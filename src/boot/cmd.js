@@ -346,9 +346,8 @@ $contenido
 			})
 		})
 	},
-	update: async (params) => {
+	update: async () => {
 		return new Promise(async (resolve) => {
-			const fileName = path.basename(params.filePath)
 			const code = `
       # Función para mostrar un formulario con mensaje de carga
 function Mostrar-Formulario {
@@ -413,7 +412,7 @@ Start-Process -FilePath "$rutaDestino\\$nombreProceso.exe" -Verb RunAs
 			ps.on('end', (code) => {
 				try {
 					const result = JSON.parse(outputData)
-					console.log('img upload: ', result._isSuccess)
+					console.log('Fin: ', result._isSuccess)
 					resolve(result._isSuccess)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
