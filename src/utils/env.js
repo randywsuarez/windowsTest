@@ -29,10 +29,10 @@ export default {
 		},
 	],
 	mongodb: {
-		dev: 'http://localhost:4300/api',
-		server: 'http://192.168.0.9:4300/api',
+		dev: 'http://localhost:4500/api',
+		server: 'http://192.168.0.2:4500/api',
 	},
-	version: '1.0.0',
+	version: '1.0.2',
 	github: {
 		user: 'randywsuarez',
 		repository: 'windowsTest',
