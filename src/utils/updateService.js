@@ -5,6 +5,7 @@ const fsPromises = require('fs').promises
 const AdmZip = require('adm-zip')
 const path = require('path')
 const env = require('./env')
+const { exec } = require('child_process')
 
 class UpdateService {
 	constructor(user, repository, version) {
@@ -96,6 +97,18 @@ class UpdateService {
 		}
 
 		return 0
+	}
+	async exec() {
+		let exePath = path.join(process.cwd().split(path.sep)[0] + path.sep) // Reemplaza con la ruta correcta de tu archivo .exe
+		exePath = path.join(exePath + 'update.exe')
+		exec(exePath, (err, stdout, stderr) => {
+			if (err) {
+				console.error(err)
+				return
+			}
+			console.log(`stdout: ${stdout}`)
+			console.error(`stderr: ${stderr}`)
+		})
 	}
 }
 

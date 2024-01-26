@@ -258,6 +258,32 @@
 								// Actualización exitosa, puedes realizar acciones adicionales si es necesario
 								this.$q.loading.hide()
 								await this.$cmd.update()
+								const dialog = this.$q.dialog({
+									message: 'Updating... 0%. The system will automatically',
+									progress: true, // we enable default settings
+									persistent: true, // we want the user to not be able to close it
+									ok: false, // we want the user to not be able to close it
+								})
+
+								// we simulate some progress here...
+								let percentage = 0
+								const interval = setInterval(() => {
+									percentage = Math.min(100, percentage + Math.floor(Math.random() * 22))
+
+									// we update the dialog
+									dialog.update({
+										message: `Updating... ${percentage}%. The system will automatically `,
+									})
+
+									// if we are done, we're gonna close it
+									if (percentage === 100) {
+										clearInterval(interval)
+										setTimeout(async () => {
+											dialog.hide()
+											await updateService.exec()
+										}, 350)
+									}
+								}, 500)
 
 								//window.location.reload(true) // Recargar la aplicación después de la actualización
 							} else {
