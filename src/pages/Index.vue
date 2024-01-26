@@ -210,6 +210,17 @@
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
+			<q-card class="card" v-show="activate.note">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Note</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<q-input v-model="form.note" label="Note" />
+				</q-card-section>
+				<q-card-actions align="right" id="actionNote">
+					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+				</q-card-actions>
+			</q-card>
 			<q-card class="card" v-show="activate.gpu">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
@@ -355,6 +366,7 @@
 					done: false,
 					comparation: false,
 					mousepad: false,
+					note: false,
 				},
 				showActions: false,
 				win: {},
@@ -469,6 +481,7 @@
 		       ${this.test.display}
 		       ${this.type == 'laptop' ? this.test.battery : ''}
 		       ${this.type != 'desktop' ? this.test.brightness : ''}
+           ${this.form.note ? this.form.note : ''}
 		       ====================================Result==========================================
 		       Test Result is ${res}
 		     `.replace(/^\s*[\r\n]/gm, '')
@@ -1014,6 +1027,15 @@
 								...this.form,
 							}
 							this.activate.desktop = false
+						}
+						if (this.type == 'desktop' || this.type == 'all-in-one') {
+							this.activate.note = true
+							await this.espera('actionNote')
+							this.info = {
+								...this.info,
+								...this.form,
+							}
+							this.activate.note = false
 						}
 						this.info = {
 							...this.info,

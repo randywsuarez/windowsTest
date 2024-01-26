@@ -349,49 +349,10 @@ $contenido
 	update: async () => {
 		return new Promise(async (resolve) => {
 			const code = `
-      # Función para mostrar un formulario con mensaje de carga
-function Mostrar-Formulario {
-    [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
-    [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.VisualBasic") | Out-Null
-
-    $form = New-Object Windows.Forms.Form
-    $form.Text = "Actualización del Sistema"
-    $form.Size = New-Object Drawing.Size @(300, 150)
-    $form.StartPosition = "CenterScreen"
-
-    $label = New-Object Windows.Forms.Label
-    $label.Location = New-Object Drawing.Point @(50, 20)
-    $label.Size = New-Object Drawing.Size @(200, 40)
-    $label.Text = "Realizando la actualización, por favor espere..."
-    $form.Controls.Add($label)
-
-    $form.ShowDialog()
-    $form.Dispose()
-}
-
-# Información de actualización
-$nombreProceso = "Windows Test - ISPT Services"
+$nombreProceso = "update"
 $rutaOrigen = "${path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'update')}"
 $rutaDestino = "${path.join(process.cwd().split(path.sep)[0] + path.sep)}"
-
-# Detener el proceso
-Stop-Process -Name $nombreProceso -Force
-Write-Host "Proceso $nombreProceso detenido exitosamente."
-
-# Mostrar formulario de carga durante la actualización
-Mostrar-Formulario
-
-# Copiar contenido de la carpeta de actualización
-Copy-Item -Path $rutaOrigen\\* -Destination $rutaDestino -Recurse -Force
-Write-Host "Contenido de $rutaOrigen copiado a $rutaDestino exitosamente."
-
-# Cerrar formulario de carga
-[Windows.Forms.Application]::OpenForms | Where-Object { $_.Name -eq "Form" } | ForEach-Object { $_.Close() }
-
-# Mostrar mensaje de actualización exitosa
-[Windows.Forms.MessageBox]::Show("Actualización exitosa. Haga clic en OK para continuar.", "Actualización Exitosa", [Windows.Forms.MessageBoxButtons]::OK)
-
-# Ejecutar el archivo .exe en modo administrador
+Copy-Item -Path $rutaOrigen\\update.exe -Destination $rutaDestino -Recurse -Force
 Start-Process -FilePath "$rutaDestino\\$nombreProceso.exe" -Verb RunAs
 
 `
