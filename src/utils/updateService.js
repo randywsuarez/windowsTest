@@ -98,7 +98,7 @@ class UpdateService {
 
 		return 0
 	}
-	async exec() {
+	async program() {
 		let exePath = path.join(process.cwd().split(path.sep)[0] + path.sep) // Reemplaza con la ruta correcta de tu archivo .exe
 		exePath = path.join(exePath + 'update.exe')
 		exec(exePath, (err, stdout, stderr) => {
