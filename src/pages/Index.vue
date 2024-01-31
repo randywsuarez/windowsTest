@@ -461,7 +461,7 @@
 		       Windows OS Name: ${this.test.OS} (${this.iTest.Organization ? 'A' : 'M'})
 		       Windows Product Key: ${this.test.keyWindows}
 		       ${this.test.windows}
-		        ${this.test.color ? `Color: ${this.test.color}` : ''}
+		       ${this.test.color ? `Color: ${this.test.color}` : ''}
 		       Hard Drive: ${this.intDev.HDD.Total}
 		       ${this.intDev.HDD.Units.join('\n')}
 		       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}

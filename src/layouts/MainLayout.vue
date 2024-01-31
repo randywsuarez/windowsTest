@@ -4,7 +4,7 @@
 			<q-toolbar>
 				<q-btn flat dense round icon="logout" @click="cerrarSesion" />
 
-				<q-toolbar-title>Windows Test - ISPT Services</q-toolbar-title>
+				<q-toolbar-title>Windows Test - ISPT Services V${{ version }}</q-toolbar-title>
 
 				<!-- Botón de cierre con animación -->
 				<div class="close-button" @click="cerrarVentana">
@@ -31,13 +31,36 @@
 				</q-card-actions>
 			</q-card>
 		</q-dialog>
+		<q-dialog v-model="updt" persistent>
+			<q-card>
+				<q-card-section>
+					<div class="text-h6">Update</div>
+				</q-card-section>
 
-		<!-- <q-drawer v-model="leftDrawerOpen" show-if-above bordered content-class="bg-grey-1">
-			<q-list>
-				<q-item-label header class="text-grey-8"> Essential Links </q-item-label>
-				<EssentialLink v-for="link in essentialLinks" :key="link.title" v-bind="link" />
-			</q-list>
-		</q-drawer> -->
+				<q-separator />
+
+				<q-card-section style="max-height: 50vh">
+					<p>
+						New version available! its current version is: {{ v.current }} and the new version is:
+						{{ v.new }}
+					</p>
+				</q-card-section>
+				<q-separator />
+
+				<q-card-section style="max-height: 50vh" class="scroll">
+					<h4>Changes</h4>
+					<p>
+						{{ v.body }}
+					</p>
+				</q-card-section>
+
+				<q-separator />
+
+				<q-card-actions align="right">
+					<q-btn flat label="Accept" color="primary" @click="update" v-close-popup />
+				</q-card-actions>
+			</q-card>
+		</q-dialog>
 
 		<q-page-container>
 			<router-view />
@@ -99,9 +122,13 @@
 				isDialogVisible: false,
 				checkInterval: null,
 				intervalId: null,
+				updt: false,
+				v: {},
+				version: '',
 			}
 		},
 		async created() {
+			this.version = env.version
 			this.startInternetCheckInterval()
 			this.test = await this.$cmd.executeScriptCode(winDate)
 			console.log(this.test)
@@ -209,6 +236,27 @@
 				this.$cmd.logout()
 				this.$router.push('/login')
 			},
+			async update() {
+				this.$q.loading.show({
+					message: 'Downloading and updating...',
+				})
+				const exito = await updateService.descargarYDescomprimir(actualizacionDisponible.version)
+
+				if (exito) {
+					// Actualización exitosa, puedes realizar acciones adicionales si es necesario
+					this.$q.loading.hide()
+					await this.$cmd.update()
+					//await updateService.program()
+
+					//window.location.reload(true) // Recargar la aplicación después de la actualización
+				} else {
+					this.$q.loading.hide()
+					this.$q.notify({
+						color: 'negative',
+						message: 'Error downloading or unzipping the update.',
+					})
+				}
+			},
 		},
 		mounted() {
 			const updateService = new UpdateService(env.github.user, env.github.repository, env.version)
@@ -218,37 +266,21 @@
 
 				if (actualizacionDisponible.result) {
 					clearInterval(this.intervalId)
-					this.$q
+					this.v['current'] = env.version
+					this.v['new'] = actualizacionDisponible.version
+					this.v['body'] = actualizacionDisponible.body
+					this.updt = actualizacionDisponible.result
+					/* this.$q
 						.dialog({
 							title: 'Update',
 							color: 'positive',
-							message: `New version available!`,
+							message: `New version available! its current version is: ${env.version} and the new version is: ${actualizacionDisponible.version}`,
 							persistent: true,
 							OK: 'Update',
 						})
-						.onOk(async () => {
-							this.$q.loading.show({
-								message: 'Downloading and updating...',
-							})
-							const exito = await updateService.descargarYDescomprimir(actualizacionDisponible.version)
-
-							if (exito) {
-								// Actualización exitosa, puedes realizar acciones adicionales si es necesario
-								this.$q.loading.hide()
-								await this.$cmd.update()
-								//await updateService.program()
-
-								//window.location.reload(true) // Recargar la aplicación después de la actualización
-							} else {
-								this.$q.loading.hide()
-								this.$q.notify({
-									color: 'negative',
-									message: 'Error downloading or unzipping the update.',
-								})
-							}
-						})
+						.onOk(async () => {})
 						.onCancel(() => {})
-						.onDismiss(() => {})
+						.onDismiss(() => {}) */
 				}
 			}, 10000)
 		},
