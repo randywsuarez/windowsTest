@@ -125,6 +125,7 @@
 				updt: false,
 				v: {},
 				version: '',
+				updateService: '',
 			}
 		},
 		async created() {
@@ -240,7 +241,7 @@
 				this.$q.loading.show({
 					message: 'Downloading and updating...',
 				})
-				const exito = await updateService.descargarYDescomprimir(actualizacionDisponible.version)
+				const exito = await this.updateService.descargarYDescomprimir(actualizacionDisponible.version)
 
 				if (exito) {
 					// Actualización exitosa, puedes realizar acciones adicionales si es necesario
@@ -259,10 +260,10 @@
 			},
 		},
 		mounted() {
-			const updateService = new UpdateService(env.github.user, env.github.repository, env.version)
+			this.updateService = new UpdateService(env.github.user, env.github.repository, env.version)
 
 			this.intervalId = setInterval(async () => {
-				const actualizacionDisponible = await updateService.verificarActualizacion()
+				const actualizacionDisponible = await this.updateService.verificarActualizacion()
 
 				if (actualizacionDisponible.result) {
 					clearInterval(this.intervalId)

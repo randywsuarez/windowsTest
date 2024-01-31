@@ -481,7 +481,7 @@
 		       ${this.test.display}
 		       ${this.type == 'laptop' ? this.test.battery : ''}
 		       ${this.type != 'desktop' ? this.test.brightness : ''}
-           ${this.form.note ? this.form.note : ''}
+           ${this.form.note ? `Note: ${this.form.note}` : ''}
 		       ====================================Result==========================================
 		       Test Result is ${res}
 		     `.replace(/^\s*[\r\n]/gm, '')
