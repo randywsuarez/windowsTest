@@ -4,7 +4,7 @@
 			<q-toolbar>
 				<q-btn flat dense round icon="logout" @click="cerrarSesion" />
 
-				<q-toolbar-title>Windows Test - ISPT Services V${{ version }}</q-toolbar-title>
+				<q-toolbar-title>Windows Test - ISPT Services V{{ version }}</q-toolbar-title>
 
 				<!-- Botón de cierre con animación -->
 				<div class="close-button" @click="cerrarVentana">
