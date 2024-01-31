@@ -28,7 +28,7 @@ class UpdateService {
 			const ultimaVersion = data.tag_name
 
 			if (this.compararVersiones(ultimaVersion, this.versionActual) > 0) {
-				return { result: true, version: ultimaVersion } // Hay una nueva versión disponible
+				return { result: true, version: ultimaVersion, body: data.body } // Hay una nueva versión disponible
 			} else {
 				return { result: false } // La versión actual es la más reciente
 			}
