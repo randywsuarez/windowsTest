@@ -436,7 +436,7 @@
 				console.log(lastdate)
 				this.myDb.DATE = lastdate.wipe
 				this.myDb.STATUS = res == 'PASS' ? 'true' : 'false'
-				this.myDb.OPERATOR = this.user.id
+				this.myDb.OPERATOR = this.project.operator
 				this.myDb.DateEnd = lastdate.end
 				//this.myDb.DateEnd.setHours(this.myDb.DateEnd.getHours() - 6)
 				this.myDb.DateStart = lastdate.start
@@ -447,8 +447,8 @@
 					','
 				)}`
 				return `
-		       ISP Windows Test Ver:3.00 - ${this.project.id}
-		       Operator ID: ${this.user.id}
+		       ISP Windows Test Ver:3.01 - ${this.project.id}
+		       Operator ID: ${this.project.operator}
 		       Operator Name:${this.user.usuario}
 		       Start Date: ${this.test.Date}
 		       Start Time: ${this.test.startTime}
@@ -903,6 +903,7 @@
 								.from('sfis_WorkTracking')
 								.where(`SerialNumber = '${result.Serial}'`)
 								.execute()
+							console.log(x.id, res)
 							if (res.length) {
 								this.project['id'] = x.id
 								this.project['db'] = x.db
