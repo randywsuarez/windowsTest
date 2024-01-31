@@ -411,6 +411,63 @@ if ($?) {
 			})
 		})
 	},
+	logout: async () => {
+		return new Promise(async (resolve) => {
+			const code = `
+$json = "user"
+$rutaOrigen = "${path.join(
+				process.cwd().split(path.sep)[0] + path.sep,
+				'..',
+				'resources',
+				'..',
+				'data'
+			)}"
+$rutaDestino = "${path.join(
+				process.cwd().split(path.sep)[0] + path.sep,
+				'..',
+				'resources',
+				'..',
+				'data'
+			)}"
+# Verificar si el archivo de destino ya existe y eliminarlo si es así
+$archivoDestino = Join-Path -Path $rutaDestino -ChildPath "$json.json"
+
+if (Test-Path $archivoDestino) {
+    Write-Host "El archivo $archivoDestino ya existe. Eliminándolo..."
+    Remove-Item -Path $rutaOrigen\\* -Recurse -Force
+}
+`
+			//console.log(code)
+
+			let ps = new PowerShell([code])
+			let outputData = ''
+
+			ps.on('output', (data) => {
+				outputData += data
+			})
+
+			ps.on('error-output', (data) => {
+				console.error(data)
+				resolve(false)
+			})
+
+			ps.on('end', (code) => {
+				try {
+					const result = JSON.parse(outputData)
+					console.log('Fin: ', result._isSuccess)
+					resolve(result._isSuccess)
+				} catch (parseError) {
+					console.error('Error parsing output as JSON:', parseError.message)
+					resolve(false)
+				}
+			})
+
+			ps.on('error', (err) => {
+				console.error(err)
+				resolve(false)
+			})
+		})
+	},
 }
 
 export default ({ app, router, Vue }) => {
