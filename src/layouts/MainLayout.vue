@@ -241,11 +241,12 @@
 				this.$q.loading.show({
 					message: 'Downloading and updating...',
 				})
-				const exito = await this.updateService.descargarYDescomprimir(actualizacionDisponible.version)
+				const exito = await this.updateService.descargarYDescomprimir(this.v.new)
 
 				if (exito) {
 					// Actualización exitosa, puedes realizar acciones adicionales si es necesario
 					this.$q.loading.hide()
+					//await this.$cmd.change()
 					await this.$cmd.update()
 					//await updateService.program()
 
@@ -259,35 +260,24 @@
 				}
 			},
 		},
-		mounted() {
-			this.updateService = new UpdateService(env.github.user, env.github.repository, env.version)
+		async mounted() {
+			this.updateService = new UpdateService(
+				env.github.user,
+				env.github.repository,
+				env.version,
+				env.token
+			)
 
-			this.intervalId = setInterval(async () => {
-				const actualizacionDisponible = await this.updateService.verificarActualizacion()
+			const actualizacionDisponible = await this.updateService.verificarActualizacion()
 
-				if (actualizacionDisponible.result) {
-					clearInterval(this.intervalId)
-					this.v['current'] = env.version
-					this.v['new'] = actualizacionDisponible.version
-					this.v['body'] = actualizacionDisponible.body
-					this.updt = actualizacionDisponible.result
-					/* this.$q
-						.dialog({
-							title: 'Update',
-							color: 'positive',
-							message: `New version available! its current version is: ${env.version} and the new version is: ${actualizacionDisponible.version}`,
-							persistent: true,
-							OK: 'Update',
-						})
-						.onOk(async () => {})
-						.onCancel(() => {})
-						.onDismiss(() => {}) */
-				}
-			}, 10000)
+			if (actualizacionDisponible.result) {
+				clearInterval(this.intervalId)
+				this.v['current'] = env.version
+				this.v['new'] = actualizacionDisponible.version
+				this.v['body'] = actualizacionDisponible.body
+				this.updt = actualizacionDisponible.result
+			}
 		},
-		beforeDestroy() {
-			// Detiene el intervalo antes de destruir el componente para evitar fugas de memoria
-			this.stopInternetCheckInterval()
-		},
+		beforeDestroy() {},
 	}
 </script>

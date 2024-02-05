@@ -375,12 +375,12 @@ if ($?) {
     # Ejecutar el archivo $nombreProceso.exe en modo administrador
     Start-Process -FilePath "$rutaDestino\\$nombreProceso.exe" -Verb RunAs
 } else {
-    Write-Host "Error al copiar update.exe a $rutaDestino."
+    Write-Host "Error al copiar update.exe a $rutaDestino"
 }
 "
 }
 `
-			//console.log(code)
+			console.log(code)
 
 			let ps = new PowerShell([code])
 			let outputData = ''
