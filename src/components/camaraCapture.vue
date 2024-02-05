@@ -108,6 +108,13 @@
 				}, 1000)
 			},
 			myPic() {
+				let res = {
+					SerialNumber: this.imageName,
+					EmployeeID: '',
+					FileType: '1',
+					fileExtension: '.jpg',
+					fileBase64Str: '',
+				}
 				// Captura la imagen y guarda el valor base64 en una variable
 				const canvas = document.createElement('canvas')
 				const context = canvas.getContext('2d')
@@ -124,8 +131,20 @@
 				console.log(this.imageName)
 				if (this.imageName) {
 					this.$uploadImage(`${this.imageName}.jpg`, imageDataURL)
+					res.fileBase64Str = imageDataURL
+					this.$emit('value', res)
 					this.stopCamera()
 				}
+			},
+			captureImage() {
+				this.showVideo = true
+				this.myPic()
+			},
+			async recargarComponente() {
+				this.showVideo = true
+				this.showCapturedImage = false
+				this.initializeCamera()
+				this.startCountdown()
 			},
 		},
 		computed: {

@@ -95,14 +95,28 @@
 			</q-card>
 			<q-card class="card" v-show="activate.camera">
 				<q-card-section>
-					<q-card-section> <div class="text-h6">Camera Test</div> </q-card-section><q-separator />
+					<div class="row items-center no-wrap">
+						<div class="col">
+							<div class="text-h6">Camera Test</div>
+						</div>
+
+						<div class="col-auto">
+							<q-btn round color="primary" icon="restart_alt" @click="activateCamera" />
+						</div>
+					</div>
 				</q-card-section>
+				<q-separator />
 				<q-card-section>
-					<CameraCapture
-						@capture-result="handleCaptureResult"
-						:imageName="device.Serial"
-						v-if="activate.camera"
-					/>
+					<template v-if="activate.camera">
+						<CameraCapture
+							ref="camaraCapture"
+							:key="componentKey"
+							@capture-result="handleCaptureResult"
+							:imageName="device.Serial"
+							v-modal="image"
+							v-if="activate.camera"
+						/>
+					</template>
 				</q-card-section>
 				<q-card-actions align="right" id="actionCamera">
 					<q-btn flat color="negative" label="Fail" @click="test['camera'] = 'Webcam test FAIL'" />
@@ -177,11 +191,30 @@
 					<q-card-section> <div class="text-h6">Battery Test</div> </q-card-section><q-separator />
 				</q-card-section>
 				<q-card-section class="center">
-					<pre>{{ battery }}</pre>
+					<p style="text-decoration: red">
+						<b>Battery test {{ battery.Status }}</b>
+					</p>
+					<p><b>Design Capacity</b> = {{ battery.DesignCapacity }}</p>
+					<p><b>Full Charge Capacity</b> = {{ battery.FullChargeCapacity }}</p>
+					<p><b>Battery Health</b> = {{ battery.BatteryHealth }}%</p>
+					<p><b>Cycle Count</b> = {{ battery.CycleCount }}</p>
+					<p><b>ID</b> = {{ battery.ID }}</p>
 				</q-card-section>
 				<q-card-actions align="right" id="actionBattery">
-					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn
+						flat
+						color="negative"
+						label="Fail"
+						@click="action = 'FAIL'"
+						v-if="battery.Status != 'fail'"
+					/>
+					<q-btn
+						flat
+						color="positive"
+						label="Pass"
+						@click="action = 'PASS'"
+						v-if="battery.Status != 'fail'"
+					/>
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.mousepad">
@@ -346,7 +379,8 @@
 				test: {},
 				project: {},
 				sound: 'nada',
-				battery: '',
+				componentKey: 0,
+				battery: {},
 				action: '',
 				check: {
 					sku: false,
@@ -375,6 +409,8 @@
 				driver: {},
 				select: {},
 				file: '',
+				omponentKey: 0,
+				image: {},
 				miniSerial: '',
 				myDb: {
 					Serial: '',
@@ -426,6 +462,16 @@
 			}
 		},
 		methods: {
+			activateCamera() {
+				//this.activate.camera = false
+				//this.activate.camera = true
+				this.componentKey += 1
+				//this.$refs.camaraCapture.recargarComponente()
+				this.$nextTick(() => {
+					this.mostrarComponente = true
+				})
+				//this.$refs.camaraCapture.captureImage()
+			},
 			handleInputChange() {
 				// Convierte el valor a mayúsculas
 				this.check.serial = this.check.serial.toUpperCase()
@@ -945,12 +991,13 @@
 						this.activate.comparation = false
 						if (this.type == 'laptop') {
 							var battery = await this.$cmd.executeScriptCode(getBattery)
-							this.battery = this.test['battery']
 							this.info = { ...this.info, battery }
 							if (battery.Status.includes('fail')) {
 								this.test[
 									'battery'
 								] = `Battery test FAIL, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+								this.battery = battery
+								console.log('Bateria: ', this.battery)
 								this.activate.battery = true
 								await this.espera('actionBattery')
 								this.activate.battery = false
