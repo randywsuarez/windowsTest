@@ -8,19 +8,28 @@ const env = require('./env')
 const { exec } = require('child_process')
 
 class UpdateService {
-	constructor(user, repository, version) {
+	constructor(user, repository, version, token) {
 		this.usuario = user
 		this.repositorio = repository
 		this.versionActual = version
 		this.archivoDescarga = 'update.zip'
 		this.carpetaDestino = path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'update')
+		this.token = token
 	}
 
 	async verificarActualizacion() {
 		try {
 			console.log('verificarActualizacion')
+			const options = {
+				method: 'GET',
+				headers: {
+					'User-Agent': 'insomnia/2023.5.8',
+					Authorization: this.token,
+				},
+			}
 			const response = await fetch(
-				`https://api.github.com/repos/${this.usuario}/${this.repositorio}/releases/latest`
+				`https://api.github.com/repos/${this.usuario}/${this.repositorio}/releases/latest`,
+				options
 			)
 			const data = await response.json()
 			console.log(data)
