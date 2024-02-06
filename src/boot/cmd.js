@@ -361,7 +361,7 @@ if (Test-Path $archivoDestino) {
 }
 
 # Copiar el archivo desde $rutaOrigen a $rutaDestino
-Copy-Item -Path "$rutaOrigen\\$nombreProceso.exe" -Destination $rutaDestino -Recurse -Force
+Copy-Item -Path "$rutaOrigen\\$nombreProceso.exe" -Destination $rutaDestino -Recurse -Force -Wait
 
 # Verificar si la copia fue exitosa antes de ejecutar el siguiente proceso
 if ($?) {
