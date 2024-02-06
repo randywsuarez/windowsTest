@@ -370,7 +370,7 @@
 			keyboard,
 			MousePad,
 		},
-		data() {
+		data(r) {
 			return {
 				user: {},
 				device: {
@@ -462,6 +462,47 @@
 			}
 		},
 		methods: {
+			async passImaging() {
+				const options = {
+					method: 'POST',
+					headers: {
+						cookie:
+							'.AspNetCore.Identity.Application=CfDJ8Pv0WhnmHWxAjuPCJCw7jtwo2KuPDoEzvWeKhaxjHrM1Bu1-G6sVrRCk_riSrAhB4G47sxA6nH4hch9CsYdvtpxST_LCY1vFm4whBDvQWwXd1gGGeIeMGn7sjs4ESV7HA0kXHqmgKGx1h2Mo7rarMQbsChpH-03yty_hnYmvyk8Mh34Qftbr0QRKXeKJd8zLBhKHRDMAidqkowRXDSd1HGo2624krNzShdcR4zFprz2HVjTSmaKLmjrNKmEXMSU6cOb3nVCIpK7HpbbNZ8Zz5EbLM3lXfjbjcBvgv4FQbJcIu2dwhMz2VxFcN2hcuiT46LtEFGUF-3YxtDCw0JvWj23J_YjqOlzghE4C9yGDMjSeA8rBgp8P_Mb0rKrPg2PkK8O3laiKGbFU_A4LMPr06dMKbSIzgiodDqShr4l_2B3i4ubKni89isqYHAaeTeyDryIyQzvaU4SJStTEQzaJpJ3JCw7vk9uZHZ1xLL0oPt7-seV0-rl4N_0kKuWHTeLIE0zMPnloap21rdIDZE8qVJdPItFxtlPhwzHkbsualEqzbt7pX5sRINCqgCRXZK8IKNIig6AynuGnCeaTXqkUo-OLXj2igd0jMQaiVF2apNuVUl2KtrL-6u2HXwCBiqBKFz2pqgH_dq6sPZ_9aU1ZakpllLDuFrNhvyKxzLUHZM3i6lYiNhJ88X4ez_09v_HPXDr2NOdp3uyjNhGb4JcSPoqzWO7Z4cK6y0Wcn0Ub93VnnIj8PKqSCiUi4zfU71ASQLApwXfSxSAn8i3ovOfPtLZN9b9iql6dGMJiE1H9RMF83wJ8GnyD4AODUtSWKvL92w; ARRAffinity=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961; ARRAffinitySameSite=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961',
+						'Content-Type': 'application/x-www-form-urlencoded',
+						tenant: `${this.select.tenant}`,
+						Authorization: `Bearer ${this.select.authToken}`,
+					},
+				}
+
+				fetch(
+					`${this.select.url}/APP/PromoteImageDownloadUnit/SerchSN?sn=${this.device.Serial}&station=Image%20Download`,
+					options
+				)
+					.then((response) => response.json())
+					.then((response) => console.log(response))
+					.catch((err) => console.error(err))
+			},
+			async saveFile(r) {
+				r.EmployeeID = this.project.operator
+				console.log(r)
+				const options = {
+					method: 'POST',
+					headers: {
+						cookie:
+							'.AspNetCore.Identity.Application=CfDJ8Pv0WhnmHWxAjuPCJCw7jtxNS_9_ev4TXloAhIYHtLXW0LCJXNhbk9XKV9mPI3bOYKwPnlbQ4wNPNRg-MG06npV-5j2_nlCbWUpSL7TSqMT6uxsB2ORmPA6C2GaT6nXJdXgIzwZuCurvpaT9ZLJUAB-56xJIi7mOkGGzh_a5xWYxbNZtj74M5ZVf9NNWoki3yZe1CgbJecvOTnWKDDkko2Wpjpv-wRecYX_UAjTZ1jrdkKB67ksMb_bQURjHkr2fGJUcKMl5o6WK6W7mjcwGBEC1TBXgXkeCCFTXw5S5SFf9g4a_QMGG7o-Y09MWSj-ox3930gAegwYZ04q34wlwsM_ffIilQubA-ryMU-mqdHGAKiGRIs_kDZeDAmF2ZcxarHWR1hKPq-C7Fo0lvCFabVAOaOIZe6zyBO-6riVlmfOKaHz0nVSTrOnzj-o4p0pmD3_6Ix3auK5orE7ILpo-uKj9SWcrWl53_UXya903MPw_M4Vk3wOK-QO85eEw_2eiMUtoZlhUNP1o9nQKPhUR2-RMzESLqfSCyhI4iT4YLlUiuBUjNUzEAPwkcag6KIzfOLMdC2Kd40HmrBiTXmiN0l-1di57DiNq-G37hFiaMKludc_fw9qaryvkX9ojpO4UeX4WsduMOVbA4iTnvjFZ4AksYRiRBIgiLpyu2jv93XadooHaKSwbQw7OdrHJJnu1HRqf34uZcrDYSodBwU_dvSgXPpoxaLfZaCUeJlCN9wuXvjzyWhl3Ff9d-6zo-R6pTjD9IVB6CcAG9K0E3JjaLjei5gEFu_zvlrYRq9lYIN53rYxVaXDR7zMZifFQRt5rtG9vk_eAc6EuurEs1ocRrA0; ARRAffinity=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961; ARRAffinitySameSite=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961',
+						'Content-Type': 'application/json',
+						'User-Agent': 'Insomnia/2023.5.7',
+						tenant: `${this.select.tenant}`,
+						Authorization: `Bearer ${this.select.authToken}`,
+					},
+					body: r,
+				}
+
+				fetch(`${this.select.url}/Testing/TestFilesResultsUpload/UploadFile`, options)
+					.then((response) => response.json())
+					.then((response) => console.log(response))
+					.catch((err) => console.error(err))
+			},
 			activateCamera() {
 				//this.activate.camera = false
 				//this.activate.camera = true
@@ -1097,14 +1138,17 @@
 						this.$q.loading.show()
 						let txt = await this.report()
 						this.file = await this.$uploadTextFile(this.device.Serial, txt)
-						if (this.$textFile) await this.upload(this.$textFile.path, 1)
-						if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
+						if (this.file) await this.saveFile(this.file)
+						if (this.file) await this.saveFile(this.image)
+						//if (this.$textFile) await this.upload(this.$textFile.path, 1)
+						//if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
 						this.info = {
 							...this.info,
 							report: txt,
 						}
 						await this.rsSave()
 						await this.saveMng()
+						await this.passImaging()
 						this.$q.loading.hide()
 						this.activate.done = true
 						JsBarcode('#barcode', this.device.Serial, {
