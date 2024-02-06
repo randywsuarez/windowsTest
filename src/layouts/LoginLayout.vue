@@ -141,18 +141,18 @@
 						// Guardar credenciales en la colección 'credenciales'
 						console.log('entro')
 						for (let a of res) {
-							let res = await this.$rsNeDB('credenciales').insert({
+							let aa = await this.$rsNeDB('credenciales').insert({
 								usuario: this.usuario,
 								authToken: a.AuthToken,
 								id: a.Id,
 								tenant: a.tenant,
 							})
-							console.log(res)
+							console.log(aa)
 							await this.$rsNeDB('user').insert({
 								userName: this.usuario,
 								password: this.contrasena,
 								RememberMe: 0,
-								projectSelector: 'HPRefurbish',
+								projectSelector: a.tenant,
 							})
 						}
 						const documentos = await this.$rsNeDB('user').findOne({

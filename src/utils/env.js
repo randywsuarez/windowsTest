@@ -20,12 +20,12 @@ export default {
 		{
 			db: 'SfisDB',
 			id: 'HPRefurbish',
-			url: 'https://sfisprodisp.azurewebsites.net/api',
+			url: 'https://sfis.ispt.app/api',
 		},
 		{
 			db: 'Sfis_HP_RevenueDB',
 			id: 'ISP-PC',
-			url: 'https://sfis-hprevenue.azurewebsites.net/api',
+			url: 'https://shared-revenue.ispt.app/api',
 		},
 	],
 	mongodb: {
@@ -33,6 +33,7 @@ export default {
 		server: 'http://192.168.0.2:4500/api',
 	},
 	version: '1.0.4',
+	token: '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',
 	github: {
 		user: 'randywsuarez',
 		repository: 'windowsTest',
