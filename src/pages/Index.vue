@@ -534,44 +534,44 @@
 					','
 				)}`
 				return `
-		       ISP Windows Test Ver:3.01 - ${this.project.id}
-		       Operator ID: ${this.project.operator}
-		       Operator Name:${this.user.usuario}
-		       Start Date: ${this.test.Date}
-		       Start Time: ${this.test.startTime}
-		       End Date: ${lastdate.date}
-		       End Time: ${lastdate.time}
-		       ==============================Devices Information===================================
-		       ${this.test.Description}
-		       ${this.test.Model}
-		       ${this.test.Serial}
-		       Windows OS Name: ${this.test.OS} (${this.iTest.Organization ? 'A' : 'M'})
-		       Windows Product Key: ${this.test.keyWindows}
-		       ${this.test.windows}
-		       ${this.test.color ? `Color: ${this.test.color}` : ''}
-		       Hard Drive: ${this.intDev.HDD.Total}
-		       ${this.intDev.HDD.Units.join('\n')}
-		       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
-		       ${this.intDev.RAM.Modules.join('\n')}
-		       GPU Verification PASS
-		       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
-		       CPU
-		       ${this.intDev.cpu.join('\n')}
-		       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
-		       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
-		       ${this.type == 'desktop' ? 'Cooler System' : ''}
-		       ${this.type == 'desktop' ? this.form.coolerSystem : ''}
-		       =================================Test Status========================================
-		       ${this.type != 'desktop' ? this.test.audio : ''}
-		       ${this.type != 'desktop' ? this.test.camera : ''}
-		       ${this.test.drivers}
-		       ${this.test.display}
-		       ${this.type == 'laptop' ? this.test.battery : ''}
-		       ${this.type != 'desktop' ? this.test.brightness : ''}
-           ${this.form.note ? `Note: ${this.form.note}` : ''}
-		       ====================================Result==========================================
-		       Test Result is ${res}
-		     `.replace(/^\s*[\r\n]/gm, '')
+			       ISP Windows Test Ver:3.01 - ${this.project.id}
+			       Operator ID: ${this.project.operator}
+			       Operator Name:${this.user.usuario}
+			       Start Date: ${this.test.Date}
+			       Start Time: ${this.test.startTime}
+			       End Date: ${lastdate.date}
+			       End Time: ${lastdate.time}
+			       ==============================Devices Information===================================
+			       ${this.test.Description}
+			       ${this.test.Model}
+			       ${this.test.Serial}
+			       Windows OS Name: ${this.test.OS} (${this.iTest.Organization ? 'A' : 'M'})
+			       Windows Product Key: ${this.test.keyWindows}
+			       ${this.test.windows}
+			       ${this.test.color ? `Color: ${this.test.color}` : ''}
+			       Hard Drive: ${this.intDev.HDD.Total}
+			       ${this.intDev.HDD.Units.join('\n')}
+			       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
+			       ${this.intDev.RAM.Modules.join('\n')}
+			       GPU Verification PASS
+			       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
+			       CPU
+			       ${this.intDev.cpu.join('\n')}
+			       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
+			       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
+			       ${this.type == 'desktop' ? 'Cooler System' : ''}
+			       ${this.type == 'desktop' ? this.form.coolerSystem : ''}
+			       =================================Test Status========================================
+			       ${this.type != 'desktop' ? this.test.audio : ''}
+			       ${this.type != 'desktop' ? this.test.camera : ''}
+			       ${this.test.drivers}
+			       ${this.test.display}
+			       ${this.type == 'laptop' ? this.test.battery : ''}
+			       ${this.type != 'desktop' ? this.test.brightness : ''}
+	           ${this.form.note ? `Note: ${this.form.note}` : ''}
+			       ====================================Result==========================================
+			       Test Result is ${res}
+			     `.replace(/^\s*[\r\n]/gm, '')
 			},
 			ramInfo(i) {
 				let objetos = i.map((item) => {
@@ -797,13 +797,13 @@
 					.then((result) => {
 						console.log('Result:', result)
 						/* if (this.$textFile && !result) {
-							this.msn['title'] = 'Error'
-							this.msn['message'] =
-								'Oops. The log could not be uploaded to the system. Call the system administrator.'
-							this.$q.loading.hide()
-							this.msn.active = true
-							return
-						} */
+								this.msn['title'] = 'Error'
+								this.msn['message'] =
+									'Oops. The log could not be uploaded to the system. Call the system administrator.'
+								this.$q.loading.hide()
+								this.msn.active = true
+								return
+							} */
 						return result
 					})
 					.catch((error) => {
@@ -821,13 +821,13 @@
 					.then((result) => {
 						console.log('Result:', result)
 						/* if (this.$imageFile && !result) {
-							this.msn['title'] = 'Error'
-							this.msn['message'] =
-								'Oops. The image could not be uploaded to the system. Call the system administrator.'
-							this.$q.loading.hide()
-							this.msn.active = true
-							return
-						} */
+								this.msn['title'] = 'Error'
+								this.msn['message'] =
+									'Oops. The image could not be uploaded to the system. Call the system administrator.'
+								this.$q.loading.hide()
+								this.msn.active = true
+								return
+							} */
 						return result
 					})
 					.catch((error) => {
@@ -1063,9 +1063,26 @@
 							this.activate.brightness = false
 						}
 						if (this.type == 'laptop' || this.type == 'all-in-one') {
-							this.activate.camera = true
-							await this.espera('actionCamera')
-							this.activate.camera = false
+							if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+								navigator.mediaDevices
+									.enumerateDevices()
+									.then(async (devices) => {
+										const cameras = devices.filter((device) => device.kind === 'videoinput')
+										if (cameras.length > 0) {
+											console.log('Tu computadora tiene una cámara.')
+											this.activate.camera = true
+											await this.espera('actionCamera')
+											this.activate.camera = false
+										} else {
+											console.log('No se encontraron cámaras en tu computadora.')
+										}
+									})
+									.catch((error) => {
+										console.error('Error al enumerar dispositivos:', error)
+									})
+							} else {
+								console.log('La API de MediaDevices no es compatible con tu navegador.')
+							}
 						}
 						this.driver = await this.$cmd.executeScriptCode(drivers)
 						this.activate.drivers = true
@@ -1179,7 +1196,7 @@
 			this.user = await this.$rsNeDB('credenciales').findOne({})
 
 			/* console.log(this.user, this.getDev)
-				this.type = 'desktop' */
+					this.type = 'desktop' */
 		},
 		async mounted() {
 			this.$q.loading.show()
