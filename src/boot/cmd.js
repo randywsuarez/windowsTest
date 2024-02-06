@@ -414,21 +414,9 @@ if ($?) {
 	logout: async () => {
 		return new Promise(async (resolve) => {
 			const code = `
-$json = "user"
-$rutaOrigen = "${path.join(
-				process.cwd().split(path.sep)[0] + path.sep,
-				'..',
-				'resources',
-				'..',
-				'data'
-			)}"
-$rutaDestino = "${path.join(
-				process.cwd().split(path.sep)[0] + path.sep,
-				'..',
-				'resources',
-				'..',
-				'data'
-			)}"
+$file = "user"
+$rutaOrigen = "${path.join(process.cwd().split(path.sep)[0], 'resources', 'data', 'user.json')}"
+$rutaDestino = "${path.join(process.cwd().split(path.sep)[0], 'resources', 'data')}"
 # Verificar si el archivo de destino ya existe y eliminarlo si es así
 $archivoDestino = Join-Path -Path $rutaDestino -ChildPath "$json.json"
 
@@ -437,7 +425,7 @@ if (Test-Path $archivoDestino) {
     Remove-Item -Path $rutaOrigen\\* -Recurse -Force
 }
 `
-			//console.log(code)
+			console.log(path.join(process.cwd().split(path.sep)[0], 'resources', 'data'), code)
 
 			let ps = new PowerShell([code])
 			let outputData = ''

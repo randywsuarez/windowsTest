@@ -107,7 +107,7 @@
 				</q-card-section>
 				<q-separator />
 				<q-card-section>
-					<template v-if="activate.camera">
+					<template v-if="activate.camera && camera">
 						<CameraCapture
 							ref="camaraCapture"
 							:key="componentKey"
@@ -117,6 +117,7 @@
 							v-if="activate.camera"
 						/>
 					</template>
+					<div v-if="!camera">No Found</div>
 				</q-card-section>
 				<q-card-actions align="right" id="actionCamera">
 					<q-btn flat color="negative" label="Fail" @click="test['camera'] = 'Webcam test FAIL'" />
@@ -190,7 +191,7 @@
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Battery Test</div> </q-card-section><q-separator />
 				</q-card-section>
-				<q-card-section class="center">
+				<q-card-section class="center" v-if="battery.hasOwnProperty('DesignCapacity')">
 					<p style="text-decoration: red">
 						<b>Battery test {{ battery.Status }}</b>
 					</p>
@@ -200,7 +201,14 @@
 					<p><b>Cycle Count</b> = {{ battery.CycleCount }}</p>
 					<p><b>ID</b> = {{ battery.ID }}</p>
 				</q-card-section>
-				<q-card-actions align="right" id="actionBattery">
+				<q-card-section class="center" v-else>
+					<div>Wait...</div>
+				</q-card-section>
+				<q-card-actions
+					align="right"
+					id="actionBattery"
+					v-if="battery.hasOwnProperty('DesignCapacity')"
+				>
 					<q-btn
 						flat
 						color="negative"
@@ -382,6 +390,7 @@
 				componentKey: 0,
 				battery: {},
 				action: '',
+				camera: true,
 				check: {
 					sku: false,
 				},
@@ -1042,6 +1051,7 @@
 						await this.espera('actionComparation')
 						this.activate.comparation = false
 						if (this.type == 'laptop') {
+							this.activate.battery = true
 							var battery = await this.$cmd.executeScriptCode(getBattery)
 							this.info = { ...this.info, battery }
 							if (battery.Status.includes('fail')) {
@@ -1052,11 +1062,11 @@
 								console.log('Bateria: ', this.battery)
 								this.activate.battery = true
 								await this.espera('actionBattery')
-								this.activate.battery = false
 							} else
 								this.test[
 									'battery'
 								] = `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+							this.activate.battery = false
 							this.activate.mousepad = true
 							await this.espera('actionMousePad')
 							this.activate.mousepad = false
@@ -1075,26 +1085,29 @@
 						}
 						if (this.type == 'laptop' || this.type == 'all-in-one') {
 							if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-								navigator.mediaDevices
+								await navigator.mediaDevices
 									.enumerateDevices()
 									.then(async (devices) => {
 										const cameras = devices.filter((device) => device.kind === 'videoinput')
 										if (cameras.length > 0) {
 											console.log('Tu computadora tiene una cámara.')
-											this.activate.camera = true
-											await this.espera('actionCamera')
-											this.activate.camera = false
+											this.camera = true
 										} else {
 											console.log('No se encontraron cámaras en tu computadora.')
+											this.camera = false
 										}
 									})
 									.catch((error) => {
 										console.error('Error al enumerar dispositivos:', error)
+										this.camera = true
 									})
 							} else {
 								console.log('La API de MediaDevices no es compatible con tu navegador.')
 							}
 						}
+						this.activate.camera = true
+						await this.espera('actionCamera')
+						this.activate.camera = false
 						this.driver = await this.$cmd.executeScriptCode(drivers)
 						this.activate.drivers = true
 						await this.espera('actionDrivers')
@@ -1166,8 +1179,8 @@
 						this.$q.loading.show()
 						let txt = await this.report()
 						this.file = await this.$uploadTextFile(this.device.Serial, txt)
-						if (this.file) await this.saveFile(this.file)
-						if (this.file) await this.saveFile(this.image)
+						//if (this.file) await this.saveFile(this.file)
+						//if (this.file) await this.saveFile(this.image)
 						//if (this.$textFile) await this.upload(this.$textFile.path, 1)
 						//if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
 						this.info = {
