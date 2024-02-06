@@ -1008,7 +1008,18 @@
 							this.msn.active = true
 							return
 						}
-						if (!res[0].StationID == 15 && !res[0].StationID) {
+						console.log(res[0].ArrivedSKU, this.device.SKU)
+						if (res[0].ArrivedSKU != this.device.SKU) {
+							this.$q.loading.hide()
+							this.test['SKU'] = `SKU ID Check FAIL`
+							this.msn['title'] = 'No Math'
+							this.msn[
+								'message'
+							] = `SKUs are not the same, Device: ${this.device.SKU} <> System: ${res[0].ArrivedSKU}`
+							this.msn.active = true
+							return
+						}
+						if (!res[0].StationID == 15 || !res[0].StationID) {
 							this.$q.loading.hide()
 							this.msn['title'] = 'Error'
 							this.msn['message'] = 'The unit has not passed through any previous station.'

@@ -211,7 +211,7 @@
 							},
 						}
 
-						const response = await fetch(`${s.url}/Projects/ObtainProjects`, options)
+						const response = await fetch(`${s.url}/APP/Projects/ObtainProjects`, options)
 						const data = await response.json()
 
 						if (data.length) {
