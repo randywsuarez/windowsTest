@@ -479,6 +479,6 @@ export default ({ Vue, router }) => {
 				})
 			})
 		},
-		socket: io.connect(env.mongodb.server),
+		//socket: io.connect(env.mongodb.server),
 	}
 }
