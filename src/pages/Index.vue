@@ -338,6 +338,20 @@
 					</q-card-actions>
 				</q-card>
 			</q-dialog>
+
+			<q-dialog v-model="msn.active2" persistent transition-show="scale" transition-hide="scale">
+				<q-card class="card" style="width: 300px">
+					<q-card-section>
+						<div class="text-h6">{{ msn.title }}</div>
+					</q-card-section>
+
+					<q-card-section class="q-pt-none"> {{ msn.message }} </q-card-section>
+
+					<q-card-actions align="right" class="text-teal">
+						<q-btn flat label="OK" v-close-popup />
+					</q-card-actions>
+				</q-card>
+			</q-dialog>
 		</div>
 
 		<!-- <q-card class="card" v-if="activate.keyboard">
@@ -1016,7 +1030,7 @@
 						for (let x of this.$env.project) {
 							let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
 							res = await this.$rsDB(x.db)
-								.select('SerialNumber, ArrivedSKU, StationID')
+								.select('SerialNumber, ArrivedSKU, StationID, SKU')
 								.from('sfis_WorkTracking')
 								.where(`SerialNumber = '${result.Serial}'`)
 								.execute()
@@ -1039,7 +1053,7 @@
 							return
 						}
 						console.log(res[0].ArrivedSKU, this.device.SKU)
-						if (res[0].ArrivedSKU != this.device.SKU) {
+						if (res[0].ArrivedSKU != this.device.SKU && this.type == 'laptop') {
 							this.$q.loading.hide()
 							this.test['SKU'] = `SKU ID Check FAIL`
 							this.msn['title'] = 'No Math'
@@ -1049,6 +1063,15 @@
 							this.msn.active = true
 							return
 						}
+						/* if (this.device.SKU.includes(res[0].SKU) && this.type != 'laptop') {
+							this.$q.loading.hide()
+							this.test['SKU'] = `SKU ID Check FAIL`
+							this.msn['title'] = 'No Math'
+							this.msn[
+								'message'
+							] = `SKUs are not the same, Device: ${this.device.SKU} <> System: ${res[0].SKU}`
+							this.msn.active2 = true
+						} */
 						if (!res[0].StationID == 15 || !res[0].StationID) {
 							this.$q.loading.hide()
 							this.msn['title'] = 'Error'
@@ -1072,6 +1095,16 @@
 						await this.espera('actionComparation')
 						this.activate.comparation = false
 						this.activate.select = true
+						this.driver = await this.$cmd.executeScriptCode(drivers)
+						this.activate.drivers = true
+						await this.espera('actionDrivers')
+						if (this.driver.estatusDrivers == 'PASS')
+							this.test['drivers'] = 'Device Manager Drivers Test PASS'
+						else this.test['drivers'] = 'Device Manager Drivers Test FAIL'
+						if (this.driver.estatusVideo == 'PASS')
+							this.test['display'] = 'Display Adapter Drivers Test PASS'
+						else this.test['display'] = 'Display Adapter Drivers Test FAIL'
+						this.activate.drivers = false
 						if (this.type == 'laptop') {
 							this.activate.battery = true
 							var battery = await this.$cmd.executeScriptCode(getBattery)
@@ -1130,16 +1163,6 @@
 						await this.espera('actionCamera')
 						this.activate.camera = false
 						console.log(this.image)
-						this.driver = await this.$cmd.executeScriptCode(drivers)
-						this.activate.drivers = true
-						await this.espera('actionDrivers')
-						if (this.driver.estatusDrivers == 'PASS')
-							this.test['drivers'] = 'Device Manager Drivers Test PASS'
-						else this.test['drivers'] = 'Device Manager Drivers Test FAIL'
-						if (this.driver.estatusVideo == 'PASS')
-							this.test['display'] = 'Display Adapter Drivers Test PASS'
-						else this.test['display'] = 'Display Adapter Drivers Test FAIL'
-						this.activate.drivers = false
 						this.activate.windows = true
 						this.win = await this.$cmd.executeScriptCode(windows)
 						this.info = { ...this.info, ...this.win }
@@ -1203,7 +1226,7 @@
 						this.file = await this.$uploadTextFile(this.device.Serial, txt)
 						console.log(this.file)
 						//if (this.file) await this.saveFile(this.file)
-						//if (this.image) await this.saveFile(this.image)
+						if (this.image) await this.saveFile(this.image)
 						//if (this.$textFile) await this.upload(this.$textFile.path, 1)
 						//if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
 						this.info = {

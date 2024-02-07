@@ -59,7 +59,7 @@ module.exports = ({ Vue }) => {
 			EmployeeID: '',
 			FileType: '2',
 			fileExtension: '.txt',
-			fileBase64Str: base64FilePath,
+			fileBase64Str: base64Content,
 		}
 	}
 }
