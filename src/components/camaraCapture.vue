@@ -1,6 +1,6 @@
 <!-- src/components/CamaraCapture.vue -->
 <template>
-	<div>
+	<div style="transform: scale(0.5)">
 		<!-- Menú desplegable para seleccionar la cámara -->
 		<!-- <q-select
 			v-model="selectedCamera"
@@ -131,7 +131,7 @@
 				console.log(this.imageName)
 				if (this.imageName) {
 					this.$uploadImage(`${this.imageName}.jpg`, imageDataURL)
-					res.fileBase64Str = imageDataURL
+					res.fileBase64Str = imageDataURL.replace(/^data:image\/jpeg;base64,/, '')
 					this.$emit('input', res)
 					this.stopCamera()
 				}
