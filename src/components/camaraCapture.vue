@@ -132,7 +132,7 @@
 				if (this.imageName) {
 					this.$uploadImage(`${this.imageName}.jpg`, imageDataURL)
 					res.fileBase64Str = imageDataURL
-					this.$emit('value', res)
+					this.$emit('input', res)
 					this.stopCamera()
 				}
 			},
