@@ -113,7 +113,7 @@
 							:key="componentKey"
 							@capture-result="handleCaptureResult"
 							:imageName="device.Serial"
-							v-modal="image"
+							v-model="image"
 							v-if="activate.camera"
 						/>
 					</template>
@@ -1050,6 +1050,7 @@
 						this.activate.comparation = true
 						await this.espera('actionComparation')
 						this.activate.comparation = false
+						this.activate.select = true
 						if (this.type == 'laptop') {
 							this.activate.battery = true
 							var battery = await this.$cmd.executeScriptCode(getBattery)
@@ -1071,7 +1072,6 @@
 							await this.espera('actionMousePad')
 							this.activate.mousepad = false
 						}
-						this.activate.select = true
 						if (this.type != 'desktop') {
 							this.activate.audio = true
 							await this.espera('actionAudio')
@@ -1108,6 +1108,7 @@
 						this.activate.camera = true
 						await this.espera('actionCamera')
 						this.activate.camera = false
+						console.log(this.image)
 						this.driver = await this.$cmd.executeScriptCode(drivers)
 						this.activate.drivers = true
 						await this.espera('actionDrivers')
@@ -1179,7 +1180,7 @@
 						this.$q.loading.show()
 						let txt = await this.report()
 						this.file = await this.$uploadTextFile(this.device.Serial, txt)
-						//console.log(this.file, this.image)
+						console.log(this.file)
 						//if (this.file) await this.saveFile(this.file)
 						//if (this.image) await this.saveFile(this.image)
 						//if (this.$textFile) await this.upload(this.$textFile.path, 1)

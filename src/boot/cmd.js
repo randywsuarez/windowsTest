@@ -422,7 +422,7 @@ $archivoDestino = Join-Path -Path $rutaDestino -ChildPath "$json.json"
 
 if (Test-Path $archivoDestino) {
     Write-Host "El archivo $archivoDestino ya existe. Eliminándolo..."
-    Remove-Item -Path $rutaOrigen\\* -Recurse -Force
+    Remove-Item -Path "$rutaOrigen\*" -Recurse -Force
 }
 `
 			console.log(path.join(process.cwd().split(path.sep)[0], 'resources', 'data'), code)
