@@ -492,7 +492,7 @@
 					.catch((err) => console.error(err))
 			},
 			async saveFile(r) {
-				r.EmployeeID = this.project.operator
+				r.EmployeeID = this.select.id
 				console.log(r)
 				const options = {
 					method: 'POST',
@@ -532,7 +532,7 @@
 				console.log(lastdate)
 				this.myDb.DATE = lastdate.wipe
 				this.myDb.STATUS = res == 'PASS' ? 'true' : 'false'
-				this.myDb.OPERATOR = this.project.operator
+				this.myDb.OPERATOR = this.select.id
 				this.myDb.DateEnd = lastdate.end
 				//this.myDb.DateEnd.setHours(this.myDb.DateEnd.getHours() - 6)
 				this.myDb.DateStart = lastdate.start
@@ -544,7 +544,7 @@
 				)}`
 				return `
 			       ISP Windows Test Ver:3.01 - ${this.project.id}
-			       Operator ID: ${this.project.operator}
+			       Operator ID: ${this.select.id}
 			       Operator Name:${this.user.usuario}
 			       Start Date: ${this.test.Date}
 			       Start Time: ${this.test.startTime}
@@ -1005,7 +1005,7 @@
 								this.project['db'] = x.db
 								this.project['operator'] = u.id
 								this.select = { ...x, ...u }
-								console.log(this.select)
+								console.log('select: ', this.select)
 								break
 							}
 						}
@@ -1179,8 +1179,9 @@
 						this.$q.loading.show()
 						let txt = await this.report()
 						this.file = await this.$uploadTextFile(this.device.Serial, txt)
+						//console.log(this.file, this.image)
 						//if (this.file) await this.saveFile(this.file)
-						//if (this.file) await this.saveFile(this.image)
+						//if (this.image) await this.saveFile(this.image)
 						//if (this.$textFile) await this.upload(this.$textFile.path, 1)
 						//if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
 						this.info = {
