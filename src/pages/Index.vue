@@ -370,6 +370,7 @@
 	import MousePad from '../components/MousePad.vue'
 	import moment from 'moment'
 	import JsBarcode from 'jsbarcode'
+	import axios from 'axios'
 	export default {
 		components: {
 			UserInfoGrid,
@@ -494,7 +495,7 @@
 			async saveFile(r) {
 				r.EmployeeID = this.select.id
 				console.log(r)
-				const options = {
+				/* const options = {
 					method: 'POST',
 					headers: {
 						cookie:
@@ -510,7 +511,27 @@
 				fetch(`${this.select.url}/Testing/TestFilesResultsUpload/UploadFile`, options)
 					.then((response) => response.json())
 					.then((response) => console.log(response))
-					.catch((err) => console.error(err))
+          .catch((err) => console.error(err)) */
+
+				const options = {
+					method: 'POST',
+					url: `${this.select.url}/Testing/TestFilesResultsUpload/UploadFile`,
+					headers: {
+						'Content-Type': 'application/json',
+						tenant: `${this.select.tenant}`,
+						Authorization: `Bearer ${this.select.authToken}`,
+					},
+					data: r,
+				}
+
+				axios
+					.request(options)
+					.then(function (response) {
+						console.log(response.data)
+					})
+					.catch(function (error) {
+						console.error(error)
+					})
 			},
 			activateCamera() {
 				//this.activate.camera = false
