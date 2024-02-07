@@ -51,7 +51,7 @@ module.exports = ({ Vue }) => {
 			},
 			base64: {
 				name: fileName + '_base64',
-				path: base64FilePath,
+				path: base64Content,
 			},
 		}
 		return {
