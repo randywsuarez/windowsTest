@@ -1225,8 +1225,8 @@
 						let txt = await this.report()
 						this.file = await this.$uploadTextFile(this.device.Serial, txt)
 						console.log(this.file, this.$textFile)
-						if (this.file) await this.saveFile(this.file)
-						if (this.image) await this.saveFile(this.image)
+						//if (this.file) await this.saveFile(this.file)
+						//if (this.image) await this.saveFile(this.image)
 						//if (this.$textFile) await this.upload(this.$textFile.path, 1)
 						//if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
 						this.info = {
@@ -1235,7 +1235,7 @@
 						}
 						await this.rsSave()
 						await this.saveMng()
-						await this.passImaging()
+						//await this.passImaging()
 						this.$q.loading.hide()
 						this.activate.done = true
 						JsBarcode('#barcode', this.device.Serial, {
