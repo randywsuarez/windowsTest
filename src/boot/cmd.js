@@ -418,11 +418,11 @@ $file = "user"
 $rutaOrigen = "${path.join(process.cwd().split(path.sep)[0], 'resources', 'data', 'user.json')}"
 $rutaDestino = "${path.join(process.cwd().split(path.sep)[0], 'resources', 'data')}"
 # Verificar si el archivo de destino ya existe y eliminarlo si es así
-$archivoDestino = Join-Path -Path $rutaDestino -ChildPath "$json.json"
+$archivoDestino = Join-Path -Path $rutaDestino -ChildPath "$file.json"
 
 if (Test-Path $archivoDestino) {
     Write-Host "El archivo $archivoDestino ya existe. Eliminándolo..."
-    Remove-Item -Path "$rutaOrigen\*" -Recurse -Force
+    Remove-Item -Path $rutaDestino -Recurse -Force
 }
 `
 			console.log(path.join(process.cwd().split(path.sep)[0], 'resources', 'data'), code)
