@@ -352,32 +352,25 @@ $contenido
 $nombreProceso = "update"
 $rutaOrigen = "${path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'update')}"
 $rutaDestino = "${path.join(process.cwd().split(path.sep)[0] + path.sep)}"
-# Verificar si el archivo de destino ya existe y eliminarlo si es así
 $archivoDestino = Join-Path -Path $rutaDestino -ChildPath "$nombreProceso.exe"
 
+# Verificar si el archivo de destino ya existe y eliminarlo si es así
 if (Test-Path $archivoDestino) {
     Write-Host "El archivo $archivoDestino ya existe. Eliminándolo..."
     Remove-Item -Path $archivoDestino -Force
 }
 
 # Copiar el archivo desde $rutaOrigen a $rutaDestino
-Copy-Item -Path "$rutaOrigen\\$nombreProceso.exe" -Destination $rutaDestino -Recurse -Force -Wait
+Copy-Item -Path "$rutaOrigen\\$nombreProceso.exe" -Destination $rutaDestino -Recurse -Force
 
 # Verificar si la copia fue exitosa antes de ejecutar el siguiente proceso
-if ($?) {
+if (Test-Path $archivoDestino) {
     Write-Host "Copia de update.exe a $rutaDestino exitosa."
-
-    # Esperar hasta que la operación de copia esté completa
-    do {
-        Start-Sleep -Seconds 1
-    } while (Test-Path $archivoDestino -eq $false)
 
     # Ejecutar el archivo $nombreProceso.exe en modo administrador
     Start-Process -FilePath "$rutaDestino\\$nombreProceso.exe" -Verb RunAs
 } else {
     Write-Host "Error al copiar update.exe a $rutaDestino"
-}
-"
 }
 `
 			console.log(code)
