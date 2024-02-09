@@ -314,10 +314,13 @@
 						id="actionDone"
 						style="justify-content: center"
 					>
-						<div class="col-12 justify-center">
+						<div class="col-12 justify-center" v-if="scan">
+							<h1>Device processed</h1>
+						</div>
+						<div class="col-6 justify-center">
 							<svg width="75%" id="barcode"></svg>
 						</div>
-						<div class="col-12 justify-center">
+						<div class="col-6 justify-center">
 							<svg width="75%" id="barcode2"></svg>
 						</div>
 						<q-btn flat color="positive" label="Shutdown" @click="sdDevice" />
@@ -425,6 +428,7 @@
 					comparation: false,
 					mousepad: false,
 					note: false,
+					scan: false,
 				},
 				showActions: false,
 				win: {},
@@ -509,24 +513,6 @@
 			async saveFile(r) {
 				r.EmployeeID = this.select.id
 				console.log(r)
-				/* const options = {
-					method: 'POST',
-					headers: {
-						cookie:
-							'.AspNetCore.Identity.Application=CfDJ8Pv0WhnmHWxAjuPCJCw7jtxNS_9_ev4TXloAhIYHtLXW0LCJXNhbk9XKV9mPI3bOYKwPnlbQ4wNPNRg-MG06npV-5j2_nlCbWUpSL7TSqMT6uxsB2ORmPA6C2GaT6nXJdXgIzwZuCurvpaT9ZLJUAB-56xJIi7mOkGGzh_a5xWYxbNZtj74M5ZVf9NNWoki3yZe1CgbJecvOTnWKDDkko2Wpjpv-wRecYX_UAjTZ1jrdkKB67ksMb_bQURjHkr2fGJUcKMl5o6WK6W7mjcwGBEC1TBXgXkeCCFTXw5S5SFf9g4a_QMGG7o-Y09MWSj-ox3930gAegwYZ04q34wlwsM_ffIilQubA-ryMU-mqdHGAKiGRIs_kDZeDAmF2ZcxarHWR1hKPq-C7Fo0lvCFabVAOaOIZe6zyBO-6riVlmfOKaHz0nVSTrOnzj-o4p0pmD3_6Ix3auK5orE7ILpo-uKj9SWcrWl53_UXya903MPw_M4Vk3wOK-QO85eEw_2eiMUtoZlhUNP1o9nQKPhUR2-RMzESLqfSCyhI4iT4YLlUiuBUjNUzEAPwkcag6KIzfOLMdC2Kd40HmrBiTXmiN0l-1di57DiNq-G37hFiaMKludc_fw9qaryvkX9ojpO4UeX4WsduMOVbA4iTnvjFZ4AksYRiRBIgiLpyu2jv93XadooHaKSwbQw7OdrHJJnu1HRqf34uZcrDYSodBwU_dvSgXPpoxaLfZaCUeJlCN9wuXvjzyWhl3Ff9d-6zo-R6pTjD9IVB6CcAG9K0E3JjaLjei5gEFu_zvlrYRq9lYIN53rYxVaXDR7zMZifFQRt5rtG9vk_eAc6EuurEs1ocRrA0; ARRAffinity=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961; ARRAffinitySameSite=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961',
-						'Content-Type': 'application/json',
-						'User-Agent': 'Insomnia/2023.5.7',
-						tenant: `${this.select.tenant}`,
-						Authorization: `Bearer ${this.select.authToken}`,
-					},
-					body: r,
-				}
-
-				fetch(`${this.select.url}/Testing/TestFilesResultsUpload/UploadFile`, options)
-					.then((response) => response.json())
-					.then((response) => console.log(response))
-          .catch((err) => console.error(err)) */
-
 				const options = {
 					method: 'POST',
 					url: `${this.select.url}/Testing/TestFilesResultsUpload/UploadFile`,
@@ -538,10 +524,11 @@
 					data: r,
 				}
 
-				axios
+				return axios
 					.request(options)
 					.then(function (response) {
 						console.log(response.data)
+						return response.data._isSuccess
 					})
 					.catch(function (error) {
 						console.error(error)
@@ -1225,8 +1212,8 @@
 						let txt = await this.report()
 						this.file = await this.$uploadTextFile(this.device.Serial, txt)
 						console.log(this.file, this.$textFile)
-						//if (this.file) await this.saveFile(this.file)
-						//if (this.image) await this.saveFile(this.image)
+						if (this.file) await this.saveFile(this.file)
+						if (this.image) await this.saveFile(this.image)
 						//if (this.$textFile) await this.upload(this.$textFile.path, 1)
 						//if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
 						this.info = {
@@ -1235,7 +1222,7 @@
 						}
 						await this.rsSave()
 						await this.saveMng()
-						//await this.passImaging()
+						this.scan = await this.passImaging()
 						this.$q.loading.hide()
 						this.activate.done = true
 						JsBarcode('#barcode', this.device.Serial, {
