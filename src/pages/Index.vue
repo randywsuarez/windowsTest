@@ -494,9 +494,6 @@
 				const options = {
 					method: 'POST',
 					headers: {
-						cookie:
-							'.AspNetCore.Identity.Application=CfDJ8Pv0WhnmHWxAjuPCJCw7jtwo2KuPDoEzvWeKhaxjHrM1Bu1-G6sVrRCk_riSrAhB4G47sxA6nH4hch9CsYdvtpxST_LCY1vFm4whBDvQWwXd1gGGeIeMGn7sjs4ESV7HA0kXHqmgKGx1h2Mo7rarMQbsChpH-03yty_hnYmvyk8Mh34Qftbr0QRKXeKJd8zLBhKHRDMAidqkowRXDSd1HGo2624krNzShdcR4zFprz2HVjTSmaKLmjrNKmEXMSU6cOb3nVCIpK7HpbbNZ8Zz5EbLM3lXfjbjcBvgv4FQbJcIu2dwhMz2VxFcN2hcuiT46LtEFGUF-3YxtDCw0JvWj23J_YjqOlzghE4C9yGDMjSeA8rBgp8P_Mb0rKrPg2PkK8O3laiKGbFU_A4LMPr06dMKbSIzgiodDqShr4l_2B3i4ubKni89isqYHAaeTeyDryIyQzvaU4SJStTEQzaJpJ3JCw7vk9uZHZ1xLL0oPt7-seV0-rl4N_0kKuWHTeLIE0zMPnloap21rdIDZE8qVJdPItFxtlPhwzHkbsualEqzbt7pX5sRINCqgCRXZK8IKNIig6AynuGnCeaTXqkUo-OLXj2igd0jMQaiVF2apNuVUl2KtrL-6u2HXwCBiqBKFz2pqgH_dq6sPZ_9aU1ZakpllLDuFrNhvyKxzLUHZM3i6lYiNhJ88X4ez_09v_HPXDr2NOdp3uyjNhGb4JcSPoqzWO7Z4cK6y0Wcn0Ub93VnnIj8PKqSCiUi4zfU71ASQLApwXfSxSAn8i3ovOfPtLZN9b9iql6dGMJiE1H9RMF83wJ8GnyD4AODUtSWKvL92w; ARRAffinity=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961; ARRAffinitySameSite=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961',
-						'Content-Type': 'application/x-www-form-urlencoded',
 						tenant: `${this.select.tenant}`,
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
@@ -1211,7 +1208,7 @@
 						this.$q.loading.show()
 						let txt = await this.report()
 						this.file = await this.$uploadTextFile(this.device.Serial, txt)
-						console.log(this.file, this.$textFile)
+						console.log(this.file, this.$image)
 						if (this.file) await this.saveFile(this.file)
 						if (this.image) await this.saveFile(this.image)
 						//if (this.$textFile) await this.upload(this.$textFile.path, 1)

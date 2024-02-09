@@ -32,7 +32,12 @@
 						</div>
 
 						<!-- Botón de inicio de sesión -->
-						<q-btn @click="iniciarSesion" label="Sign On" style="margin-top: 20px" />
+						<q-btn
+							@click="iniciarSesion"
+							label="Sign On"
+							style="margin-top: 20px"
+							:disable="!contrasena || !usuario"
+						/>
 					</div>
 				</q-card-section>
 			</q-card>
@@ -107,6 +112,7 @@
 				clearInterval(this.checkInterval)
 			},
 			async iniciarSesion() {
+				if (!this.usuario || !this.password) return
 				this.$q.loading.show()
 				// Hacer la solicitud de inicio de sesión (simulación)
 				let res = []
