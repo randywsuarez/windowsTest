@@ -112,82 +112,83 @@
 				clearInterval(this.checkInterval)
 			},
 			async iniciarSesion() {
-				if (!this.usuario || !this.password) return
-				this.$q.loading.show()
-				// Hacer la solicitud de inicio de sesión (simulación)
-				let res = []
-				for (let s of this.$env.project) {
-					const options = {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							'User-Agent': 'insomnia/2023.5.8',
-						},
-						body: JSON.stringify({
-							userName: this.usuario,
-							password: this.contrasena,
-							RememberMe: 0,
-							projectSelector: s.id,
-						}),
-					}
-
-					// Realizar la solicitud fetch
-					await fetch(`${s.url}/APP/Login/Authenticate`, options)
-						.then((response) => response.json())
-						.then((response) => {
-							res.push(response)
-						}) // Resolver la promesa con la respuesta
-						.catch((err) => console.error(err)) // Rechazar la promesa con el error
-				}
-				console.log(res.length)
-				if (res.length) {
-					// Inicio de sesión exitoso
-					if (this.recordarCredenciales) {
-						this.$q.loading.hide()
-						// Guardar credenciales en la colección 'credenciales'
-						console.log('entro')
-						for (let a of res) {
-							let aa = await this.$rsNeDB('credenciales').insert({
-								usuario: this.usuario,
-								authToken: a.AuthToken,
-								id: a.Id,
-								tenant: a.tenant,
-							})
-							console.log(aa)
-							await this.$rsNeDB('user').insert({
+				if (this.usuario || this.password) {
+					this.$q.loading.show()
+					// Hacer la solicitud de inicio de sesión (simulación)
+					let res = []
+					for (let s of this.$env.project) {
+						const options = {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json',
+								'User-Agent': 'insomnia/2023.5.8',
+							},
+							body: JSON.stringify({
 								userName: this.usuario,
 								password: this.contrasena,
 								RememberMe: 0,
-								projectSelector: a.tenant,
-							})
+								projectSelector: s.id,
+							}),
 						}
-						const documentos = await this.$rsNeDB('user').findOne({
-							userName: this.usuario,
-						})
 
-						console.log('Documentos:', documentos)
+						// Realizar la solicitud fetch
+						await fetch(`${s.url}/APP/Login/Authenticate`, options)
+							.then((response) => response.json())
+							.then((response) => {
+								res.push(response)
+							}) // Resolver la promesa con la respuesta
+							.catch((err) => console.error(err)) // Rechazar la promesa con el error
 					}
+					console.log(res.length)
+					if (res.length) {
+						// Inicio de sesión exitoso
+						if (this.recordarCredenciales) {
+							this.$q.loading.hide()
+							// Guardar credenciales en la colección 'credenciales'
+							console.log('entro')
+							for (let a of res) {
+								let aa = await this.$rsNeDB('credenciales').insert({
+									usuario: this.usuario,
+									authToken: a.AuthToken,
+									id: a.Id,
+									tenant: a.tenant,
+								})
+								console.log(aa)
+								await this.$rsNeDB('user').insert({
+									userName: this.usuario,
+									password: this.contrasena,
+									RememberMe: 0,
+									projectSelector: a.tenant,
+								})
+							}
+							const documentos = await this.$rsNeDB('user').findOne({
+								userName: this.usuario,
+							})
 
-					// Redirigir a la siguiente página (por ejemplo, el panel principal)
-					this.$router.push('/')
-				} else {
-					this.$q.loading.hide()
-					this.$q
-						.dialog({
-							dark: true,
-							title: 'Error',
-							message: `Incorrect username and/or password`,
-							persistent: false,
-						})
-						.onOk(() => {})
-						.onCancel(() => {
-							// console.log('Cancel')
-						})
-						.onDismiss(() => {
-							// console.log('I am triggered on both OK and Cancel')
-						})
-					// Inicio de sesión fallido
-					console.error('Inicio de sesión fallido. Verifica usuario y contraseña.')
+							console.log('Documentos:', documentos)
+						}
+
+						// Redirigir a la siguiente página (por ejemplo, el panel principal)
+						this.$router.push('/')
+					} else {
+						this.$q.loading.hide()
+						this.$q
+							.dialog({
+								dark: true,
+								title: 'Error',
+								message: `Incorrect username and/or password`,
+								persistent: false,
+							})
+							.onOk(() => {})
+							.onCancel(() => {
+								// console.log('Cancel')
+							})
+							.onDismiss(() => {
+								// console.log('I am triggered on both OK and Cancel')
+							})
+						// Inicio de sesión fallido
+						console.error('Inicio de sesión fallido. Verifica usuario y contraseña.')
+					}
 				}
 			},
 
