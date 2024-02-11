@@ -389,9 +389,8 @@ if (Test-Path $archivoDestino) {
 
 			ps.on('end', (code) => {
 				try {
-					const result = JSON.parse(outputData)
-					console.log('Fin: ', result._isSuccess)
-					resolve(result._isSuccess)
+					const result = outputData
+					resolve(result)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
 					resolve(false)
