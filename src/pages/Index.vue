@@ -306,7 +306,18 @@
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.done">
-				<q-card-section> <div class="text-h6">Done</div> </q-card-section><q-separator />
+				<q-card-section>
+					<div class="row items-center no-wrap">
+						<div class="col">
+							<div class="text-h6">Done</div>
+						</div>
+
+						<div class="col-auto">
+							<q-btn round color="primary" icon="info" @click="activate.txt = true" />
+						</div>
+					</div>
+				</q-card-section>
+				<q-separator />
 				<q-card-section class="reproductor-content">
 					<q-card-section
 						class="row col justify-center"
@@ -314,8 +325,8 @@
 						id="actionDone"
 						style="justify-content: center"
 					>
-						<div class="col-12 justify-center" v-if="scan">
-							<h1>Device processed</h1>
+						<div class="col-12 justify-center" v-if="activate.scan">
+							<h6>{{ activate.scan }}</h6>
 						</div>
 						<div class="col-6 justify-center">
 							<svg width="75%" id="barcode"></svg>
@@ -352,6 +363,33 @@
 
 					<q-card-actions align="right" class="text-teal">
 						<q-btn flat label="OK" v-close-popup />
+					</q-card-actions>
+				</q-card>
+			</q-dialog>
+			<q-dialog v-model="activate.txt">
+				<q-card>
+					<q-card-section>
+						<div class="row items-center no-wrap">
+							<div class="col">
+								<div class="text-h6">Information</div>
+							</div>
+
+							<!-- <div class="col-auto">
+								<q-btn round color="primary" icon="restart_alt" @click="activate.txt" />
+							</div> -->
+						</div>
+					</q-card-section>
+
+					<q-separator />
+
+					<q-card-section style="max-height: 80vh" class="scroll">
+						<div v-html="formatInfo(txt)"></div>
+					</q-card-section>
+
+					<q-separator />
+
+					<q-card-actions align="right">
+						<q-btn flat label="Close" color="primary" v-close-popup />
 					</q-card-actions>
 				</q-card>
 			</q-dialog>
@@ -428,7 +466,8 @@
 					comparation: false,
 					mousepad: false,
 					note: false,
-					scan: false,
+					scan: '',
+					txt: false,
 				},
 				showActions: false,
 				win: {},
@@ -437,6 +476,7 @@
 				driver: {},
 				select: {},
 				file: '',
+				txt: '',
 				omponentKey: 0,
 				image: {},
 				miniSerial: '',
@@ -490,6 +530,9 @@
 			}
 		},
 		methods: {
+			formatInfo(info) {
+				return info.replace(/\n/g, '<br>')
+			},
 			async passImaging() {
 				const options = {
 					method: 'POST',
@@ -499,18 +542,23 @@
 					},
 				}
 
-				fetch(
+				return fetch(
 					`${this.select.url}/APP/PromoteImageDownloadUnit/SerchSN?sn=${this.device.Serial}&station=Image%20Download`,
 					options
 				)
 					.then((response) => response.json())
-					.then((response) => console.log(response))
-					.catch((err) => console.error(err))
+					.then((response) => {
+						return response._message
+					})
+					.catch((err) => {
+						console.error(err)
+						return err._message
+					})
 			},
 			async saveFile(r) {
 				r.EmployeeID = this.select.id
 				console.log(r)
-				const options = {
+				/* 	const options = {
 					method: 'POST',
 					url: `${this.select.url}/Testing/TestFilesResultsUpload/UploadFile`,
 					headers: {
@@ -524,12 +572,38 @@
 				return axios
 					.request(options)
 					.then(function (response) {
-						console.log(response.data)
+						console.log(response)
 						return response.data._isSuccess
 					})
 					.catch(function (error) {
 						console.error(error)
+					}) */
+				const options = {
+					method: 'POST',
+					headers: {
+						cookie:
+							'.AspNetCore.Identity.Application=CfDJ8Pv0WhnmHWxAjuPCJCw7jtyhZLq6S3nyRzfIHKZJOYQtEQ9hL9aX19OzrTjV8uk1xdI9dU-1YPI33AaECMgBFlaESDpOOX2FDk7S2tqsC0gJ1_7V7msodnLjsBAqAgSWnlUVvYl5ijgqNA4qsVC9W8wczbPIbCOuc-SodELJK0o-Mh6ua73Z9I3UleU85L4i0Rwzab_Dolm34AliuJHCwSX3KiisitNWY_sva5QYM8lRePNIy8c41JXlBkwluWhmN6xvOm9Qo3go5bVf2b8Qk3VCe96yOwSmNvyc3RddSBN-45SbH_VCx9ujjiRjqf3t6RmK7viqOz7IW9-pQw7ZBBefbtqSUGFmN8gzXkjD6sg-2fbWJODEvkyJOSQjFKy__-30bXqQ32Tmts8Bb7-yTcJmymXAOhMqRtV8q2X48q3pmZEnUDpTxPkLnsorXbmzMgoWVLC-QapXQBwGO9jr2YoL2Q2DRhPvNPzXo8Ly0wB-0gedagBVhj9CKr6ridtZQwv1jTu_wnf-J5T6XvtLOsUmyAN-7wW6KOVN6fXi8hKk-z3gTeT0SHDhbQPViVMnB3sKZkewxHdX1Mb1QPot5nlytpkdNDfT4vybqpUrFTczco7aDTNU55ORyCjpF6quntw7-LF2rrTYT2UZZlWWlnRZOr5Bhz-Vn_0cNMl_b1_-Zy9_vrvxiYm4BWKKIjf8sVZzY-ayC5vWuRdsxaKS61SD6JFVIbf_sO6Vat2y6R3HTblNM9BHT0T7VLZ0yRwZF5vO_ty6kZxeTUZyhLA8jDAp-p5npa1D3f-gqirOhsa6m8TIjKxn5GH54HA4KaHqkg; ARRAffinity=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961; ARRAffinitySameSite=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961',
+						tenant: `${this.select.tenant}`,
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${this.select.authToken}`,
+					},
+					//body: `{"SerialNumber":"${this.select.SerialNumber}","EmployeeID":"${this.select.id}","FileType":"${r.FileType}","fileExtension":"${r.fileExtension}",  "fileBase64Str":"${r.fileBase64Str}"`,
+					body: JSON.stringify({
+						SerialNumber: r.SerialNumber,
+						EmployeeID: this.select.id,
+						FileType: r.FileType,
+						fileExtension: r.fileExtension,
+						fileBase64Str: r.fileBase64Str,
+					}),
+				}
+
+				return fetch(`${this.select.url}/Testing/TestFilesResultsUpload/UploadFile`, options)
+					.then((response) => response.json())
+					.then((response) => {
+						console.log('response: ', response)
+						return response.data._isSuccess
 					})
+					.catch((err) => console.error(err))
 			},
 			activateCamera() {
 				//this.activate.camera = false
@@ -1020,6 +1094,12 @@
 								.execute()
 							console.log(x.id, res)
 							if (res.length) {
+								/* let sttn = await this.$rsDB(x.admin)
+									.select('Name')
+									.from('conf_Station')
+									.where(`Station = '${res.StationID}'`)
+									.execute()
+								this.project['Station'] = sttn[0].Name */
 								this.project['id'] = x.id
 								this.project['db'] = x.db
 								this.project['operator'] = u.id
@@ -1143,9 +1223,11 @@
 								console.log('La API de MediaDevices no es compatible con tu navegador.')
 							}
 						}
-						this.activate.camera = true
-						await this.espera('actionCamera')
-						this.activate.camera = false
+						if (this.type == 'laptop' || this.type == 'all-in-one') {
+							this.activate.camera = true
+							await this.espera('actionCamera')
+							this.activate.camera = false
+						}
 						console.log(this.image)
 						this.activate.windows = true
 						this.win = await this.$cmd.executeScriptCode(windows)
@@ -1200,14 +1282,13 @@
 							...this.info,
 							video: itDG,
 							cpuName: this.intDev.cpuName,
-							cpuName: this.intDev.cpu,
-							cpuName: this.intDev.cpu,
+							cpu: this.intDev.cpu,
 							RAM: this.intDev.RAM,
 							HDD: this.intDev.HDD,
 						}
 						this.$q.loading.show()
-						let txt = await this.report()
-						this.file = await this.$uploadTextFile(this.device.Serial, txt)
+						this.txt = await this.report()
+						this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
 						console.log(this.file, this.$image)
 						if (this.file) await this.saveFile(this.file)
 						if (this.image) await this.saveFile(this.image)
@@ -1215,18 +1296,18 @@
 						//if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
 						this.info = {
 							...this.info,
-							report: txt,
+							report: this.txt,
 						}
 						await this.rsSave()
 						await this.saveMng()
-						this.scan = await this.passImaging()
+						this.activate.scan = await this.passImaging()
 						this.$q.loading.hide()
 						this.activate.done = true
 						JsBarcode('#barcode', this.device.Serial, {
 							format: 'CODE128',
 							lineColor: '#000',
 							width: 1,
-							height: 100,
+							height: 50,
 							displayValue: true,
 							//text: this.form.serial,
 							textAlign: 'center',
@@ -1236,7 +1317,7 @@
 							format: 'CODE128',
 							lineColor: '#000',
 							width: 1,
-							height: 100,
+							height: 50,
 							displayValue: true,
 							//text: this.form.sku,
 							textAlign: 'center',
