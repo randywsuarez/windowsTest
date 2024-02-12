@@ -390,6 +390,7 @@ if (Test-Path $archivoDestino) {
 			ps.on('end', (code) => {
 				try {
 					const result = outputData
+					console.log(code)
 					resolve(result)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
