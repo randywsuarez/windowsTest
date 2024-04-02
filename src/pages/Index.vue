@@ -1,5 +1,9 @@
 <template>
-	<q-page id="test" class="" style="padding-top: 10px">
+	<q-page
+		id="test"
+		class=""
+		:style="`padding-top: 10px; background: linear-gradient(45deg, #ffffff, ${this.typeUnit})`"
+	>
 		<user-info-grid
 			v-show="activate.select"
 			:username="user.usuario"
@@ -16,18 +20,21 @@
 				<q-card-section class="center col row">
 					<q-input
 						v-model="check.serial"
-						@input="handleInputChange"
+						@input="handleInputChange('serial')"
 						type="text"
 						label="Serial"
 						:prefix="miniSerial"
 						placeholder="XX"
 						hint="Write the last 2 digits"
 					/>
-					<q-toggle
-						size="50px"
+					<q-input
 						v-model="check.sku"
-						:val="true"
-						:label="`Is the SKU ${device.SKU} correct?`"
+						@input="handleInputChange('sku')"
+						type="text"
+						label="SKU"
+						:prefix="miniSKU"
+						placeholder="XX"
+						hint="Write the last 2 digits"
 					/>
 				</q-card-section>
 
@@ -38,7 +45,9 @@
 						color="positive"
 						label="Pass"
 						@click="action = 'PASS'"
-						v-show="device.Serial == `${miniSerial}${check.serial}` && check.sku"
+						v-show="
+							device.Serial == `${miniSerial}${check.serial}` && device.SKU == `${miniSKU}${check.sku}`
+						"
 					/>
 				</q-card-actions>
 			</q-card>
@@ -422,6 +431,7 @@
 	import getDeviceInfo from '../scripts/GetDeviceInfo'
 	import GetMntBringhtness from '../scripts/MonitorBrightness'
 	import imaging from '../scripts/imaging'
+	import resolution from '../scripts/resolution'
 	import MousePad from '../components/MousePad.vue'
 	import moment from 'moment'
 	import JsBarcode from 'jsbarcode'
@@ -441,15 +451,14 @@
 					img: '',
 				},
 				test: {},
+				typeUnit: '#87cefa',
 				project: {},
 				sound: 'nada',
 				componentKey: 0,
 				battery: {},
 				action: '',
 				camera: true,
-				check: {
-					sku: false,
-				},
+				check: {},
 				activate: {
 					type: true,
 					select: false,
@@ -480,6 +489,7 @@
 				omponentKey: 0,
 				image: {},
 				miniSerial: '',
+				miniSKU: '',
 				myDb: {
 					Serial: '',
 					Model: '',
@@ -615,9 +625,9 @@
 				})
 				//this.$refs.camaraCapture.captureImage()
 			},
-			handleInputChange() {
+			handleInputChange(id) {
 				// Convierte el valor a mayúsculas
-				this.check.serial = this.check.serial.toUpperCase()
+				this.check[id] = this.check[id].toUpperCase()
 			},
 			async report() {
 				let res = Object.values(this.test).includes('fail') ? 'FAIL' : 'PASS'
@@ -636,7 +646,7 @@
 					','
 				)}`
 				return `
-			       ISP Windows Test Ver:3.01 - ${this.project.id}
+			       ISP Windows Test Ver:3.02 - ${this.project.id}
 			       Operator ID: ${this.select.id}
 			       Operator Name:${this.user.usuario}
 			       Start Date: ${this.test.Date}
@@ -657,6 +667,8 @@
 			       ${this.intDev.RAM.Modules.join('\n')}
 			       GPU Verification PASS
 			       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
+			       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Resolution' : ''}
+			       ${this.test.hasOwnProperty('resolution') ? this.test.resolution : ''}
 			       CPU
 			       ${this.intDev.cpu.join('\n')}
 			       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
@@ -1081,9 +1093,15 @@
 						this.device = result
 						this.info = { ...this.info, ...this.device }
 						this.miniSerial = this.device.Serial.slice(0, -2)
+						this.miniSKU = this.device.SKU.split('#')[0].slice(0, -2)
+						//this.miniSKU = this.device.SKU.split('#')[0]
 						await this.infoHP()
 						this.myDb.Serial = result.Serial
 						this.myDb.Model = result.SKU
+						if (result.SKU.includes('AV')) this.typeUnit = '#fa8787'
+						else if (result.SKU.includes('UAR') || result.SKU.includes('U8R')) this.typeUnit = '#8bfa87'
+						else if (result.SKU.includes('UA') || result.SKU.includes('U8')) this.typeUnit = this.typeUnit
+						else this.typeUnit = '#8bfa87'
 						let res = ''
 						for (let x of this.$env.project) {
 							let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
@@ -1202,6 +1220,9 @@
 							this.activate.brightness = false
 						}
 						if (this.type == 'laptop' || this.type == 'all-in-one') {
+							let mires = await this.$cmd.executeScriptCode(resolution)
+							console.log('resolution: ', mires)
+							this.test['resolution'] = mires.resolution
 							if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
 								await navigator.mediaDevices
 									.enumerateDevices()
@@ -1336,6 +1357,8 @@
 		async mounted() {
 			this.$q.loading.show()
 			this.iTest = await this.$cmd.executeScriptCode(imaging)
+			/* let mires = await this.$cmd.executeScriptCode(resolution)
+			console.log('resolution: ', mires) */
 			this.$q.loading.hide()
 			if (!this.iTest.Organization)
 				this.$q
