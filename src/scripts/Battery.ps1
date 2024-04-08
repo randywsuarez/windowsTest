@@ -9,7 +9,7 @@ if ($BatteryDriver -eq $null) {
     exit
 }
 $batteryResults = @()
-$InfoAlertPercent = "80"
+$InfoAlertPercent = "85"
 $WarnAlertPercent = "50"
 $CritAlertPercent = "20"
 $BatteryHealth = ""
