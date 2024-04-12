@@ -35,7 +35,7 @@ export default {
 		dev: 'http://localhost:4500/api',
 		server: 'http://192.168.0.2:4500/api',
 	},
-	version: '1.0.11',
+	version: '1.0.12',
 	token: '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',
 	github: {
 		user: 'randywsuarez',
