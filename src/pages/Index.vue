@@ -553,7 +553,7 @@
 				}
 
 				return fetch(
-					`${this.select.url}/APP/PromoteImageDownloadUnit/SerchSN?sn=${this.device.Serial}&station=Image%20Download`,
+					`${this.select.url}/${this.project.id}/APP/PromoteImageDownloadUnit/SerchSN?sn=${this.device.Serial}&station=Image%20Download`,
 					options
 				)
 					.then((response) => response.json())
@@ -607,7 +607,10 @@
 					}),
 				}
 
-				return fetch(`${this.select.url}/Testing/TestFilesResultsUpload/UploadFile`, options)
+				return fetch(
+					`${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile`,
+					options
+				)
 					.then((response) => response.json())
 					.then((response) => {
 						console.log('response: ', response)
@@ -903,7 +906,7 @@
 			async upload(file, type) {
 				await this.$cmd
 					.savePS({
-						apiUrl: `${this.select.url}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
+						apiUrl: `${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
 						filePath: file,
 						tenant: this.select.tenant,
 						token: this.select.authToken,
@@ -927,7 +930,7 @@
 			async uploadImg(file, type) {
 				this.$cmd
 					.saveImg({
-						apiUrl: `${this.select.url}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
+						apiUrl: `${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
 						filePath: file,
 						tenant: this.select.tenant,
 						token: this.select.authToken,
