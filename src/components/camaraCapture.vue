@@ -58,13 +58,20 @@
 				navigator.mediaDevices
 					.enumerateDevices()
 					.then((devices) => {
+						// Filtra solo dispositivos de entrada de video
 						this.cameras = devices.filter((device) => device.kind === 'videoinput')
+						// Filtra adicionalmente aquellos dispositivos que no contengan 'IR' o 'Infrared' en su descripción
+						this.cameras = this.cameras.filter(
+							(camera) =>
+								!camera.label.toLowerCase().includes('ir') &&
+								!camera.label.toLowerCase().includes('infrared')
+						)
 
 						if (this.cameras.length > 0) {
 							this.selectedCamera = this.cameras[0].deviceId
 							this.changeCamera()
 						} else {
-							console.warn('No se encontraron cámaras disponibles.')
+							console.warn('No se encontraron cámaras disponibles sin IR.')
 						}
 					})
 					.catch((error) => {
@@ -111,7 +118,7 @@
 				let res = {
 					SerialNumber: this.imageName,
 					EmployeeID: '',
-					FileType: '1',
+					FileType: '2',
 					fileExtension: '.jpg',
 					fileBase64Str: '',
 				}

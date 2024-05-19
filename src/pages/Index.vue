@@ -10,7 +10,7 @@
 			:project="project.id"
 			:title="device.Description"
 			:subtitle="`${device.SKU} - ${device.Serial}`"
-			:imageSrc="device.img ? device.img : 'logo.png'"
+			:imageSrc="device.img ? device.img : 'Logo.png'"
 		/>
 		<div class="main">
 			<q-card class="card" v-show="activate.comparation">
@@ -33,8 +33,7 @@
 						type="text"
 						label="SKU"
 						:prefix="miniSKU"
-						placeholder="XX"
-						hint="Write the last 2 digits"
+						hint="Write the missing"
 					/>
 				</q-card-section>
 
@@ -130,7 +129,13 @@
 				</q-card-section>
 				<q-card-actions align="right" id="actionCamera">
 					<q-btn flat color="negative" label="Fail" @click="test['camera'] = 'Webcam test FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="test['camera'] = 'Webcam test PASS'" />
+					<q-btn
+						flat
+						color="positive"
+						v-if="Object.keys(image).length !== 0"
+						label="Pass"
+						@click="test['camera'] = 'Webcam test PASS'"
+					/>
 				</q-card-actions>
 			</q-card>
 
@@ -246,6 +251,74 @@
 					<q-btn flat color="positive" label="Pass" @click="test['mousepad'] = 'Mouse pad test PASS'" />
 				</q-card-actions>
 			</q-card>
+
+			<q-card class="card" v-show="activate.hotKey">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">HotKey</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<b>You need to test the Hotkeys</b>
+				</q-card-section>
+				<q-card-actions align="right" id="actionHotKey">
+					<q-btn flat color="negative" label="Fail" @click="test['hotKey'] = 'HotKeys test FAIL'" />
+					<q-btn flat color="positive" label="Pass" @click="test['hotKey'] = 'HotKeys test PASS'" />
+				</q-card-actions>
+			</q-card>
+
+			<q-card class="card" v-show="activate.components">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Status Components</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<div class="row justify-between">
+						<div class="col-6">
+							<q-list dense bordered>
+								<q-item v-for="(item, index) in leftItems" :key="index">
+									<q-item-section side>
+										<q-checkbox
+											v-model="bios[formatItem(item)]"
+											:label="item"
+											true-value="YES"
+											false-value="NO"
+											left-label
+										/>
+									</q-item-section>
+								</q-item>
+							</q-list>
+						</div>
+						<div class="col-6">
+							<q-list dense bordered>
+								<q-item v-for="(item, index) in rightItems" :key="index">
+									<q-item-section side>
+										<q-checkbox
+											v-model="bios[formatItem(item)]"
+											:label="item"
+											true-value="YES"
+											false-value="NO"
+											left-label
+										/>
+									</q-item-section>
+								</q-item>
+							</q-list>
+						</div>
+					</div>
+				</q-card-section>
+				<q-card-actions align="right" id="actionComponents">
+					<q-btn
+						flat
+						color="negative"
+						label="Fail"
+						@click="test['components'] = 'Components test FAIL'"
+					/>
+					<q-btn
+						flat
+						color="positive"
+						label="Pass"
+						@click="test['components'] = 'Components test PASS'"
+					/>
+				</q-card-actions>
+			</q-card>
+
 			<q-card class="card" v-show="activate.desktop">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Desktop Information</div> </q-card-section
@@ -432,6 +505,9 @@
 	import GetMntBringhtness from '../scripts/MonitorBrightness'
 	import imaging from '../scripts/imaging'
 	import resolution from '../scripts/resolution'
+	import spotLights from '../scripts/spotLights'
+	import touchScreen from '../scripts/touchScreen'
+	import componentes from '../scripts/info'
 	import MousePad from '../components/MousePad.vue'
 	import moment from 'moment'
 	import JsBarcode from 'jsbarcode'
@@ -458,6 +534,7 @@
 				battery: {},
 				action: '',
 				camera: true,
+				bios: {},
 				check: {},
 				activate: {
 					type: true,
@@ -477,6 +554,8 @@
 					note: false,
 					scan: '',
 					txt: false,
+					hotKey: false,
+					components: false,
 				},
 				showActions: false,
 				win: {},
@@ -486,6 +565,7 @@
 				select: {},
 				file: '',
 				txt: '',
+				componentes: '',
 				omponentKey: 0,
 				image: {},
 				miniSerial: '',
@@ -537,9 +617,41 @@
 				],
 				myGpu: [],
 				info: {},
+				items: [
+					'Lock BIOS',
+					'Fingerprint Reset',
+					'Smart Card',
+					'Bluetooth',
+					'Wireless Network',
+					'Lock Wireless',
+					'Internal Speakers',
+					'Microphone',
+					'Integrated Camera',
+					'Fingerprint Device',
+					'Touch Device',
+					'OS Recovery',
+					'Programming Mode',
+					'Permanent Disable',
+					'NumLock',
+					'Keys mapped',
+					'Keyboard Backlit',
+					'Mobile Network',
+					'Headphone',
+				],
 			}
 		},
+		computed: {
+			leftItems() {
+				return this.items.slice(0, Math.ceil(this.items.length / 2))
+			},
+			rightItems() {
+				return this.items.slice(Math.ceil(this.items.length / 2))
+			},
+		},
 		methods: {
+			formatItem(item) {
+				return item.replace(/\s+/g, '').replace(/\b\w/g, (l) => l.toUpperCase())
+			},
 			formatInfo(info) {
 				return info.replace(/\n/g, '<br>')
 			},
@@ -643,13 +755,13 @@
 				//this.myDb.DateEnd.setHours(this.myDb.DateEnd.getHours() - 6)
 				this.myDb.DateStart = lastdate.start
 				//this.myDb.DateStart.setHours(this.myDb.DateStart.getHours() - 6)
-				this.myDb.Description = `${this.device.Description}\n${this.test.OS}\n${this.intDev.cpu}\n${
+				/* this.myDb.Description = `${this.device.Description}\n${this.test.OS}\n${this.intDev.cpu}\n${
 					this.intDev.HDD.Total
 				} ${this.intDev.HDD.Units.join(',')}\n${this.intDev.RAM.Total} ${this.intDev.RAM.Modules.join(
 					','
-				)}`
+				)}` */
 				return `
-			       ISP Windows Test Ver:3.02 - ${this.project.id}
+			       ISP Windows Test Ver:3.03 - ${this.project.id}
 			       Operator ID: ${this.select.id}
 			       Operator Name:${this.user.usuario}
 			       Start Date: ${this.test.Date}
@@ -672,6 +784,8 @@
 			       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
 			       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Resolution' : ''}
 			       ${this.test.hasOwnProperty('resolution') ? this.test.resolution : ''}
+			       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Touch Screen' : ''}
+			       ${this.test.hasOwnProperty('touchScreen') ? this.test.touchScreen : ''}
 			       CPU
 			       ${this.intDev.cpu.join('\n')}
 			       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
@@ -685,6 +799,7 @@
 			       ${this.test.display}
 			       ${this.type == 'laptop' ? this.test.battery : ''}
 			       ${this.type != 'desktop' ? this.test.brightness : ''}
+			       ${this.type != 'desktop' ? this.test.spotLights : ''}
 	           ${this.form.note ? `Note: ${this.form.note}` : ''}
 			       ====================================Result==========================================
 			       Test Result is ${res}
@@ -1082,9 +1197,13 @@
 			},
 			async myTest() {
 				this.$q.loading.show()
+				this.bios = await this.$cmd.biosData()
+				console.log(this.bios)
 				this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
+				this.componentes = await this.$cmd.executeScriptCode(componentes)
+				console.log(this.intDev.video.length)
+
 				let itDH = await this.hddInfo(this.intDev.HDD.Units)
-				console.log(itDH)
 				this.myDb.Serial_HDD = itDH.group.Serial
 				this.myDb.Model_HDD = itDH.group.Description
 				this.myDb.HDD_CAPACITY = itDH.group.Size
@@ -1210,6 +1329,12 @@
 							this.activate.mousepad = true
 							await this.espera('actionMousePad')
 							this.activate.mousepad = false
+							this.activate.hotKey = true
+							await this.espera('actionHotKey')
+							this.activate.hotKey = false
+							this.activate.components = true
+							await this.espera('actionComponents')
+							this.activate.components = false
 						}
 						if (this.type != 'desktop') {
 							this.activate.audio = true
@@ -1221,6 +1346,11 @@
 							}, 4000)
 							await this.espera('actionBrightness')
 							this.activate.brightness = false
+							this.test['spotLights'] =
+								(await this.$cmd.executeScriptCode(spotLights)).result == 'PASS'
+									? 'Spot Lights Test PASS'
+									: 'Spot Lights Test FAIL'
+							this.test['touchScreen'] = (await this.$cmd.executeScriptCode(touchScreen)).result
 						}
 						if (this.type == 'laptop' || this.type == 'all-in-one') {
 							let mires = await this.$cmd.executeScriptCode(resolution)
@@ -1267,23 +1397,36 @@
 						this.test['keyWindows'] = this.win.keyWindows
 						//this.myGpu.then((v) => (this.myGpu = v))
 						//this.myGpu = await this.getGraphicsInfo(this.myGpu.result.value)
-						this.activate.gpu = true
-						if (this.intDev.video.some((obj) => obj.AdapterRAM.includes('4'))) {
-							this.myGpu = await this.$cmd.getDx({
-								Serial: this.device.Serial,
-							})
-							this.intDev.video = this.intDev.video.map((objA) => {
-								const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
-								return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
-							})
-							console.log('myGpu: ', this.myGpu)
-						} else this.myGpu = this.intDev.video
-						let itDG = await this.GPUInfo(this.myGpu)
-						await this.espera('actionGPU')
-						this.activate.gpu = false
-						this.myDb.GPU = itDG.description
-						this.myDb.GPU_RAM = itDG.RAM_GPU
+						let itDG = ''
+						if (this.intDev.video.length) {
+							this.activate.gpu = true
+							if (this.intDev.video.some((obj) => obj.AdapterRAM.includes('4'))) {
+								this.myGpu = await this.$cmd.getDx({
+									Serial: this.device.Serial,
+								})
+								this.intDev.video = this.intDev.video.map((objA) => {
+									const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
+									return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
+								})
+								console.log('myGpu: ', this.myGpu)
+							} else this.myGpu = this.intDev.video
+							itGD = await this.GPUInfo(this.myGpu)
+							await this.espera('actionGPU')
+							this.activate.gpu = false
+							this.myDb.GPU = itDG.description
+							this.myDb.GPU_RAM = itDG.RAM_GPU
+						}
+						this.componentes = { ...this.componentes, ...this.bios }
+						this.componentes['GPU'] = this.intDev.video.length ? this.myDb.GPU : null
+						this.componentes['Memory'] = this.intDev.RAM.Total
+						this.componentes['Storage'] = itDH.group.Size
+						this.componentes['Serial'] = this.device.Serial
+						this.componentes['Model'] = this.device.SKU
+						this.componentes['Description'] = this.device.Description
+						this.componentes['OSEdition'] = this.test.OS
+						this.componentes['SmartCard'] = this.bios.SmartCard
 						this.myDb.CPU = this.intDev.cpuName.join('\n')
+						this.componentes['CPU'] = this.myDb.CPU
 						if (this.type == 'desktop') {
 							this.activate.desktop = true
 							await this.espera('actionDesktop')
@@ -1302,6 +1445,7 @@
 							}
 							this.activate.note = false
 						}
+						console.log(this.componentes)
 						this.info = {
 							...this.info,
 							video: itDG,
@@ -1310,6 +1454,15 @@
 							RAM: this.intDev.RAM,
 							HDD: this.intDev.HDD,
 						}
+						console.log(this.componentes)
+						await this.$db.funcAdmin('modules/bypass/createModel', this.componentes).then(async (v) => {
+							this.myDb['CODE'] = v.Code
+							this.myDb.Description = `${this.device.Description}\n${this.test.OS}\n${this.intDev.cpu}\n${
+								this.intDev.HDD.Total
+							} ${this.intDev.HDD.Units.join(',')}\n${
+								this.intDev.RAM.Total
+							} ${this.intDev.RAM.Modules.join(',')}`
+						})
 						this.$q.loading.show()
 						this.txt = await this.report()
 						this.file = await this.$uploadTextFile(this.device.Serial, this.txt)

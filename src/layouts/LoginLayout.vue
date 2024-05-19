@@ -8,7 +8,7 @@
 				<q-card-section>
 					<div class="login-content">
 						<!-- Puedes agregar tu logo si lo deseas -->
-						<q-img src="logo.png" />
+						<q-img src="Logo.png" />
 
 						<!-- Campos del formulario -->
 						<div class="row col">
