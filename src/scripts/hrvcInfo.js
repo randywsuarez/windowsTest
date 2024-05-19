@@ -12,6 +12,7 @@ $Information = @{
         Units = @()
     }
 }
+
 function ConvertBytesToStandardSize {
     param (
         [Parameter(Mandatory=$true)]
@@ -42,44 +43,9 @@ function ConvertBytesToStandardSize {
 
 # Obtener información de la CPU
 $cpus = Get-WmiObject -Class Win32_Processor
-
 foreach ($cpu in $cpus) {
     $Information.cpuName += $cpu.Name
     $Information.cpu += "$($cpu.Name) ($($cpu.MaxClockSpeed) GHz, $($cpu.L3CacheSize) MB L3 cache, $($cpu.NumberOfCores) cores, $($cpu.NumberOfLogicalProcessors) threads)"
-}
-
-# Obtener solo las tarjetas de video reales
-$videoControllers = Get-WmiObject -Class Win32_VideoController | Where-Object { $_.VideoProcessor -notmatch "RDP" } | Select-Object Description, AdapterRAM
-
-# Verificamos si hay al menos una tarjeta de video
-if ($videoControllers) {
-    $counter = 1
-    foreach ($controller in $videoControllers) {
-        $adapterRAMBytes = $controller.AdapterRAM
-        $adapterRAMMB = [Math]::Round($adapterRAMBytes / 1MB, 2)
-
-        # Si la cantidad es 0.5 GB, convertirla a 512 MB
-        if ($adapterRAMMB -eq 0.5) {
-            $adapterRAMMB = 512
-        }
-
-        # Determinar si mostrar en MB o GB
-        $adapterRAMFormatted = if ($adapterRAMMB -lt 1024) {
-            "$adapterRAMMB MB"
-        } else {
-            "$([Math]::Round($adapterRAMMB / 1024, 2)) GB"
-        }
-
-        # Creamos un objeto para cada tarjeta de video
-        $videoInfo = [PSCustomObject]@{
-            Description = $controller.Description
-            AdapterRAM = $adapterRAMFormatted
-        }
-
-        # Agregamos el objeto al array
-        $Information.video += $videoInfo
-        $counter++
-    }
 }
 
 # Obtener información de la RAM
@@ -141,7 +107,6 @@ $Information.RAM.Modules = @($ramDescArray | ForEach-Object { "$($_.SerialNumber
 
 $hddUnits = Get-WmiObject -Class Win32_DiskDrive | Where-Object { $_.MediaType -ne "Removable Media" } | Select-Object Size, Model, SerialNumber
 
-
 if ($hddUnits) {
     $totalHDDSize = 0
     $hddUnitArray = @()
@@ -161,10 +126,32 @@ if ($hddUnits) {
 
     $Information.HDD.Total = ConvertBytesToStandardSize -Bytes $totalHDDSize
     $Information.HDD.Units = $hddUnitArray
-    #$Information.HDD.Units = "$($cpu.Name)"
 }
-#Write-Host ($hddUnitArray | ConvertTo-Json)
+# Obtener todas las tarjetas de video
+$videoControllers = Get-WmiObject -Class Win32_VideoController
+
+foreach ($controller in $videoControllers) {
+    # Filtrar las tarjetas de video reales que no sean USB y tengan AdapterDACType igual a "Integrated RAMDAC"
+    if ($controller.AdapterDACType -eq "Integrated RAMDAC" -and $controller.Description -notmatch "USB") {
+        $adapterRAMBytes = $controller.AdapterRAM
+        $adapterRAMMB = [Math]::Round($adapterRAMBytes / 1MB, 2)
+        if ($adapterRAMMB -eq 0.5) {
+            $adapterRAMMB = 512
+        }
+        $adapterRAMFormatted = if ($adapterRAMMB -lt 1024) {
+            "$adapterRAMMB MB"
+        } else {
+            "$([Math]::Round($adapterRAMMB / 1024, 2)) GB"
+        }
+        $videoInfo = [PSCustomObject]@{
+            Description = $controller.Description
+            AdapterRAM = $adapterRAMFormatted
+        }
+        # Agregar el objeto de información de video al array en $Information.video
+        $Information.video += $videoInfo
+    }
+}
+
 # Convertir a JSON y mostrar el resultado
 Write-Host ($Information | ConvertTo-Json)
-
 `

@@ -6,6 +6,67 @@ const fs = require('fs')
 const currentDirectory = __dirname
 const scriptsDirectory = path.join(currentDirectory, '..', 'scripts')
 
+async function checkItems(items, documentText) {
+	function capitalizeAndRemoveSpaces(str) {
+		return str.replace(/\b\w/g, (char) => char.toUpperCase()).replace(/\s+/g, '')
+	}
+
+	const keywordSets = [
+		{ enableWord: 'Enable', disableWord: 'Disable', enableResult: 'YES', disableResult: 'NO' },
+		{ enableWord: 'Unlock', disableWord: 'Lock', enableResult: 'YES', disableResult: 'NO' },
+		{ enableWord: 'Yes', disableWord: 'No', enableResult: 'YES', disableResult: 'NO' },
+	]
+
+	const result = {}
+
+	for (const item of items) {
+		let transformedItem = capitalizeAndRemoveSpaces(item)
+		result[transformedItem] = 'NO' // Inicializa el resultado con 'NO' para el caso de no coincidencia
+
+		for (const { enableWord, disableWord, enableResult, disableResult } of keywordSets) {
+			const regex = new RegExp(`${item}.*\\r?\\n\\s*(\\*?)(${enableWord}|${disableWord})`, 'i')
+			const match = documentText.match(regex)
+
+			if (match) {
+				const hasAsterisk = match[1] === '*'
+				const command = match[2].toLowerCase()
+
+				if (command === enableWord.toLowerCase()) {
+					result[transformedItem] = hasAsterisk ? enableResult : disableResult
+				} else if (command === disableWord.toLowerCase()) {
+					result[transformedItem] = hasAsterisk ? disableResult : enableResult
+				}
+				break // Salir del bucle si se encuentra una coincidencia
+			}
+		}
+	}
+
+	return result
+}
+
+// Valores de prueba
+const items = [
+	'Lock BIOS',
+	'Fingerprint Reset',
+	'Smart Card',
+	'Bluetooth',
+	'Wireless Network',
+	'Lock Wireless',
+	'Internal Speakers',
+	'Microphone',
+	'Integrated Camera',
+	'Fingerprint Device',
+	'Touch Device',
+	'OS Recovery',
+	'Programming Mode',
+	'Permanent Disable',
+	'NumLock',
+	'Keys mapped',
+	'Keyboard Backlit',
+	'Mobile Network',
+	'Headphone',
+]
+
 const CmdHelper = {
 	executeScript: function (scriptPath, callback) {
 		const powershellScriptPath = path.join(scriptsDirectory, `${scriptPath}.ps1`)
@@ -446,6 +507,54 @@ if (Test-Path $archivoDestino) {
 			ps.on('error', (err) => {
 				console.error(err)
 				resolve(false)
+			})
+		})
+	},
+	biosData: async () => {
+		return new Promise(async (resolve, reject) => {
+			// Construir la ruta hacia la herramienta y el archivo de configuración
+			const toolsPath = path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'Tools')
+			const myApp = path.join(toolsPath, 'Bios.exe')
+			const configFile = path.join(toolsPath, 'config.txt')
+
+			// Argumento para el comando Bios.exe, incluyendo la ruta completa al archivo de configuración
+			const argument = `/GetConfig:"${configFile}"`
+
+			// Comando completo para PowerShell
+			const psCommand = `& '${myApp}' ${argument}`
+
+			// Crear una nueva instancia de PowerShell
+			let ps = new PowerShell(psCommand)
+
+			// Escuchar los outputs de la consola
+			ps.on('output', (data) => {
+				console.log(data)
+			})
+
+			// Escuchar si hay errores
+			ps.on('error', (err) => {
+				console.error('Error en PowerShell:', err)
+			})
+
+			// Escuchar cuando el proceso termina
+			ps.on('end', async (code) => {
+				try {
+					fs.readFile(configFile, 'utf8', async (err, data) => {
+						if (err) {
+							console.error('Error al leer el archivo de configuración:', err)
+							reject(err)
+						}
+						let re = await checkItems(items, data)
+						console.log('Contenido de config.txt:', re)
+						resolve(re)
+						//console.log('Contenido de config.txt:', data)
+					})
+				} catch (parseError) {
+					console.error('Error parsing output as JSON:', parseError.message)
+					resolve(false)
+				}
+				console.log(`El proceso terminó con el código ${code}`)
+				// Leer el archivo de configuración después de que el proceso ha terminado
 			})
 		})
 	},

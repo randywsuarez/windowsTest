@@ -51,15 +51,29 @@ module.exports = ({ Vue }) => {
 			},
 			base64: {
 				name: fileName + '_base64',
-				path: base64Content,
+				path: base64FilePath,
 			},
 		}
+
 		return {
 			SerialNumber: fileName,
 			EmployeeID: '',
-			FileType: '2',
+			FileType: '1',
 			fileExtension: '.txt',
 			fileBase64Str: base64Content,
+		}
+	}
+
+	// Función para leer el contenido de un archivo de texto dado su ruta y nombre
+	Vue.prototype.$readTextFile = function (filePath) {
+		try {
+			// Leer el contenido del archivo
+			const fileContent = fs.readFileSync(filePath, 'utf-8')
+			console.log(`Contenido del archivo ${filePath} leído con éxito`)
+			return fileContent
+		} catch (error) {
+			console.error(`Error al leer el archivo ${filePath}:`, error)
+			return null // Retorna null si hay un error
 		}
 	}
 }
