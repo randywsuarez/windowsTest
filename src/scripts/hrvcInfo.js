@@ -1,5 +1,4 @@
-export default `
-$Information = @{
+export default `$Information = @{
     cpu = @()
     cpuName = @()
     video = @()  # Inicializamos como un array
@@ -45,7 +44,7 @@ function ConvertBytesToStandardSize {
 $cpus = Get-WmiObject -Class Win32_Processor
 foreach ($cpu in $cpus) {
     $Information.cpuName += $cpu.Name
-    $Information.cpu += "$($cpu.Name) ($($cpu.MaxClockSpeed) GHz, $($cpu.L3CacheSize) MB L3 cache, $($cpu.NumberOfCores) cores, $($cpu.NumberOfLogicalProcessors) threads)"
+    $Information.cpu += $cpu.Name
 }
 
 # Obtener información de la RAM
@@ -105,27 +104,43 @@ $ramTotalDesc += ($ramDetailsArray -join ", ") + ")"
 $Information.RAM.Total = "$ramTotalGB GB"
 $Information.RAM.Modules = @($ramDescArray | ForEach-Object { "$($_.SerialNumber),$($_.Details)" })
 
-$hddUnits = Get-WmiObject -Class Win32_DiskDrive | Where-Object { $_.MediaType -ne "Removable Media" } | Select-Object Size, Model, SerialNumber
+# Obtener información de los discos duros usando Get-WmiObject
+$wmiHddUnits = Get-WmiObject -Class Win32_DiskDrive | Where-Object { $_.MediaType -ne "Removable Media" } | Select-Object Size, Model, SerialNumber
 
-if ($hddUnits) {
+# Obtener información de los discos duros usando Get-PhysicalDisk
+$physicalHddUnits = Get-PhysicalDisk | Select-Object SerialNumber, MediaType
+
+if ($wmiHddUnits) {
     $totalHDDSize = 0
     $hddUnitArray = @()
+    $diskUnitArray = @()
 
-    foreach ($unit in $hddUnits) {
+    foreach ($unit in $wmiHddUnits) {
         $hddSize = ConvertBytesToStandardSize -Bytes $unit.Size
         $totalHDDSize += $unit.Size
+
+        # Buscar el tipo de disco correspondiente por SerialNumber
+        $matchingPhysicalDisk = $physicalHddUnits | Where-Object { $_.SerialNumber -eq $unit.SerialNumber }
+        $diskType = if ($matchingPhysicalDisk) {
+            $matchingPhysicalDisk.MediaType
+        } else {
+            "Unknown"
+        }
 
         $hddInfo = @{
             Model = $unit.Model
             Size = $hddSize
             Serial = $unit.SerialNumber
+            Type = $diskType
         }
 
-        $hddUnitArray += "$($hddInfo.Serial),$($hddInfo.Model),$($hddInfo.Size)"
+        $hddUnitArray += "$($hddInfo.Serial),$($hddInfo.Model),$($hddInfo.Size),$($hddInfo.Type)"
+        $diskUnitArray += "$(ConvertBytesToStandardSize -Bytes $unit.Size) $($diskType)"
     }
 
     $Information.HDD.Total = ConvertBytesToStandardSize -Bytes $totalHDDSize
     $Information.HDD.Units = $hddUnitArray
+    $Information.HDD.Disks = $diskUnitArray
 }
 # Obtener todas las tarjetas de video
 $videoControllers = Get-WmiObject -Class Win32_VideoController
