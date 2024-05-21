@@ -925,6 +925,14 @@
 				}
 
 				this.device = result
+				if (!this.device.SKU) {
+					this.test['SKU'] = `SKU ID Check FAIL`
+					this.showNotification('No Found', 'The SKU number no found in the device.')
+				}
+				if (!this.device.Serial) {
+					this.test['Serial'] = `SN ID Check FAIL`
+					this.showNotification('No Found', 'The Serial number no found in the device.')
+				}
 				this.info = { ...this.info, ...this.device }
 				this.miniSerial = this.device.Serial.slice(0, -2)
 				this.miniSKU = this.device.SKU.split('#')[0].slice(0, -2)
@@ -1123,7 +1131,6 @@
 				return null
 			},
 			showNotification(title, message) {
-				this.test['Serial'] = `SN ID Check FAIL`
 				this.msn = { title, message, active: true }
 			},
 			checkBiosItems() {
