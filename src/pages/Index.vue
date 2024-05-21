@@ -10,7 +10,7 @@
 			:project="project.id"
 			:title="device.Description"
 			:subtitle="`${device.SKU} - ${device.Serial}`"
-			:imageSrc="device.img ? device.img : 'Logo.png'"
+			:imageSrc="device.img ? device.img : `${type}.png`"
 		/>
 		<div class="main">
 			<q-card class="card" v-show="activate.comparation">
@@ -36,7 +36,6 @@
 						hint="Write the missing"
 					/>
 				</q-card-section>
-
 				<q-card-actions align="right" id="actionComparation">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
 					<q-btn
@@ -54,7 +53,7 @@
 				<q-card-section> <div class="text-h6">Select type</div> </q-card-section><q-separator />
 				<q-card-section class="row col" id="actionType" style="justify-content: center">
 					<q-btn class="col-md-4 q-ma-sm glow" @click="type = 'laptop'" id="laptop" ref="laptop"
-						><img src="022-laptop.png"
+						><img src="laptop.png"
 					/></q-btn>
 					<q-btn class="col-md-4 q-ma-sm glow" @click="type = 'desktop'" id="desktop" ref="desktop"
 						><img src="desktop.png"
@@ -81,7 +80,6 @@
 						/>
 					</q-card-section>
 				</q-card-section>
-
 				<q-card-actions align="right" ref="actionAudio" id="actionAudio">
 					<q-btn
 						id="audioFail"
@@ -107,7 +105,6 @@
 						<div class="col">
 							<div class="text-h6">Camera Test</div>
 						</div>
-
 						<div class="col-auto">
 							<q-btn round color="primary" icon="restart_alt" @click="activateCamera" />
 						</div>
@@ -138,7 +135,6 @@
 					/>
 				</q-card-actions>
 			</q-card>
-
 			<q-card class="card" v-show="activate.brightness">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Brightness Test</div> </q-card-section><q-separator />
@@ -159,7 +155,6 @@
 					/>
 				</q-card-actions>
 			</q-card>
-
 			<q-card class="card" v-show="activate.drivers">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Drivers Test</div> </q-card-section><q-separator />
@@ -184,7 +179,6 @@
 					/>
 				</q-card-actions>
 			</q-card>
-
 			<q-card class="card" v-show="activate.windows">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Windows Test</div> </q-card-section><q-separator />
@@ -251,7 +245,6 @@
 					<q-btn flat color="positive" label="Pass" @click="test['mousepad'] = 'Mouse pad test PASS'" />
 				</q-card-actions>
 			</q-card>
-
 			<q-card class="card" v-show="activate.hotKey">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">HotKey</div> </q-card-section><q-separator />
@@ -264,7 +257,6 @@
 					<q-btn flat color="positive" label="Pass" @click="test['hotKey'] = 'HotKeys test PASS'" />
 				</q-card-actions>
 			</q-card>
-
 			<q-card class="card" v-show="activate.components">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Status Components</div> </q-card-section><q-separator />
@@ -276,8 +268,8 @@
 								<q-item v-for="(item, index) in leftItems" :key="index">
 									<q-item-section side>
 										<q-checkbox
-											v-model="bios[formatItem(item)]"
-											:label="item"
+											v-model="bios[formatItem(item.label)]"
+											:label="item.label"
 											true-value="YES"
 											false-value="NO"
 											left-label
@@ -291,8 +283,8 @@
 								<q-item v-for="(item, index) in rightItems" :key="index">
 									<q-item-section side>
 										<q-checkbox
-											v-model="bios[formatItem(item)]"
-											:label="item"
+											v-model="bios[formatItem(item.label)]"
+											:label="item.label"
 											true-value="YES"
 											false-value="NO"
 											left-label
@@ -318,7 +310,6 @@
 					/>
 				</q-card-actions>
 			</q-card>
-
 			<q-card class="card" v-show="activate.desktop">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Desktop Information</div> </q-card-section
@@ -381,7 +372,6 @@
 				<q-card-section class="center" v-else>
 					<div>Wait...</div>
 				</q-card-section>
-
 				<q-card-actions align="right" id="actionGPU" v-show="myGpu.length">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
@@ -393,7 +383,6 @@
 						<div class="col">
 							<div class="text-h6">Done</div>
 						</div>
-
 						<div class="col-auto">
 							<q-btn round color="primary" icon="info" @click="activate.txt = true" />
 						</div>
@@ -420,29 +409,23 @@
 					</q-card-section>
 				</q-card-section>
 			</q-card>
-
 			<q-dialog v-model="msn.active" persistent transition-show="scale" transition-hide="scale">
 				<q-card class="card" style="width: 300px">
 					<q-card-section>
 						<div class="text-h6">{{ msn.title }}</div>
 					</q-card-section>
-
 					<q-card-section class="q-pt-none"> {{ msn.message }} </q-card-section>
-
 					<q-card-actions align="right" class="text-teal">
 						<q-btn flat label="OK" @click="cerrarVentana" v-close-popup />
 					</q-card-actions>
 				</q-card>
 			</q-dialog>
-
 			<q-dialog v-model="msn.active2" persistent transition-show="scale" transition-hide="scale">
 				<q-card class="card" style="width: 300px">
 					<q-card-section>
 						<div class="text-h6">{{ msn.title }}</div>
 					</q-card-section>
-
 					<q-card-section class="q-pt-none"> {{ msn.message }} </q-card-section>
-
 					<q-card-actions align="right" class="text-teal">
 						<q-btn flat label="OK" v-close-popup />
 					</q-card-actions>
@@ -455,82 +438,60 @@
 							<div class="col">
 								<div class="text-h6">Information</div>
 							</div>
-
-							<!-- <div class="col-auto">
-								<q-btn round color="primary" icon="restart_alt" @click="activate.txt" />
-							</div> -->
 						</div>
 					</q-card-section>
-
 					<q-separator />
-
 					<q-card-section style="max-height: 80vh" class="scroll">
 						<div v-html="formatInfo(txt)"></div>
 					</q-card-section>
-
 					<q-separator />
-
 					<q-card-actions align="right">
 						<q-btn flat label="Close" color="primary" v-close-popup />
 					</q-card-actions>
 				</q-card>
 			</q-dialog>
 		</div>
-
-		<!-- <q-card class="card" v-if="activate.keyboard">
-			<q-card-section>
-				<q-card-section> <div class="text-h6">Keyboard Test</div> </q-card-section><q-separator />
-			</q-card-section>
-			<q-card-section>
-				<keyboard />
-			</q-card-section>
-			<q-card-actions align="right">
-				<q-btn color="negative" label="Fail" @click="handleAction('fail')" />
-				<q-btn color="positive" label="Pass" @click="handleAction('pass')" />
-			</q-card-actions>
-		</q-card> -->
 	</q-page>
 </template>
-
 <script>
 	import UserInfoGrid from '../components/UserInfoGrid.vue'
 	import Reproductor from '../components/soundTest.vue'
 	import CameraCapture from '../components/camaraCapture.vue'
-	import keyboard from '../components/keyboardTest.vue'
-	import drivers from '../scripts/checkDrivers'
-	import windows from '../scripts/checkWindows'
-	import intenalDevices from '../scripts/hrvcInfo'
-	import getBattery from '../scripts/battery'
-	import getDeviceInfo from '../scripts/GetDeviceInfo'
-	import GetMntBringhtness from '../scripts/MonitorBrightness'
-	import imaging from '../scripts/imaging'
-	import resolution from '../scripts/resolution'
-	import spotLights from '../scripts/spotLights'
-	import touchScreen from '../scripts/touchScreen'
-	import componentes from '../scripts/info'
 	import MousePad from '../components/MousePad.vue'
+	import {
+		drivers,
+		windows,
+		intenalDevices,
+		getBattery,
+		getDeviceInfo,
+		GetMntBringhtness,
+		imaging,
+		resolution,
+		spotLights,
+		touchScreen,
+		components,
+	} from '../scripts'
 	import moment from 'moment'
 	import JsBarcode from 'jsbarcode'
 	import axios from 'axios'
+
 	export default {
 		components: {
 			UserInfoGrid,
 			Reproductor,
 			CameraCapture,
-			keyboard,
 			MousePad,
 		},
-		data(r) {
+		data() {
 			return {
 				user: {},
-				device: {
-					img: '',
-				},
+				device: { img: '' },
 				test: {},
 				typeUnit: '#87cefa',
 				project: {},
 				sound: 'nada',
 				componentKey: 0,
+				commercial: false,
 				battery: {},
 				action: '',
 				camera: true,
@@ -566,7 +527,6 @@
 				file: '',
 				txt: '',
 				componentes: '',
-				omponentKey: 0,
 				image: {},
 				miniSerial: '',
 				miniSKU: '',
@@ -607,36 +567,31 @@
 						align: 'left',
 						sortable: true,
 					},
-					{
-						name: 'AdapterRAM',
-						label: 'RAM',
-						field: 'AdapterRAM',
-						align: 'left',
-						sortable: true,
-					},
+					{ name: 'AdapterRAM', label: 'RAM', field: 'AdapterRAM', align: 'left', sortable: true },
 				],
 				myGpu: [],
 				info: {},
 				items: [
-					'Lock BIOS',
-					'Fingerprint Reset',
-					'Smart Card',
-					'Bluetooth',
-					'Wireless Network',
-					'Lock Wireless',
-					'Internal Speakers',
-					'Microphone',
-					'Integrated Camera',
-					'Fingerprint Device',
-					'Touch Device',
-					'OS Recovery',
-					'Programming Mode',
-					'Permanent Disable',
-					'NumLock',
-					'Keys mapped',
-					'Keyboard Backlit',
-					'Mobile Network',
-					'Headphone',
+					{ label: 'Lock BIOS', value: '' },
+					{ label: 'Fingerprint Reset', value: '' },
+					{ label: 'Smart Card', value: '' },
+					{ label: 'Bluetooth', value: '' },
+					{ label: 'Wireless Network', value: '' },
+					{ label: 'Lock Wireless', value: '' },
+					{ label: 'Internal Speakers', value: '' },
+					{ label: 'Microphone', value: '' },
+					{ label: 'Integrated Camera', value: '' },
+					{ label: 'Fingerprint Device', value: 'Fingerprint' },
+					{ label: 'Touch Device', value: '' },
+					{ label: 'OS Recovery', value: '' },
+					{ label: 'Programming Mode', value: '' },
+					{ label: 'Permanent Disable', value: '' },
+					{ label: 'NumLock', value: '' },
+					{ label: 'Keys mapped', value: '' },
+					{ label: 'Keyboard Backlit', value: '' },
+					{ label: 'Mobile Network', value: 'WWAN' },
+					{ label: 'Headphone', value: '' },
+					{ label: 'NFC', value: 'NFC' },
 				],
 			}
 		},
@@ -664,52 +619,29 @@
 					},
 				}
 
-				return fetch(
-					`${this.select.url}/${this.project.id}/APP/PromoteImageDownloadUnit/SerchSN?sn=${this.device.Serial}&station=Image%20Download`,
-					options
-				)
-					.then((response) => response.json())
-					.then((response) => {
-						return response._message
-					})
-					.catch((err) => {
-						console.error(err)
-						return err._message
-					})
+				try {
+					const response = await fetch(
+						`${this.select.url}/${this.project.id}/APP/PromoteImageDownloadUnit/SerchSN?sn=${this.device.Serial}&station=Image%20Download`,
+						options
+					)
+					const data = await response.json()
+					return data._message
+				} catch (err) {
+					console.error(err)
+					return err._message
+				}
 			},
 			async saveFile(r) {
 				r.EmployeeID = this.select.id
-				console.log(r)
-				/* 	const options = {
-					method: 'POST',
-					url: `${this.select.url}/Testing/TestFilesResultsUpload/UploadFile`,
-					headers: {
-						'Content-Type': 'application/json',
-						tenant: `${this.select.tenant}`,
-						Authorization: `Bearer ${this.select.authToken}`,
-					},
-					data: r,
-				}
-
-				return axios
-					.request(options)
-					.then(function (response) {
-						console.log(response)
-						return response.data._isSuccess
-					})
-					.catch(function (error) {
-						console.error(error)
-					}) */
 				const options = {
 					method: 'POST',
 					headers: {
 						cookie:
-							'.AspNetCore.Identity.Application=CfDJ8Pv0WhnmHWxAjuPCJCw7jtyhZLq6S3nyRzfIHKZJOYQtEQ9hL9aX19OzrTjV8uk1xdI9dU-1YPI33AaECMgBFlaESDpOOX2FDk7S2tqsC0gJ1_7V7msodnLjsBAqAgSWnlUVvYl5ijgqNA4qsVC9W8wczbPIbCOuc-SodELJK0o-Mh6ua73Z9I3UleU85L4i0Rwzab_Dolm34AliuJHCwSX3KiisitNWY_sva5QYM8lRePNIy8c41JXlBkwluWhmN6xvOm9Qo3go5bVf2b8Qk3VCe96yOwSmNvyc3RddSBN-45SbH_VCx9ujjiRjqf3t6RmK7viqOz7IW9-pQw7ZBBefbtqSUGFmN8gzXkjD6sg-2fbWJODEvkyJOSQjFKy__-30bXqQ32Tmts8Bb7-yTcJmymXAOhMqRtV8q2X48q3pmZEnUDpTxPkLnsorXbmzMgoWVLC-QapXQBwGO9jr2YoL2Q2DRhPvNPzXo8Ly0wB-0gedagBVhj9CKr6ridtZQwv1jTu_wnf-J5T6XvtLOsUmyAN-7wW6KOVN6fXi8hKk-z3gTeT0SHDhbQPViVMnB3sKZkewxHdX1Mb1QPot5nlytpkdNDfT4vybqpUrFTczco7aDTNU55ORyCjpF6quntw7-LF2rrTYT2UZZlWWlnRZOr5Bhz-Vn_0cNMl_b1_-Zy9_vrvxiYm4BWKKIjf8sVZzY-ayC5vWuRdsxaKS61SD6JFVIbf_sO6Vat2y6R3HTblNM9BHT0T7VLZ0yRwZF5vO_ty6kZxeTUZyhLA8jDAp-p5npa1D3f-gqirOhsa6m8TIjKxn5GH54HA4KaHqkg; ARRAffinity=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961; ARRAffinitySameSite=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961',
+							'.AspNetCore.Identity.Application=CfDJ8Pv0WhnmHWxAjuPCJCw7jtyhZLq6S3nyRzfIHKZJOYQtEQ9hL9aX19OzrTjV8uk1xdI9dU-1YPI33AaECMgBFlaESDpOOX2FDk7S2tqsC0gJ1_7V7msodnLjsBAqAgSWnlUVvYl5ijgqNA4qsVC9W8wczbPIbCOuc-SodELJK0o-Mh6ua73Z9I3UleU85L4i0Rwzab_Dolm34AliuJHCwSX3KiisitNWY_sva5QYM8lRePNIy8c41JXlBkwluWhmN6xvOm9Qo3go5bVf2b8Qk3VCe96yOwSmNvyc3RddSBN-45SbH_VCx9ujjiRjqf3t6RmK7viqOz7IW9-pQw7ZBBefbtqSUGFmN8gzXkjD6sg-2fbWJODEvkyJOSQjFKy__-30bXqQ32Tmts8Bb7-yTcJmymXAOhMqRtV8q2X48q3pmZEnUDpTxPkLnsorXbmzMgoWVLC-QapXQBwGO9jr2YoL2Q2DRhPvNPzXo8Ly0wB-0gedagBVhj9CKr6ridtZQwv1jTu_wnf-J5T6XvtLOsUmyAN-7wW6fXi8hKk-z3gTeT0SHDhbQPViVMnB3sKZkewxHdX1Mb1QPot5nlytpkdNDfT4vybqpUrFTczco7aDTNU55ORyCjpF6quntw7-LF2rrTYT2UZZlWWlnRZOr5Bhz-Vn_0cNMl_b1_-Zy9_vrvxiYm4BWKKIjf8sVZzY-ayC5vWuRdsxaKS61SD6JFVIbf_sO6Vat2y6R3HTblNM9BHT0T7VLZ0yRwZF5vO_ty6kZxeTUZyhLA8jDAp-p5npa1D3f-gqirOhsa6m8TIjKxn5GH54HA4KaHqkg; ARRAffinity=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961; ARRAffinitySameSite=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961',
 						tenant: `${this.select.tenant}`,
 						'Content-Type': 'application/json',
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
-					//body: `{"SerialNumber":"${this.select.SerialNumber}","EmployeeID":"${this.select.id}","FileType":"${r.FileType}","fileExtension":"${r.fileExtension}",  "fileBase64Str":"${r.fileBase64Str}"`,
 					body: JSON.stringify({
 						SerialNumber: r.SerialNumber,
 						EmployeeID: this.select.id,
@@ -719,91 +651,649 @@
 					}),
 				}
 
-				return fetch(
-					`${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile`,
-					options
-				)
-					.then((response) => response.json())
-					.then((response) => {
-						console.log('response: ', response)
-						return response.data._isSuccess
-					})
-					.catch((err) => console.error(err))
+				try {
+					const response = await fetch(
+						`${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile`,
+						options
+					)
+					const data = await response.json()
+					return data.data._isSuccess
+				} catch (err) {
+					console.error(err)
+					return false
+				}
 			},
 			activateCamera() {
-				//this.activate.camera = false
-				//this.activate.camera = true
 				this.componentKey += 1
-				//this.$refs.camaraCapture.recargarComponente()
 				this.$nextTick(() => {
 					this.mostrarComponente = true
 				})
-				//this.$refs.camaraCapture.captureImage()
 			},
 			handleInputChange(id) {
-				// Convierte el valor a mayúsculas
 				this.check[id] = this.check[id].toUpperCase()
 			},
 			async report() {
 				let res = Object.values(this.test).includes('fail') ? 'FAIL' : 'PASS'
 				let lastdate = await this.DateTime()
-				console.log(lastdate)
 				this.myDb.DATE = lastdate.wipe
 				this.myDb.STATUS = res == 'PASS' ? 'true' : 'false'
 				this.myDb.OPERATOR = this.select.id
 				this.myDb.DateEnd = lastdate.end
-				//this.myDb.DateEnd.setHours(this.myDb.DateEnd.getHours() - 6)
 				this.myDb.DateStart = lastdate.start
-				//this.myDb.DateStart.setHours(this.myDb.DateStart.getHours() - 6)
-				/* this.myDb.Description = `${this.device.Description}\n${this.test.OS}\n${this.intDev.cpu}\n${
-					this.intDev.HDD.Total
-				} ${this.intDev.HDD.Units.join(',')}\n${this.intDev.RAM.Total} ${this.intDev.RAM.Modules.join(
-					','
-				)}` */
+
 				return `
-			       ISP Windows Test Ver:3.03 - ${this.project.id}
-			       Operator ID: ${this.select.id}
-			       Operator Name:${this.user.usuario}
-			       Start Date: ${this.test.Date}
-			       Start Time: ${this.test.startTime}
-			       End Date: ${lastdate.date}
-			       End Time: ${lastdate.time}
-			       ==============================Devices Information===================================
-			       ${this.test.Description}
-			       ${this.test.Model}
-			       ${this.test.Serial}
-			       Windows OS Name: ${this.test.OS} (${this.iTest.Organization ? 'A' : 'M'})
-			       Windows Product Key: ${this.test.keyWindows}
-			       ${this.test.windows}
-			       ${this.test.color ? `Color: ${this.test.color}` : ''}
-			       Hard Drive: ${this.intDev.HDD.Total}
-			       ${this.intDev.HDD.Units.join('\n')}
-			       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
-			       ${this.intDev.RAM.Modules.join('\n')}
-			       GPU Verification PASS
-			       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
-			       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Resolution' : ''}
-			       ${this.test.hasOwnProperty('resolution') ? this.test.resolution : ''}
-			       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Touch Screen' : ''}
-			       ${this.test.hasOwnProperty('touchScreen') ? this.test.touchScreen : ''}
-			       CPU
-			       ${this.intDev.cpu.join('\n')}
-			       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
-			       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
-			       ${this.type == 'desktop' ? 'Cooler System' : ''}
-			       ${this.type == 'desktop' ? this.form.coolerSystem : ''}
-			       =================================Test Status========================================
-			       ${this.type != 'desktop' ? this.test.audio : ''}
-			       ${this.type != 'desktop' ? this.test.camera : ''}
-			       ${this.test.drivers}
-			       ${this.test.display}
-			       ${this.type == 'laptop' ? this.test.battery : ''}
-			       ${this.type != 'desktop' ? this.test.brightness : ''}
-			       ${this.type != 'desktop' ? this.test.spotLights : ''}
-	           ${this.form.note ? `Note: ${this.form.note}` : ''}
-			       ====================================Result==========================================
-			       Test Result is ${res}
-			     `.replace(/^\s*[\r\n]/gm, '')
+	       ISP Windows Test Ver:3.03 - ${this.project.id}
+	       Operator ID: ${this.select.id}
+	       Operator Name:${this.user.usuario}
+	       Start Date: ${this.test.Date}
+	       Start Time: ${this.test.startTime}
+	       End Date: ${lastdate.date}
+	       End Time: ${lastdate.time}
+	       ==============================Devices Information===================================
+	       ${this.test.Description}
+	       ${this.test.Model}
+	       ${this.test.Serial}
+	       Windows OS Name: ${this.test.OS} (${this.iTest.Organization ? 'A' : 'M'})
+	       Windows Product Key: ${this.test.keyWindows}
+	       ${this.test.windows}
+	       ${this.test.color ? `Color: ${this.test.color}` : ''}
+	       Hard Drive: ${this.intDev.HDD.Total}
+	       ${this.intDev.HDD.Units.join('\n')}
+	       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
+	       ${this.intDev.RAM.Modules.join('\n')}
+	       GPU Verification PASS
+	       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
+	       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Resolution' : ''}
+	       ${this.test.hasOwnProperty('resolution') ? this.test.resolution : ''}
+	       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Touch Screen' : ''}
+	       ${this.test.hasOwnProperty('touchScreen') ? this.test.touchScreen : ''}
+	       CPU
+	       ${this.intDev.cpu.join('\n')}
+	       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
+	       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
+	       ${this.type == 'desktop' ? 'Cooler System' : ''}
+	       ${this.type == 'desktop' ? this.form.coolerSystem : ''}
+	       =================================Test Status========================================
+	       ${this.type != 'desktop' ? this.test.audio : ''}
+	       ${this.type != 'desktop' ? this.test.camera : ''}
+	       ${this.test.drivers}
+	       ${this.test.display}
+	       ${this.type == 'laptop' ? this.test.battery : ''}
+	       ${this.type != 'desktop' ? this.test.brightness : ''}
+	       ${this.type != 'desktop' ? this.test.spotLights : ''}
+	       ${this.form.note ? `Note: ${this.form.note}` : ''}
+	       ====================================Result==========================================
+	       Test Result is ${res}
+	     `.replace(/^\s*[\r\n]/gm, '')
+			},
+			async rsSave() {
+				let sh = await this.$rsDB(this.select.db)
+					.select('Serial')
+					.from('test_SnResults')
+					.where(`Serial = '${this.device.Serial}'`)
+					.execute()
+				if (sh.length) {
+					await this.$rsDB(this.select.db)
+						.update('test_SnResults')
+						.set(this.myDb)
+						.where(`Serial = '${this.device.Serial}'`)
+						.execute()
+				} else {
+					this.myDb['test_SnResultsID'] = 'NEWID()'
+					await this.$rsDB(this.select.db).insert('test_SnResults').fields(this.myDb).execute()
+				}
+			},
+			async upload(file, type) {
+				try {
+					const result = await this.$cmd.savePS({
+						apiUrl: `${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
+						filePath: file,
+						tenant: this.select.tenant,
+						token: this.select.authToken,
+					})
+					return result
+				} catch (error) {
+					console.error('Error:', error)
+					return false
+				}
+			},
+			async uploadImg(file, type) {
+				try {
+					const result = await this.$cmd.saveImg({
+						apiUrl: `${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
+						filePath: file,
+						tenant: this.select.tenant,
+						token: this.select.authToken,
+					})
+					return result
+				} catch (error) {
+					console.error('Error:', error)
+					return false
+				}
+			},
+			cerrarVentana() {
+				this.sdDevice()
+				const { remote } = require('electron')
+				const ventanaActual = remote.getCurrentWindow()
+				ventanaActual.close()
+			},
+			async infoHP() {
+				const model = this.device.SKU.includes('#') ? this.device.SKU.split('#')[0] : this.device.SKU
+				const info = await this.$db.collection('pcbHP').conditions({ Model: model }).all_data().get()
+
+				if (info.length) {
+					if (info[0].hasOwnProperty('COLOR') && info[0].color) {
+						this.device.img = info[0].img
+						this.myDb.COLOR = info[0].color ? info[0].color : ''
+					} else {
+						const data = await this.$db.funcAdmin('modules/pallets/partsurfer', {
+							serial: this.device.Serial,
+							prod_num: model,
+						})
+						this.myDb.COLOR = data.color ? data.color : ''
+						this.form.adapter = data.adapter
+					}
+				} else {
+					const data = await this.$db.funcAdmin('modules/pallets/partsurfer', {
+						serial: this.device.Serial,
+						prod_num: model,
+					})
+					this.myDb.COLOR = data.color ? data.color : ''
+					this.form.adapter = data.adapter
+				}
+				this.test['color'] = this.myDb.COLOR
+			},
+			getGraphicsInfo(dxdiagContent) {
+				const cardNamePattern = /Card name: (.+)/g
+				const dedicatedMemoryPattern = /Dedicated Memory: (.+)/g
+				let match
+				const graphicsInfoArray = []
+
+				while ((match = cardNamePattern.exec(dxdiagContent)) !== null) {
+					const cardName = match[1].trim()
+					const dedicatedMemoryMatch = dedicatedMemoryPattern.exec(dxdiagContent)
+					const dedicatedMemoryString = dedicatedMemoryMatch
+						? dedicatedMemoryMatch[1].trim()
+						: 'No se encontró'
+					const dedicatedMemoryInGB =
+						dedicatedMemoryString !== 'No se encontró'
+							? `${Math.round(parseFloat(dedicatedMemoryString.replace(' MB', '')) / 1024)} GB`
+							: 'No se encontró'
+
+					graphicsInfoArray.push({ Description: cardName, AdapterRAM: dedicatedMemoryInGB })
+				}
+
+				return graphicsInfoArray
+			},
+			async saveMng() {
+				const search = await this.$db
+					.collection('devices')
+					.conditions({ Serial: this.device.Serial })
+					.limit(1)
+					.all_data()
+					.get()
+				if (search.length) {
+					await this.$db.doc(`devices/${search[0]._id}`).update(this.info)
+				} else {
+					await this.$db.doc('devices').add(this.info)
+				}
+				const intDB = {
+					...this.myDb,
+					project: this.project.id,
+					OPERATOR: this.user.usuario,
+					TYPE: this.type.toUpperCase(),
+					PROCESSED: this.iTest.Organization ? 'A' : 'M',
+				}
+				const test = await this.$db
+					.collection('test_SnResults')
+					.conditions({ Serial: this.device.Serial })
+					.limit(1)
+					.all_data()
+					.get()
+
+				if (test.length) {
+					await this.$db.doc(`test_SnResults/${test[0]._id}`).update(intDB)
+				} else {
+					await this.$db.doc('test_SnResults').add(intDB)
+				}
+			},
+			async sdDevice() {
+				await this.$cmd.executeScriptCode(['Stop-Computer -ComputerName localhost'])
+			},
+			async checkDevice() {
+				const res = await this.$rsDB(this.project.db)
+					.select('Serial')
+					.from('test_SnResults')
+					.where(`Serial = '${this.device.Serial}'`)
+					.limit(1)
+					.execute()
+
+				if (res.length) {
+					this.$q.notify({ type: 'negative', message: `This unit was tested previously.` })
+					this.$q
+						.dialog({
+							title: 'Authorization Required',
+							message: 'You need to call your leader',
+							prompt: {
+								model: '',
+								type: 'password', // Hace que el campo sea de tipo contraseña
+								isValid: (val) => val.length > 0 || 'Please enter a password',
+							},
+							persistent: true,
+						})
+						.onOk(async (data) => {
+							this.$q.loading.show()
+							let i = await this.$db
+								.collection('securityTest')
+								.conditions({ key: data })
+								.limit(1)
+								.all_data()
+								.get()
+							if (i.length) {
+								this.myDb['Authorization'] = i[0].Description
+								this.$q.notify({ type: 'positive', message: `Authorizated...` })
+								this.$q.loading.hide()
+							} else {
+								this.$q.loading.hide()
+								this.$q.notify({ type: 'negative', message: `The code is bad try again...` })
+								this.checkDevice()
+							}
+						})
+						.onCancel(() => {
+							// console.log('>>>> Cancel')
+						})
+						.onDismiss(() => {
+							// console.log('I am triggered on both OK and Cancel')
+						})
+				}
+			},
+			async initializeTest() {
+				this.$q.loading.show()
+				this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
+				this.componentes = await this.$cmd.executeScriptCode(components)
+
+				const itDH = await this.hddInfo(this.intDev.HDD.Units)
+				this.myDb.Serial_HDD = itDH.group.Serial
+				this.myDb.Model_HDD = itDH.group.Description
+				this.myDb.HDD_CAPACITY = itDH.group.Size
+				this.myDb.RAM = this.intDev.RAM.Total
+
+				const result = await this.$cmd.executeScriptCode(getDeviceInfo)
+				if (!result) {
+					console.error('Error ejecutando script:', error)
+					return
+				}
+
+				this.device = result
+				this.info = { ...this.info, ...this.device }
+				this.miniSerial = this.device.Serial.slice(0, -2)
+				this.miniSKU = this.device.SKU.split('#')[0].slice(0, -2)
+
+				await this.infoHP()
+				this.myDb.Serial = result.Serial
+				this.myDb.Model = result.SKU
+
+				this.setTypeUnit()
+				if (this.commercial) this.bios = await this.$cmd.biosData()
+
+				let projectInfo = await this.getProjectInfo(result.Serial)
+				if (!projectInfo) {
+					this.$q.loading.hide()
+					this.showNotification('No Found', 'The Serial number no found in the system.')
+					return
+				}
+
+				if (projectInfo.ArrivedSKU != this.device.SKU && this.type == 'laptop') {
+					this.$q.loading.hide()
+					this.showNotification(
+						'No Math',
+						`SKUs are not the same, Device: ${this.device.SKU} <> System: ${projectInfo.ArrivedSKU}`
+					)
+					return
+				}
+
+				if (!projectInfo.StationID == 15 || !projectInfo.StationID) {
+					this.$q.loading.hide()
+					this.showNotification('Error', 'The unit has not passed through any previous station.')
+					return
+				}
+
+				await this.checkDevice()
+				const datetime = await this.DateTime()
+				this.test = {
+					Date: datetime.date,
+					startTime: datetime.time,
+					Serial: `SN ID Check PASS, SNID: ${this.device.Serial}`,
+					Model:
+						this.device.SKU == projectInfo.ArrivedSKU
+							? `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
+							: '',
+					Description: `Product Description: ${this.device.Description}`,
+				}
+
+				this.$q.loading.hide()
+				this.activate.type = true
+				await this.espera2('actionType')
+				this.activate.type = false
+				this.activate.comparation = true
+				await this.espera('actionComparation')
+				this.activate.comparation = false
+				this.activate.select = true
+			},
+			async performTests() {
+				this.driver = await this.$cmd.executeScriptCode(drivers)
+				this.activate.drivers = true
+				await this.espera('actionDrivers')
+				this.test['drivers'] =
+					this.driver.estatusDrivers == 'PASS'
+						? 'Device Manager Drivers Test PASS'
+						: 'Device Manager Drivers Test FAIL'
+				this.test['display'] =
+					this.driver.estatusVideo == 'PASS'
+						? 'Display Adapter Drivers Test PASS'
+						: 'Display Adapter Drivers Test FAIL'
+				this.activate.drivers = false
+
+				if (this.type == 'laptop') {
+					await this.testLaptopSpecifics()
+				}
+
+				if (this.type != 'desktop') {
+					await this.testNonDesktopSpecifics()
+				}
+
+				if (this.type == 'laptop' || this.type == 'all-in-one') {
+					const mires = await this.$cmd.executeScriptCode(resolution)
+					this.test['resolution'] = mires.resolution
+					await this.checkCameraAvailability()
+					this.activate.camera = true
+					await this.espera('actionCamera')
+					this.activate.camera = false
+				}
+
+				await this.testWindows()
+
+				if (this.intDev.video.length) {
+					await this.testGPU()
+				}
+
+				await this.saveComponents()
+
+				if (this.type == 'desktop') {
+					this.activate.desktop = true
+					await this.espera('actionDesktop')
+					this.info = { ...this.info, ...this.form }
+					this.activate.desktop = false
+				}
+
+				if (this.type == 'desktop' || this.type == 'all-in-one') {
+					this.activate.note = true
+					await this.espera('actionNote')
+					this.info = { ...this.info, ...this.form }
+					this.activate.note = false
+				}
+			},
+			async finalizeTest() {
+				this.info = {
+					...this.info,
+					video: await this.getGPUInfo(),
+					cpuName: this.intDev.cpuName,
+					cpu: this.intDev.cpu,
+					RAM: this.intDev.RAM,
+					HDD: this.intDev.HDD,
+				}
+
+				await this.$db.funcAdmin('modules/bypass/createModel', this.componentes).then(async (v) => {
+					this.myDb['CODE'] = v.Code
+					this.myDb.Description = `${this.device.Description}\n${this.test.OS}\n${this.intDev.cpu}\n${
+						this.intDev.HDD.Total
+					} ${this.intDev.HDD.Units.join(',')}\n${this.intDev.RAM.Total} ${this.intDev.RAM.Modules.join(
+						','
+					)}`
+				})
+
+				this.$q.loading.show()
+				this.txt = await this.report()
+				this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
+				if (this.file) await this.saveFile(this.file)
+				if (this.image) await this.saveFile(this.image)
+
+				this.info = { ...this.info, report: this.txt }
+				await this.rsSave()
+				await this.saveMng()
+				this.activate.scan = await this.passImaging()
+				this.$q.loading.hide()
+				this.activate.done = true
+
+				JsBarcode('#barcode', this.device.Serial, {
+					format: 'CODE128',
+					lineColor: '#000',
+					width: 1,
+					height: 50,
+					displayValue: true,
+					textAlign: 'center',
+					fontSize: 12,
+				})
+				JsBarcode('#barcode2', this.device.SKU, {
+					format: 'CODE128',
+					lineColor: '#000',
+					width: 1,
+					height: 50,
+					displayValue: true,
+					textAlign: 'center',
+					fontSize: 12,
+				})
+			},
+			setTypeUnit() {
+				if (this.device.SKU.includes('AV')) {
+					this.typeUnit = '#fa8787'
+					this.commercial = true
+				} else if (this.device.SKU.includes('UAR') || this.device.SKU.includes('U8R')) {
+					this.typeUnit = '#8bfa87'
+					this.commercial = false
+				} else if (this.device.SKU.includes('UA') || this.device.SKU.includes('U8')) {
+					this.commercial = false
+				} else {
+					this.typeUnit = '#8bfa87'
+					this.commercial = true
+				}
+			},
+			async getProjectInfo(serial) {
+				let res = ''
+				for (let x of this.$env.project) {
+					const u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
+					res = await this.$rsDB(x.db)
+						.select('SerialNumber, ArrivedSKU, StationID, SKU')
+						.from('sfis_WorkTracking')
+						.where(`SerialNumber = '${serial}'`)
+						.execute()
+
+					if (res.length) {
+						this.project = {
+							...this.project,
+							Station: res[0].StationID,
+							id: x.id,
+							db: x.db,
+							operator: u.id,
+						}
+						this.select = { ...x, ...u }
+						return res[0]
+					}
+				}
+				return null
+			},
+			showNotification(title, message) {
+				this.test['Serial'] = `SN ID Check FAIL`
+				this.msn = { title, message, active: true }
+			},
+			checkBiosItems() {
+				const itemsToCheck = [
+					'ProgrammingMode',
+					'Microphone',
+					'IntegratedCamera',
+					'TouchDevice',
+					'Headphone',
+					'KeyboardBacklit',
+					'LockWireless',
+					'WirelessNetwork',
+					'Bluetooth',
+					'SmartCard',
+					'LockBIOS',
+					'ProgrammingMode',
+				]
+
+				const itemsNotSet = itemsToCheck.filter((item) => {
+					if (this.bios[item] !== null) {
+						if (['LockWireless', 'LockBIOS'].includes(item)) {
+							return this.bios[item] === 'YES'
+						} else {
+							return this.bios[item] === 'NO'
+						}
+					}
+					return false
+				})
+
+				if (itemsNotSet.length > 0) {
+					this.$q.dialog({
+						title: 'BIOS Settings',
+						message: `The following BIOS settings need to be adjusted:\n\n${itemsNotSet.join(', ')}`,
+						persistent: true,
+						ok: {
+							label: 'Restart',
+							handler: () => {
+								this.$cmd.executeScriptCode(`shutdown -s -t 2`)
+							},
+						},
+					})
+				}
+			},
+			async testLaptopSpecifics() {
+				this.activate.battery = true
+				const battery = await this.$cmd.executeScriptCode(getBattery)
+				this.info = { ...this.info, battery }
+				this.test['battery'] = battery.Status.includes('fail')
+					? `Battery test FAIL, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+					: `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
+				this.battery = battery
+				this.activate.battery = false
+				this.activate.mousepad = true
+				await this.espera('actionMousePad')
+				this.activate.mousepad = false
+				this.activate.hotKey = true
+				await this.espera('actionHotKey')
+				this.activate.hotKey = false
+				if (this.commercial) {
+					this.activate.components = true
+					await this.checkBiosItems()
+					await this.espera('actionComponents')
+					this.activate.components = false
+				}
+			},
+			async testNonDesktopSpecifics() {
+				this.activate.audio = true
+				await this.espera('actionAudio')
+				this.activate.brightness = true
+				this.$cmd.executeScriptCode(GetMntBringhtness)
+				setTimeout(() => {
+					this.showActions = true
+				}, 4000)
+				await this.espera('actionBrightness')
+				this.activate.brightness = false
+				this.test['spotLights'] =
+					(await this.$cmd.executeScriptCode(spotLights)).result == 'PASS'
+						? 'Spot Lights Test PASS'
+						: 'Spot Lights Test FAIL'
+				this.test['touchScreen'] = (await this.$cmd.executeScriptCode(touchScreen)).result
+			},
+			async checkCameraAvailability() {
+				if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+					await navigator.mediaDevices
+						.enumerateDevices()
+						.then(async (devices) => {
+							const cameras = devices.filter((device) => device.kind === 'videoinput')
+							this.camera = cameras.length > 0
+						})
+						.catch((error) => {
+							console.error('Error al enumerar dispositivos:', error)
+							this.camera = true
+						})
+				} else {
+					console.log('La API de MediaDevices no es compatible con tu navegador.')
+				}
+			},
+			async testWindows() {
+				this.activate.windows = true
+				this.win = await this.$cmd.executeScriptCode(windows)
+				this.info = { ...this.info, ...this.win }
+				await this.espera('actionWindows')
+				this.activate.windows = false
+				this.test['windows'] =
+					this.action == 'PASS' && this.win.activationStatus
+						? 'Windows Activation Test PASS'
+						: 'Windows Activation Test FAIL'
+				this.test['OS'] = this.win.os
+				this.myDb.OS = this.win.os
+				this.test['keyWindows'] = this.win.keyWindows
+			},
+			async testGPU() {
+				this.activate.gpu = true
+				if (this.intDev.video.some((obj) => obj.AdapterRAM.includes('4'))) {
+					this.myGpu = await this.$cmd.getDx({ Serial: this.device.Serial })
+					this.intDev.video = this.intDev.video.map((objA) => {
+						const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
+						return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
+					})
+				} else {
+					this.myGpu = this.intDev.video
+				}
+				const itDG = await this.GPUInfo(this.myGpu)
+				await this.espera('actionGPU')
+				this.activate.gpu = false
+				this.myDb.GPU = itDG.description
+				this.myDb.GPU_RAM = itDG.RAM_GPU
+			},
+			saveComponents() {
+				this.componentes = {
+					...this.componentes,
+					...this.bios,
+					GPU: this.intDev.video.length ? this.myDb.GPU : null,
+					Memory: this.intDev.RAM.Total,
+					Storage: this.intDev.HDD.Disks.join(','),
+					Serial: this.device.Serial,
+					Model: this.device.SKU,
+					Description: this.device.Description,
+					OSEdition: this.test.OS,
+					SmartCard:
+						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('SmartCard')
+							? this.bios.SmartCard
+							: null,
+					NFC:
+						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('NFC')
+							? this.bios.NFC
+							: this.componentes.NFC,
+					Fingerprint:
+						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('Fingerprint')
+							? this.bios.Fingerprint
+							: this.componentes.Fingerprint,
+					WWAN:
+						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('WirelessNetwork')
+							? this.bios.WirelessNetwork
+							: this.componentes.WWAN,
+					CPU: this.intDev.cpu.join(','),
+					Bluetooth:
+						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('Bluetooth')
+							? this.bios.Bluetooth
+							: this.componentes.Bluetooth,
+					Keyboard: this.componentes.Keyboard,
+				}
+			},
+			async getGPUInfo() {
+				return await this.GPUInfo(this.myGpu)
+			},
+			async myTest() {
+				await this.initializeTest()
+				await this.performTests()
+				await this.finalizeTest()
 			},
 			ramInfo(i) {
 				let objetos = i.map((item) => {
@@ -959,9 +1449,7 @@
 			async espera(a) {
 				return new Promise((resolve) => {
 					let cardActions = document.querySelector(`#${a}`)
-					//console.log(cardActions)
 					let clickHandler = (event) => {
-						//console.log(a, event)
 						let target = event.target
 						if (target.innerText === 'PASS' || target.innerText === 'FAIL') {
 							cardActions.removeEventListener('click', clickHandler)
@@ -979,7 +1467,6 @@
 					let cardActions3 = document.querySelector(`#${a} #all-in-one`)
 					let clickHandler = (event) => {
 						let target = event.target.innerHTML ? event.target.innerHTML : event.target.src
-						console.log('target: ', target)
 						if (
 							target.includes('laptop') ||
 							target.includes('desktop') ||
@@ -997,526 +1484,15 @@
 					cardActions3.addEventListener('click', clickHandler)
 				})
 			},
-			async rsSave() {
-				let sh = await this.$rsDB(this.select.db)
-					.select('Serial')
-					.from('test_SnResults')
-					.where(`Serial = '${this.device.Serial}'`)
-					.execute()
-				if (sh.length) {
-					//console.log(sh)
-					let result = await this.$rsDB(this.select.db)
-						.update('test_SnResults')
-						.set(this.myDb)
-						.where(`Serial = '${this.device.Serial}'`)
-						.execute()
-				} else {
-					this.myDb['test_SnResultsID'] = 'NEWID()'
-					let result = await this.$rsDB(this.select.db)
-						.insert('test_SnResults')
-						.fields(this.myDb)
-						.execute()
-				}
-			},
-			async upload(file, type) {
-				await this.$cmd
-					.savePS({
-						apiUrl: `${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
-						filePath: file,
-						tenant: this.select.tenant,
-						token: this.select.authToken,
-					})
-					.then((result) => {
-						console.log('Result:', result)
-						/* if (this.$textFile && !result) {
-								this.msn['title'] = 'Error'
-								this.msn['message'] =
-									'Oops. The log could not be uploaded to the system. Call the system administrator.'
-								this.$q.loading.hide()
-								this.msn.active = true
-								return
-							} */
-						return result
-					})
-					.catch((error) => {
-						console.error('Error:', error)
-					})
-			},
-			async uploadImg(file, type) {
-				this.$cmd
-					.saveImg({
-						apiUrl: `${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
-						filePath: file,
-						tenant: this.select.tenant,
-						token: this.select.authToken,
-					})
-					.then((result) => {
-						console.log('Result:', result)
-						/* if (this.$imageFile && !result) {
-								this.msn['title'] = 'Error'
-								this.msn['message'] =
-									'Oops. The image could not be uploaded to the system. Call the system administrator.'
-								this.$q.loading.hide()
-								this.msn.active = true
-								return
-							} */
-						return result
-					})
-					.catch((error) => {
-						console.error('Error:', error)
-					})
-			},
-			cerrarVentana() {
-				// Cerrar la ventana en Electron
-				this.sdDevice()
-				let { remote } = require('electron')
-				let ventanaActual = remote.getCurrentWindow()
-				ventanaActual.close()
-			},
-			async infoHP() {
-				let info = await this.$db
-					.collection('pcbHP')
-					.conditions({
-						Model: this.device.SKU.includes('#') ? this.device.SKU.split('#')[0] : this.device.SKU,
-					})
-					.all_data()
-					.get()
-				if (info.length) {
-					if (info[0].hasOwnProperty('COLOR') && info[0].color) {
-						this.device.img = info[0].img
-						this.myDb.COLOR = info[0].color ? info[0].color : ''
-					} else
-						await this.$db
-							.funcAdmin('modules/pallets/partsurfer', {
-								serial: this.device.Serial,
-								prod_num: this.device.SKU.includes('#') ? this.device.SKU.split('#')[0] : this.device.SKU,
-							})
-							.then(async (v) => {
-								console.log(v)
-								this.myDb.COLOR = v.color ? v.color : ''
-								this.form.adapter = v.adapter
-							})
-				} else
-					await this.$db
-						.funcAdmin('modules/pallets/partsurfer', {
-							serial: this.device.Serial,
-							prod_num: this.device.SKU.includes('#') ? this.device.SKU.split('#')[0] : this.device.SKU,
-						})
-						.then(async (v) => {
-							console.log(v)
-							this.myDb.COLOR = v.color ? v.color : ''
-							this.form.adapter = v.adapter
-						})
-				this.test['color'] = this.myDb.COLOR
-			},
-			getGraphicsInfo(dxdiagContent) {
-				// Buscar el patrón para el nombre de la tarjeta gráfica
-				const cardNamePattern = /Card name: (.+)/g
-				const dedicatedMemoryPattern = /Dedicated Memory: (.+)/g
-
-				let match
-				const graphicsInfoArray = []
-
-				// Buscar todas las coincidencias para el nombre de la tarjeta gráfica
-				while ((match = cardNamePattern.exec(dxdiagContent)) !== null) {
-					const cardName = match[1].trim()
-
-					// Buscar la coincidencia correspondiente para la memoria dedicada
-					const dedicatedMemoryMatch = dedicatedMemoryPattern.exec(dxdiagContent)
-					const dedicatedMemoryString = dedicatedMemoryMatch
-						? dedicatedMemoryMatch[1].trim()
-						: 'No se encontró'
-
-					// Convertir la memoria dedicada a gigabytes y agregar "GB" como sufijo
-					const dedicatedMemoryInGB =
-						dedicatedMemoryString !== 'No se encontró'
-							? `${Math.round(parseFloat(dedicatedMemoryString.replace(' MB', '')) / 1024)} GB`
-							: 'No se encontró'
-
-					// Agregar la información al array
-					graphicsInfoArray.push({
-						Description: cardName,
-						AdapterRAM: dedicatedMemoryInGB,
-					})
-				}
-
-				return graphicsInfoArray
-			},
-			async saveMng() {
-				let search = await this.$db
-					.collection('devices')
-					.conditions({
-						Serial: this.device.Serial,
-					})
-					.limit(1)
-					.all_data()
-					.get()
-				if (search.length) {
-					await this.$db.doc(`devices/${search[0]._id}`).update(this.info)
-				} else {
-					await this.$db.doc('devices').add(this.info)
-				}
-				let intDB = this.myDb
-				intDB['project'] = this.project.id
-				intDB['OPERATOR'] = this.user.usuario
-				intDB['TYPE'] = this.type.toUpperCase()
-				intDB['PROCESSED'] = this.iTest.Organization ? 'A' : 'M'
-				let test = await this.$db
-					.collection('test_SnResults')
-					.conditions({
-						Serial: this.device.Serial,
-					})
-					.limit(1)
-					.all_data()
-					.get()
-				console.log('test: ', test.length)
-				if (test.length) {
-					console.log(test[0]._id)
-					let r = await this.$db.doc(`test_SnResults/${test[0]._id}`).update(intDB)
-					console.log(r)
-				} else {
-					let r = await this.$db.doc('test_SnResults').add(intDB)
-					console.log(r)
-				}
-			},
-			async sdDevice() {
-				await this.$cmd.executeScriptCode(['Stop-Computer -ComputerName localhost'])
-			},
-			async checkDevice() {
-				let res = await this.$rsDB(this.project.db)
-					.select('Serial')
-					.from('test_SnResults')
-					.where(`Serial = '${this.device.Serial}'`)
-					.limit(1)
-					.execute()
-				if (res.length)
-					this.$q.notify({
-						type: 'negative',
-						message: `This unit was tested previously.`,
-					})
-			},
-			async myTest() {
-				this.$q.loading.show()
-				this.bios = await this.$cmd.biosData()
-				console.log(this.bios)
-				this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
-				this.componentes = await this.$cmd.executeScriptCode(componentes)
-				console.log(this.intDev.video.length)
-
-				let itDH = await this.hddInfo(this.intDev.HDD.Units)
-				this.myDb.Serial_HDD = itDH.group.Serial
-				this.myDb.Model_HDD = itDH.group.Description
-				this.myDb.HDD_CAPACITY = itDH.group.Size
-				this.myDb.RAM = this.intDev.RAM.Total
-				await this.$cmd.executeScriptCode(getDeviceInfo).then(async (result) => {
-					if (result == false) {
-						console.error('Error ejecutando script:', error)
-					} else {
-						this.device = result
-						this.info = { ...this.info, ...this.device }
-						this.miniSerial = this.device.Serial.slice(0, -2)
-						this.miniSKU = this.device.SKU.split('#')[0].slice(0, -2)
-						//this.miniSKU = this.device.SKU.split('#')[0]
-						await this.infoHP()
-						this.myDb.Serial = result.Serial
-						this.myDb.Model = result.SKU
-						if (result.SKU.includes('AV')) this.typeUnit = '#fa8787'
-						else if (result.SKU.includes('UAR') || result.SKU.includes('U8R')) this.typeUnit = '#8bfa87'
-						else if (result.SKU.includes('UA') || result.SKU.includes('U8')) this.typeUnit = this.typeUnit
-						else this.typeUnit = '#8bfa87'
-						let res = ''
-						for (let x of this.$env.project) {
-							let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
-							res = await this.$rsDB(x.db)
-								.select('SerialNumber, ArrivedSKU, StationID, SKU')
-								.from('sfis_WorkTracking')
-								.where(`SerialNumber = '${result.Serial}'`)
-								.execute()
-							console.log(x.id, res)
-							if (res.length) {
-								/* let sttn = await this.$rsDB(x.admin)
-									.select('Name')
-									.from('conf_Station')
-									.where(`Station = '${res.StationID}'`)
-									.execute()
-								this.project['Station'] = sttn[0].Name */
-								this.project['id'] = x.id
-								this.project['db'] = x.db
-								this.project['operator'] = u.id
-								this.select = { ...x, ...u }
-								console.log('select: ', this.select)
-								break
-							}
-						}
-						if (!this.project.hasOwnProperty('id')) {
-							this.$q.loading.hide()
-							this.test['Serial'] = `SN ID Check FAIL`
-							this.msn['title'] = 'No Found'
-							this.msn['message'] = 'The Serial number no found in the system.'
-							this.msn.active = true
-							return
-						}
-						console.log(res[0].ArrivedSKU, this.device.SKU)
-						if (res[0].ArrivedSKU != this.device.SKU && this.type == 'laptop') {
-							this.$q.loading.hide()
-							this.test['SKU'] = `SKU ID Check FAIL`
-							this.msn['title'] = 'No Math'
-							this.msn[
-								'message'
-							] = `SKUs are not the same, Device: ${this.device.SKU} <> System: ${res[0].ArrivedSKU}`
-							this.msn.active = true
-							return
-						}
-						/* if (this.device.SKU.includes(res[0].SKU) && this.type != 'laptop') {
-							this.$q.loading.hide()
-							this.test['SKU'] = `SKU ID Check FAIL`
-							this.msn['title'] = 'No Math'
-							this.msn[
-								'message'
-							] = `SKUs are not the same, Device: ${this.device.SKU} <> System: ${res[0].SKU}`
-							this.msn.active2 = true
-						} */
-						if (!res[0].StationID == 15 || !res[0].StationID) {
-							this.$q.loading.hide()
-							this.msn['title'] = 'Error'
-							this.msn['message'] = 'The unit has not passed through any previous station.'
-							this.msn.active = true
-							return
-						}
-						await this.checkDevice()
-						let datetime = await this.DateTime()
-						this.test['Date'] = datetime.date
-						this.test['startTime'] = datetime.time
-						this.test['Serial'] = `SN ID Check PASS, SNID: ${this.device.Serial}`
-						if (this.device.SKU == res[0].ArrivedSKU)
-							this.test['Model'] = `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
-						this.test['Description'] = `Product Description: ${this.device.Description}`
-						this.$q.loading.hide()
-						this.activate.type = true
-						await this.espera2('actionType')
-						this.activate.type = false
-						this.activate.comparation = true
-						await this.espera('actionComparation')
-						this.activate.comparation = false
-						this.activate.select = true
-						this.driver = await this.$cmd.executeScriptCode(drivers)
-						this.activate.drivers = true
-						await this.espera('actionDrivers')
-						if (this.driver.estatusDrivers == 'PASS')
-							this.test['drivers'] = 'Device Manager Drivers Test PASS'
-						else this.test['drivers'] = 'Device Manager Drivers Test FAIL'
-						if (this.driver.estatusVideo == 'PASS')
-							this.test['display'] = 'Display Adapter Drivers Test PASS'
-						else this.test['display'] = 'Display Adapter Drivers Test FAIL'
-						this.activate.drivers = false
-						if (this.type == 'laptop') {
-							this.activate.battery = true
-							var battery = await this.$cmd.executeScriptCode(getBattery)
-							this.info = { ...this.info, battery }
-							if (battery.Status.includes('fail')) {
-								this.test[
-									'battery'
-								] = `Battery test FAIL, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
-								this.battery = battery
-								console.log('Bateria: ', this.battery)
-								this.activate.battery = true
-								await this.espera('actionBattery')
-							} else
-								this.test[
-									'battery'
-								] = `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
-							this.activate.battery = false
-							this.activate.mousepad = true
-							await this.espera('actionMousePad')
-							this.activate.mousepad = false
-							this.activate.hotKey = true
-							await this.espera('actionHotKey')
-							this.activate.hotKey = false
-							this.activate.components = true
-							await this.espera('actionComponents')
-							this.activate.components = false
-						}
-						if (this.type != 'desktop') {
-							this.activate.audio = true
-							await this.espera('actionAudio')
-							this.activate.brightness = true
-							this.$cmd.executeScriptCode(GetMntBringhtness)
-							setTimeout(() => {
-								this.showActions = true
-							}, 4000)
-							await this.espera('actionBrightness')
-							this.activate.brightness = false
-							this.test['spotLights'] =
-								(await this.$cmd.executeScriptCode(spotLights)).result == 'PASS'
-									? 'Spot Lights Test PASS'
-									: 'Spot Lights Test FAIL'
-							this.test['touchScreen'] = (await this.$cmd.executeScriptCode(touchScreen)).result
-						}
-						if (this.type == 'laptop' || this.type == 'all-in-one') {
-							let mires = await this.$cmd.executeScriptCode(resolution)
-							console.log('resolution: ', mires)
-							this.test['resolution'] = mires.resolution
-							if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-								await navigator.mediaDevices
-									.enumerateDevices()
-									.then(async (devices) => {
-										const cameras = devices.filter((device) => device.kind === 'videoinput')
-										if (cameras.length > 0) {
-											console.log('Tu computadora tiene una cámara.')
-											this.camera = true
-										} else {
-											console.log('No se encontraron cámaras en tu computadora.')
-											this.camera = false
-										}
-									})
-									.catch((error) => {
-										console.error('Error al enumerar dispositivos:', error)
-										this.camera = true
-									})
-							} else {
-								console.log('La API de MediaDevices no es compatible con tu navegador.')
-							}
-						}
-						if (this.type == 'laptop' || this.type == 'all-in-one') {
-							this.activate.camera = true
-							await this.espera('actionCamera')
-							this.activate.camera = false
-						}
-						console.log(this.image)
-						this.activate.windows = true
-						this.win = await this.$cmd.executeScriptCode(windows)
-						this.info = { ...this.info, ...this.win }
-						this.activate.windows = true
-						await this.espera('actionWindows')
-						this.activate.windows = false
-						if (this.action == 'PASS' && this.win.activationStatus)
-							this.test['windows'] = 'Windows Activation Test PASS'
-						else this.test['windows'] = 'Windows Activation Test FAIL'
-						this.test['OS'] = this.win.os
-						this.myDb.OS = this.win.os
-						this.test['keyWindows'] = this.win.keyWindows
-						//this.myGpu.then((v) => (this.myGpu = v))
-						//this.myGpu = await this.getGraphicsInfo(this.myGpu.result.value)
-						let itDG = ''
-						if (this.intDev.video.length) {
-							this.activate.gpu = true
-							if (this.intDev.video.some((obj) => obj.AdapterRAM.includes('4'))) {
-								this.myGpu = await this.$cmd.getDx({
-									Serial: this.device.Serial,
-								})
-								this.intDev.video = this.intDev.video.map((objA) => {
-									const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
-									return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
-								})
-								console.log('myGpu: ', this.myGpu)
-							} else this.myGpu = this.intDev.video
-							itGD = await this.GPUInfo(this.myGpu)
-							await this.espera('actionGPU')
-							this.activate.gpu = false
-							this.myDb.GPU = itDG.description
-							this.myDb.GPU_RAM = itDG.RAM_GPU
-						}
-						this.componentes = { ...this.componentes, ...this.bios }
-						this.componentes['GPU'] = this.intDev.video.length ? this.myDb.GPU : null
-						this.componentes['Memory'] = this.intDev.RAM.Total
-						this.componentes['Storage'] = itDH.group.Size
-						this.componentes['Serial'] = this.device.Serial
-						this.componentes['Model'] = this.device.SKU
-						this.componentes['Description'] = this.device.Description
-						this.componentes['OSEdition'] = this.test.OS
-						this.componentes['SmartCard'] = this.bios.SmartCard
-						this.myDb.CPU = this.intDev.cpuName.join('\n')
-						this.componentes['CPU'] = this.myDb.CPU
-						if (this.type == 'desktop') {
-							this.activate.desktop = true
-							await this.espera('actionDesktop')
-							this.info = {
-								...this.info,
-								...this.form,
-							}
-							this.activate.desktop = false
-						}
-						if (this.type == 'desktop' || this.type == 'all-in-one') {
-							this.activate.note = true
-							await this.espera('actionNote')
-							this.info = {
-								...this.info,
-								...this.form,
-							}
-							this.activate.note = false
-						}
-						console.log(this.componentes)
-						this.info = {
-							...this.info,
-							video: itDG,
-							cpuName: this.intDev.cpuName,
-							cpu: this.intDev.cpu,
-							RAM: this.intDev.RAM,
-							HDD: this.intDev.HDD,
-						}
-						console.log(this.componentes)
-						await this.$db.funcAdmin('modules/bypass/createModel', this.componentes).then(async (v) => {
-							this.myDb['CODE'] = v.Code
-							this.myDb.Description = `${this.device.Description}\n${this.test.OS}\n${this.intDev.cpu}\n${
-								this.intDev.HDD.Total
-							} ${this.intDev.HDD.Units.join(',')}\n${
-								this.intDev.RAM.Total
-							} ${this.intDev.RAM.Modules.join(',')}`
-						})
-						this.$q.loading.show()
-						this.txt = await this.report()
-						this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
-						console.log(this.file, this.$image)
-						if (this.file) await this.saveFile(this.file)
-						if (this.image) await this.saveFile(this.image)
-						//if (this.$textFile) await this.upload(this.$textFile.path, 1)
-						//if (this.$imageFile) await this.uploadImg(this.$imageFile.path, 2)
-						this.info = {
-							...this.info,
-							report: this.txt,
-						}
-						await this.rsSave()
-						await this.saveMng()
-						this.activate.scan = await this.passImaging()
-						this.$q.loading.hide()
-						this.activate.done = true
-						JsBarcode('#barcode', this.device.Serial, {
-							format: 'CODE128',
-							lineColor: '#000',
-							width: 1,
-							height: 50,
-							displayValue: true,
-							//text: this.form.serial,
-							textAlign: 'center',
-							fontSize: 12,
-						})
-						JsBarcode('#barcode2', this.device.SKU, {
-							format: 'CODE128',
-							lineColor: '#000',
-							width: 1,
-							height: 50,
-							displayValue: true,
-							//text: this.form.sku,
-							textAlign: 'center',
-							fontSize: 12,
-						})
-					}
-				})
-			},
 		},
 		async beforeCreate() {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
-
-			/* console.log(this.user, this.getDev)
-					this.type = 'desktop' */
 		},
 		async mounted() {
 			this.$q.loading.show()
 			this.iTest = await this.$cmd.executeScriptCode(imaging)
-			/* let mires = await this.$cmd.executeScriptCode(resolution)
-			console.log('resolution: ', mires) */
 			this.$q.loading.hide()
-			if (!this.iTest.Organization)
+			if (!this.iTest.Organization) {
 				this.$q
 					.dialog({
 						dark: true,
@@ -1533,12 +1509,8 @@
 					})
 					.onCancel(() => {
 						this.cerrarVentana()
-						// console.log('Cancel')
 					})
-					.onDismiss(() => {
-						// console.log('I am triggered on both OK and Cancel')
-					})
-			else {
+			} else {
 				this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
 					'YYYY-MM-DD HH:mm:ss.SSS'
 				)
@@ -1548,6 +1520,7 @@
 		},
 	}
 </script>
+
 <style scoped>
 	.main {
 		display: flex;

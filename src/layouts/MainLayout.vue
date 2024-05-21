@@ -1,7 +1,7 @@
 <template>
 	<q-layout view="lHh Lpr lFf" class="main-layout">
 		<q-header class="main-header">
-			<q-toolbar>
+			<q-toolbar @mousedown="startDrag">
 				<q-btn flat dense round icon="logout" @click="cerrarSesion" />
 
 				<q-toolbar-title>Windows Test - ISPT Services V{{ version }}</q-toolbar-title>
@@ -98,6 +98,7 @@
 	import winDate from '../scripts/updateDate'
 	import UpdateService from '../utils/updateService'
 	import env from '../utils/env'
+	const electron = require('electron')
 
 	const linksData = [
 		{
@@ -258,6 +259,60 @@
 						message: 'Error downloading or unzipping the update.',
 					})
 				}
+			},
+			minimizeWindow() {
+				electron.remote.getCurrentWindow().minimize()
+			},
+			maximizeWindow() {
+				const currentWindow = electron.remote.getCurrentWindow()
+
+				if (currentWindow.isMaximized()) {
+					currentWindow.unmaximize()
+					this.isMaximized = false
+				} else {
+					currentWindow.maximize()
+					this.isMaximized = true
+				}
+			},
+			startDrag(event) {
+				if (event.button === 0) {
+					this.dragging = true
+					this.offsetX = event.clientX
+					this.offsetY = event.clientY
+
+					window.addEventListener('mousemove', this.dragWindow)
+					window.addEventListener('mouseup', this.stopDrag)
+				}
+			},
+			startDrag(event) {
+				if (event.button === 0) {
+					this.dragging = true
+					this.offsetX = event.screenX
+					this.offsetY = event.screenY
+
+					window.addEventListener('mousemove', this.dragWindow)
+					window.addEventListener('mouseup', this.stopDrag)
+				}
+			},
+			dragWindow(event) {
+				if (this.dragging) {
+					const currentWindow = electron.remote.getCurrentWindow()
+
+					const newX = event.screenX - this.offsetX
+					const newY = event.screenY - this.offsetY
+
+					const [currentX, currentY] = currentWindow.getPosition()
+
+					currentWindow.setPosition(currentX + newX, currentY + newY)
+
+					this.offsetX = event.screenX
+					this.offsetY = event.screenY
+				}
+			},
+			stopDrag() {
+				this.dragging = false
+				window.removeEventListener('mousemove', this.dragWindow)
+				window.removeEventListener('mouseup', this.stopDrag)
 			},
 		},
 		async mounted() {

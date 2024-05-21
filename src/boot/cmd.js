@@ -11,9 +11,10 @@ async function checkItems(items, documentText) {
 		return str.replace(/\b\w/g, (char) => char.toUpperCase()).replace(/\s+/g, '')
 	}
 
+	// Define los conjuntos de palabras clave y cómo deben evaluarse
 	const keywordSets = [
+		{ enableWord: 'Unlock', disableWord: 'Lock', enableResult: 'NO', disableResult: 'YES' },
 		{ enableWord: 'Enable', disableWord: 'Disable', enableResult: 'YES', disableResult: 'NO' },
-		{ enableWord: 'Unlock', disableWord: 'Lock', enableResult: 'YES', disableResult: 'NO' },
 		{ enableWord: 'Yes', disableWord: 'No', enableResult: 'YES', disableResult: 'NO' },
 	]
 
@@ -21,9 +22,11 @@ async function checkItems(items, documentText) {
 
 	for (const item of items) {
 		let transformedItem = capitalizeAndRemoveSpaces(item)
-		result[transformedItem] = 'NO' // Inicializa el resultado con 'NO' para el caso de no coincidencia
+		result[transformedItem] = null // Inicializa el resultado con 'null' para el caso de no coincidencia
 
+		// Iterar sobre cada conjunto de palabras clave para verificar coincidencias
 		for (const { enableWord, disableWord, enableResult, disableResult } of keywordSets) {
+			// Regex para capturar el valor relevante en la línea siguiente a la clave
 			const regex = new RegExp(`${item}.*\\r?\\n\\s*(\\*?)(${enableWord}|${disableWord})`, 'i')
 			const match = documentText.match(regex)
 
@@ -31,10 +34,14 @@ async function checkItems(items, documentText) {
 				const hasAsterisk = match[1] === '*'
 				const command = match[2].toLowerCase()
 
-				if (command === enableWord.toLowerCase()) {
-					result[transformedItem] = hasAsterisk ? enableResult : disableResult
-				} else if (command === disableWord.toLowerCase()) {
-					result[transformedItem] = hasAsterisk ? disableResult : enableResult
+				// Aplicar lógica basada en si el comando está habilitado o deshabilitado y la presencia del asterisco
+				if (
+					(command === enableWord.toLowerCase() && hasAsterisk) ||
+					(command === disableWord.toLowerCase() && !hasAsterisk)
+				) {
+					result[transformedItem] = enableResult
+				} else {
+					result[transformedItem] = disableResult
 				}
 				break // Salir del bucle si se encuentra una coincidencia
 			}
@@ -65,6 +72,7 @@ const items = [
 	'Keyboard Backlit',
 	'Mobile Network',
 	'Headphone',
+	'NFC',
 ]
 
 const CmdHelper = {
