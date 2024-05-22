@@ -1053,11 +1053,8 @@
 
 				await this.$db.funcAdmin('modules/bypass/createModel', this.componentes).then(async (v) => {
 					this.myDb['CODE'] = v.Code
-					this.myDb.Description = `${this.device.Description}\n${this.test.OS}\n${this.intDev.cpu}\n${
-						this.intDev.HDD.Total
-					} ${this.intDev.HDD.Units.join(',')}\n${this.intDev.RAM.Total} ${this.intDev.RAM.Modules.join(
-						','
-					)}`
+					this.myDb.Description = v.Description
+					this.myDb['InternalDescription'] = this.device.description
 				})
 
 				this.$q.loading.show()
