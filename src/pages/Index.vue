@@ -273,6 +273,7 @@
 											true-value="YES"
 											false-value="NO"
 											left-label
+											disable
 										/>
 									</q-item-section>
 								</q-item>
@@ -288,6 +289,7 @@
 											true-value="YES"
 											false-value="NO"
 											left-label
+											disable
 										/>
 									</q-item-section>
 								</q-item>
@@ -497,6 +499,8 @@
 				camera: true,
 				bios: {},
 				check: {},
+				Authorization: '',
+				itDG: {},
 				activate: {
 					type: true,
 					select: false,
@@ -555,7 +559,7 @@
 					coolerSystem: '',
 				},
 				options: ['Fan Cooler', 'Liquid Cooler', 'Fan Cooler with RGB', 'Liquid Cooler with RGB'],
-				type: '',
+				type: 'laptop',
 				msn: {
 					active: false,
 				},
@@ -657,7 +661,7 @@
 						options
 					)
 					const data = await response.json()
-					return data.data._isSuccess
+					return data._isSuccess
 				} catch (err) {
 					console.error(err)
 					return false
@@ -782,11 +786,11 @@
 				const info = await this.$db.collection('pcbHP').conditions({ Model: model }).all_data().get()
 
 				if (info.length) {
-					if (info[0].hasOwnProperty('COLOR') && info[0].color) {
+					if (info[0].hasOwnProperty('colour') && info[0].colour) {
 						this.device.img = info[0].img
-						this.myDb.COLOR = info[0].color ? info[0].color : ''
+						this.myDb.COLOR = info[0].colour ? info[0].colour : ''
 					} else {
-						const data = await this.$db.funcAdmin('modules/pallets/partsurfer', {
+						const data = await this.$db.funcAdmin('modules/bypass/partsurfer', {
 							serial: this.device.Serial,
 							prod_num: model,
 						})
@@ -794,14 +798,16 @@
 						this.form.adapter = data.adapter
 					}
 				} else {
-					const data = await this.$db.funcAdmin('modules/pallets/partsurfer', {
+					const data = await this.$db.funcAdmin('modules/bypass/partsurfer', {
 						serial: this.device.Serial,
 						prod_num: model,
 					})
 					this.myDb.COLOR = data.color ? data.color : ''
 					this.form.adapter = data.adapter
+					this.componentes['Adapter'] = data.general_adapter
 				}
 				this.test['color'] = this.myDb.COLOR
+				this.componentes['Color'] = this.myDb.COLOR
 			},
 			getGraphicsInfo(dxdiagContent) {
 				const cardNamePattern = /Card name: (.+)/g
@@ -843,6 +849,7 @@
 					OPERATOR: this.user.usuario,
 					TYPE: this.type.toUpperCase(),
 					PROCESSED: this.iTest.Organization ? 'A' : 'M',
+					Authorization: this.Authorization,
 				}
 				const test = await this.$db
 					.collection('test_SnResults')
@@ -890,7 +897,7 @@
 								.all_data()
 								.get()
 							if (i.length) {
-								this.myDb['Authorization'] = i[0].Description
+								this.Authorization = i[0].Description
 								this.$q.notify({ type: 'positive', message: `Authorizated...` })
 								this.$q.loading.hide()
 							} else {
@@ -917,6 +924,7 @@
 				this.myDb.Model_HDD = itDH.group.Description
 				this.myDb.HDD_CAPACITY = itDH.group.Size
 				this.myDb.RAM = this.intDev.RAM.Total
+				this.myDb.CPU = this.intDev.cpuName.join(',')
 
 				const result = await this.$cmd.executeScriptCode(getDeviceInfo)
 				if (!result) {
@@ -951,7 +959,7 @@
 					return
 				}
 
-				if (projectInfo.ArrivedSKU != this.device.SKU && this.type == 'laptop') {
+				if (projectInfo.ArrivedSKU !== this.device.SKU && this.type == 'laptop') {
 					this.$q.loading.hide()
 					this.showNotification(
 						'No Math',
@@ -1042,6 +1050,7 @@
 				}
 			},
 			async finalizeTest() {
+				this.$q.loading.show()
 				this.info = {
 					...this.info,
 					video: await this.getGPUInfo(),
@@ -1054,10 +1063,8 @@
 				await this.$db.funcAdmin('modules/bypass/createModel', this.componentes).then(async (v) => {
 					this.myDb['CODE'] = v.Code
 					this.myDb.Description = v.Description
-					this.myDb['InternalDescription'] = this.device.description
+					this.myDb['InternalDescription'] = this.device.Description
 				})
-
-				this.$q.loading.show()
 				this.txt = await this.report()
 				this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
 				if (this.file) await this.saveFile(this.file)
@@ -1088,6 +1095,7 @@
 					textAlign: 'center',
 					fontSize: 12,
 				})
+				this.$q.loading.hide()
 			},
 			setTypeUnit() {
 				if (this.device.SKU.includes('AV')) {
@@ -1250,17 +1258,19 @@
 				} else {
 					this.myGpu = this.intDev.video
 				}
-				const itDG = await this.GPUInfo(this.myGpu)
+				this.itDG = await this.GPUInfo(this.myGpu)
 				await this.espera('actionGPU')
 				this.activate.gpu = false
-				this.myDb.GPU = itDG.description
-				this.myDb.GPU_RAM = itDG.RAM_GPU
+				this.myDb.GPU = this.itDG.description
+				this.myDb.GPU_RAM = this.itDG.RAM_GPU
 			},
 			saveComponents() {
 				this.componentes = {
 					...this.componentes,
 					...this.bios,
-					GPU: this.intDev.video.length ? this.myDb.GPU : null,
+					GPU: this.intDev.video.length
+						? this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)
+						: null,
 					Memory: this.intDev.RAM.Total,
 					Storage: this.intDev.HDD.Disks.join(','),
 					Serial: this.device.Serial,
@@ -1289,6 +1299,7 @@
 							? this.bios.Bluetooth
 							: this.componentes.Bluetooth,
 					Keyboard: this.componentes.Keyboard,
+					Color: this.myDb.COLOR,
 				}
 			},
 			async getGPUInfo() {

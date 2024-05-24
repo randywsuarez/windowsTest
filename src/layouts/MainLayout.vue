@@ -165,6 +165,44 @@
 		},
 
 		methods: {
+			myFunction() {
+				// Aquí puedes ejecutar tu función
+
+				this.$q
+					.dialog({
+						title: 'Select Server',
+						message: 'Choose your options:',
+						options: {
+							type: 'radio',
+							model: this.$q.localStorage.getItem('api'),
+							// inline: true,
+							items: [
+								{ label: 'Server', value: 'server', color: 'primary' },
+								{ label: 'Public', value: 'public', color: 'secondary' },
+							],
+						},
+						cancel: true,
+						persistent: true,
+					})
+					.onOk((data) => {
+						console.log('>>>> OK, received', data)
+						this.$q.localStorage.set('api', data)
+						location.reload()
+
+						//location.reload()
+					})
+					.onCancel(() => {
+						// console.log('>>>> Cancel')
+					})
+					.onDismiss(() => {
+						// console.log('I am triggered on both OK and Cancel')
+					})
+			},
+			handleKeyDown(event) {
+				if (event.altKey && event.ctrlKey && event.code == 'KeyS') {
+					this.myFunction()
+				}
+			},
 			checkInternetConnection() {
 				this.hasInternet = navigator.onLine
 
@@ -316,6 +354,8 @@
 			},
 		},
 		async mounted() {
+			if (!this.$q.localStorage.getItem('api')) this.$q.localStorage.set('api', 'server')
+			document.addEventListener('keydown', this.handleKeyDown)
 			this.updateService = new UpdateService(
 				env.github.user,
 				env.github.repository,
@@ -333,6 +373,8 @@
 				this.updt = actualizacionDisponible.result
 			}
 		},
-		beforeDestroy() {},
+		beforeDestroy() {
+			document.removeEventListener('keydown', this.handleKeyDown)
+		},
 	}
 </script>

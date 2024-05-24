@@ -32,8 +32,8 @@ export default {
 		},
 	],
 	mongodb: {
-		dev: 'http://localhost:4500/api',
 		server: 'http://192.168.0.2:4500/api',
+		public: 'http://47.190.184.6:4900/api',
 	},
 	version: '1.1.0',
 	token: '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',
