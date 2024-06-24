@@ -40,6 +40,10 @@ $resolution = $mainScreen.Bounds.Width.ToString() + "x" + $mainScreen.Bounds.Hei
 $touchDevices = Get-PnpDevice | Where-Object { $_.Class -eq 'HIDClass' -and $_.FriendlyName -like '*Touch*' }
 $touchScreen = if ($touchDevices) { "YES" } else { "NO" }
 
+# Obtener la descripción de la cámara o webcam
+$cameraDevices = Get-WmiObject -Query "SELECT * FROM Win32_PnPEntity WHERE Description LIKE '%camera%' OR Description LIKE '%webcam%'" | Select-Object -ExpandProperty Description
+$camera = if ($cameraDevices) { $cameraDevices -join ", " } else { "NO" }
+
 # Crear objeto JSON con todas las propiedades recopiladas, agrupando relacionados bajo Display
 $jsonResult = @{
     WiFi = $wifi
@@ -50,6 +54,7 @@ $jsonResult = @{
     NFC = $nfc
     WWAN = $wwan
     Display = @{ Resolution = $resolution; TouchScreen = $touchScreen }
+    Webcam = $camera
 } | ConvertTo-Json
 
 # Imprimir el resultado JSON
