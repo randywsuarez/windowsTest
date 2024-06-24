@@ -1,12 +1,15 @@
 export default `
+# Cargar ensamblado de Windows Forms
+Add-Type -AssemblyName System.Windows.Forms
+
 # Verificar la existencia del controlador de la batería
 $BatteryDriver = Get-PnpDevice | Where-Object { $_.FriendlyName -eq 'Microsoft AC Adapter' }
 
 if ($BatteryDriver -eq $null) {
-    $msgBody = "El controlador de la batería no está instalado. Por favor, instale el controlador de la batería y vuelva a ejecutar el script."
-    $msgTitle = "Error de controlador de batería"
-    $msgButton = 'OK'
-    $msgImage = 'Error'
+    $msgBody = "The battery driver is not installed. Please install the battery driver and rerun the script."
+    $msgTitle = "Battery Driver Error"
+    $msgButton = [System.Windows.Forms.MessageBoxButtons]::OK
+    $msgImage = [System.Windows.Forms.MessageBoxIcon]::Error
     [System.Windows.Forms.MessageBox]::Show($msgBody, $msgTitle, $msgButton, $msgImage)
     exit
 }
@@ -50,23 +53,23 @@ if (Test-Path "batteryreport.xml") {
         Remove-Item "batteryreport.xml" -Force | Out-Null
     } else {
         # No se encontraron baterías
-        $msgBody = "No se encontraron baterías en el informe."
-        $msgTitle = "Error de informe de batería"
-        $msgButton = 'OK'
-        $msgImage = 'Error'
+        $msgBody = "No batteries were found in the report."
+        $msgTitle = "Battery Report Error"
+        $msgButton = [System.Windows.Forms.MessageBoxButtons]::OK
+        $msgImage = [System.Windows.Forms.MessageBoxIcon]::Error
         [System.Windows.Forms.MessageBox]::Show($msgBody, $msgTitle, $msgButton, $msgImage)
         exit
     }
 } else {
     # Reiniciar el equipo si el informe no se encuentra
-    $msgBody = "La unidad se reiniciará, cuando lo haga, por favor reinicie el proceso de prueba de Windows ISP."
-    $msgTitle = "La unidad necesita reiniciarse"
-    $msgButton = 'OK'
-    $msgImage = 'Information'
-    [System.Windows.Forms.MessageBox]::Show($msgBody, $msgTitle, $msgButton, $msgImage)
+    $msgBody = "The unit will restart. Please restart the Windows ISP test process after the restart."
+    $msgTitle = "Unit Needs to Restart"
+    $msgButton = [System.Windows.Forms.MessageBoxButtons]::OK
+    $msgImage = [System.Windows.Forms.MessageBoxIcon]::Information
+    $result = [System.Windows.Forms.MessageBox]::Show($msgBody, $msgTitle, $msgButton, $msgImage)
 
-    Restart-Computer -Force
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+        Restart-Computer -Force
+    }
 }
-
-
 `
