@@ -11,6 +11,7 @@
 			:title="device.Description"
 			:subtitle="`${device.SKU} - ${device.Serial}`"
 			:imageSrc="device.img ? device.img : `${type}.png`"
+			@update:audit="handleAuditUpdate"
 		/>
 		<div class="main">
 			<q-card class="card" v-show="activate.comparation">
@@ -26,6 +27,7 @@
 						:prefix="miniSerial"
 						placeholder="XX"
 						hint="Write the last 2 digits"
+						class="col-6"
 					/>
 					<q-input
 						v-model="check.sku"
@@ -34,6 +36,7 @@
 						label="SKU"
 						:prefix="miniSKU"
 						hint="Write the missing"
+						class="col-6"
 					/>
 				</q-card-section>
 				<q-card-actions align="right" id="actionComparation">
@@ -135,6 +138,50 @@
 					/>
 				</q-card-actions>
 			</q-card>
+			<!-- Keyboard Start -->
+			<q-card class="card" v-show="activate.keyboard">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Keyboard Test</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center" style="min-height: 200px">
+					<virtual-keyboard @allKeysPressed="handleAllKeysPressed"></virtual-keyboard>
+					<p>All keys pressed: {{ allKeysPressed }}</p></q-card-section
+				>
+				<q-card-actions align="right" v-show="activate.keyboard" id="actionKeyboard">
+					<q-btn flat color="negative" label="Fail" @click="test['keyboard'] = 'Keyboard test FAIL'" />
+					<q-btn flat color="positive" label="Pass" @click="test['keyboard'] = 'Keyboard test PASS'" />
+				</q-card-actions>
+			</q-card>
+			<!-- Keyboard End -->
+			<!-- Mic Start -->
+			<q-card class="card" v-show="activate.mic">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Mic Test</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center" style="min-height: 200px">
+					<audio-recorder></audio-recorder>
+				</q-card-section>
+				<q-card-actions align="right" v-show="activate.mic" id="actionMic">
+					<q-btn flat color="negative" label="Fail" @click="test['mic'] = 'Mic test FAIL'" />
+					<q-btn flat color="positive" label="Pass" @click="test['mic'] = 'Mic test PASS'" />
+				</q-card-actions>
+			</q-card>
+			<!-- Mic End -->
+			<!-- Touch Start -->
+			<q-card class="card" v-if="activate.touch">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Touch Test</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center" style="min-height: 200px">
+					<q-btn @click="activateFullScreen" label="Activate Full Screen" />
+					<Touch ref="touch" />
+				</q-card-section>
+				<q-card-actions align="right" v-show="activate.touch" id="actionTouch">
+					<q-btn flat color="negative" label="Fail" @click="test['touch'] = 'Touch test FAIL'" />
+					<q-btn flat color="positive" label="Pass" @click="test['touch'] = 'Touch test PASS'" />
+				</q-card-actions>
+			</q-card>
+			<!-- Mic End -->
 			<q-card class="card" v-show="activate.brightness">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Brightness Test</div> </q-card-section><q-separator />
@@ -251,6 +298,13 @@
 				</q-card-section>
 				<q-card-section class="center">
 					<b>You need to test the Hotkeys</b>
+					<div class="q-gutter-sm row col-6">
+						<q-checkbox size="150px" v-model="hotKey.mic" val="80px" label="Mic" />
+						<q-checkbox size="150px" v-model="hotKey.speakers" val="80x" label="Speakers" />
+						<q-checkbox size="150px" v-model="hotKey.brights" val="80px" label="Brightness" />
+						<q-checkbox size="150px" v-model="hotKey.privacy" val="80px" label="Privacy" />
+					</div>
+					<!-- <q-checkbox left-label v-model="hotkey.speakers" label="Speackers" /> -->
 				</q-card-section>
 				<q-card-actions align="right" id="actionHotKey">
 					<q-btn flat color="negative" label="Fail" @click="test['hotKey'] = 'HotKeys test FAIL'" />
@@ -262,10 +316,10 @@
 					<q-card-section> <div class="text-h6">Status Components</div> </q-card-section><q-separator />
 				</q-card-section>
 				<q-card-section class="center">
-					<div class="row justify-between">
-						<div class="col-6">
+					<div class="row justify-between" scroll>
+						<div class="col-4">
 							<q-list dense bordered>
-								<q-item v-for="(item, index) in leftItems" :key="index">
+								<q-item v-for="(item, index) in centerItems" :key="index">
 									<q-item-section side>
 										<q-checkbox
 											v-model="bios[formatItem(item.label)]"
@@ -273,12 +327,13 @@
 											true-value="YES"
 											false-value="NO"
 											left-label
+											disable
 										/>
 									</q-item-section>
 								</q-item>
 							</q-list>
 						</div>
-						<div class="col-6">
+						<div class="col-4">
 							<q-list dense bordered>
 								<q-item v-for="(item, index) in rightItems" :key="index">
 									<q-item-section side>
@@ -288,6 +343,23 @@
 											true-value="YES"
 											false-value="NO"
 											left-label
+											disable
+										/>
+									</q-item-section>
+								</q-item>
+							</q-list>
+						</div>
+						<div class="col-4">
+							<q-list dense bordered>
+								<q-item v-for="(item, index) in leftItems" :key="index">
+									<q-item-section side>
+										<q-checkbox
+											v-model="bios[formatItem(item.label)]"
+											:label="item.label"
+											true-value="YES"
+											false-value="NO"
+											left-label
+											disable
 										/>
 									</q-item-section>
 								</q-item>
@@ -335,6 +407,32 @@
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
+			<!-- <q-card class="card" v-show="activate.color">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Note</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<q-select
+						filled
+						v-model="rcolor"
+						use-input
+						input-debounce="0"
+						label="Select Color"
+						:options="optionsColors"
+						@filter="filterFn"
+						behavior="dialog"
+					>
+						<template v-slot:no-option>
+							<q-item>
+								<q-item-section class="text-grey"> No results </q-item-section>
+							</q-item>
+						</template>
+					</q-select>
+				</q-card-section>
+				<q-card-actions align="right" id="actionColor">
+					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+				</q-card-actions>
+			</q-card> -->
 			<q-card class="card" v-show="activate.gpu">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
@@ -456,8 +554,11 @@
 <script>
 	import UserInfoGrid from '../components/UserInfoGrid.vue'
 	import Reproductor from '../components/soundTest.vue'
-	import CameraCapture from '../components/camaraCapture.vue'
+	import CameraCapture from '../components/webcam.vue'
 	import MousePad from '../components/MousePad.vue'
+	import VirtualKeyboard from '../components/Keyboard.vue'
+	import AudioRecorder from '../components/audioRecorder.vue'
+	import Touch from '../components/Touch.vue'
 	import {
 		drivers,
 		windows,
@@ -468,8 +569,8 @@
 		imaging,
 		resolution,
 		spotLights,
-		touchScreen,
 		components,
+		touchScreen,
 	} from '../scripts'
 	import moment from 'moment'
 	import JsBarcode from 'jsbarcode'
@@ -481,9 +582,23 @@
 			Reproductor,
 			CameraCapture,
 			MousePad,
+			VirtualKeyboard,
+			AudioRecorder,
+			Touch,
 		},
 		data() {
 			return {
+				color: [],
+				optionsColors: [],
+				rcolor: '',
+				audit: false,
+				hotKey: {
+					mic: false,
+					brights: false,
+					speakers: false,
+					privacy: false,
+				},
+				allKeysPressed: false,
 				user: {},
 				device: { img: '' },
 				test: {},
@@ -497,12 +612,15 @@
 				camera: true,
 				bios: {},
 				check: {},
+				Authorization: '',
+				itDG: {},
 				activate: {
 					type: true,
 					select: false,
 					audio: false,
 					camera: false,
-					keyboard: true,
+					keyboard: false,
+					mic: false,
 					brightness: false,
 					drivers: false,
 					windows: false,
@@ -517,6 +635,7 @@
 					txt: false,
 					hotKey: false,
 					components: false,
+					touch: false,
 				},
 				showActions: false,
 				win: {},
@@ -548,6 +667,8 @@
 					Description: '',
 					DateStart: '',
 					DateEnd: '',
+					CODE: '',
+					GPUIntegrated: '',
 				},
 				form: {
 					lightRAM: false,
@@ -555,7 +676,7 @@
 					coolerSystem: '',
 				},
 				options: ['Fan Cooler', 'Liquid Cooler', 'Fan Cooler with RGB', 'Liquid Cooler with RGB'],
-				type: '',
+				type: 'laptop',
 				msn: {
 					active: false,
 				},
@@ -585,25 +706,44 @@
 					{ label: 'Touch Device', value: '' },
 					{ label: 'OS Recovery', value: '' },
 					{ label: 'Programming Mode', value: '' },
-					{ label: 'Permanent Disable', value: '' },
 					{ label: 'NumLock', value: '' },
 					{ label: 'Keys mapped', value: '' },
-					{ label: 'Keyboard Backlit', value: '' },
+					{ label: 'Backlit', value: 'Backlit' },
 					{ label: 'Mobile Network', value: 'WWAN' },
 					{ label: 'Headphone', value: '' },
 					{ label: 'NFC', value: 'NFC' },
+					{ label: 'Platform Cycle', value: 'Cycle' },
 				],
 			}
 		},
 		computed: {
 			leftItems() {
-				return this.items.slice(0, Math.ceil(this.items.length / 2))
+				return this.items.slice(0, Math.ceil(this.items.length / 3))
+			},
+			centerItems() {
+				return this.items.slice(Math.ceil(this.items.length / 3))
 			},
 			rightItems() {
-				return this.items.slice(Math.ceil(this.items.length / 2))
+				return this.items.slice(Math.ceil(this.items.length / 3))
 			},
 		},
 		methods: {
+			handleAuditUpdate(newValue) {
+				this.audit = newValue
+			},
+			filterFn(val, update) {
+				if (val === '') {
+					update(() => {
+						this.color = this.optionsColors
+					})
+					return
+				}
+
+				update(() => {
+					const needle = val.toLowerCase()
+					this.color = this.optionsColors.filter((v) => v.toLowerCase().indexOf(needle) > -1)
+				})
+			},
 			formatItem(item) {
 				return item.replace(/\s+/g, '').replace(/\b\w/g, (l) => l.toUpperCase())
 			},
@@ -657,7 +797,7 @@
 						options
 					)
 					const data = await response.json()
-					return data.data._isSuccess
+					return data._isSuccess
 				} catch (err) {
 					console.error(err)
 					return false
@@ -672,6 +812,9 @@
 			handleInputChange(id) {
 				this.check[id] = this.check[id].toUpperCase()
 			},
+			handleClose(value) {
+				this.activate.touch = value
+			},
 			async report() {
 				let res = Object.values(this.test).includes('fail') ? 'FAIL' : 'PASS'
 				let lastdate = await this.DateTime()
@@ -682,14 +825,14 @@
 				this.myDb.DateStart = lastdate.start
 
 				return `
-	       ISP Windows Test Ver:3.03 - ${this.project.id}
+	       ISP Windows Test Ver:4.03 - ${this.project.id}
 	       Operator ID: ${this.select.id}
 	       Operator Name:${this.user.usuario}
 	       Start Date: ${this.test.Date}
 	       Start Time: ${this.test.startTime}
 	       End Date: ${lastdate.date}
 	       End Time: ${lastdate.time}
-	       ==============================Devices Information===================================
+	       :::::Devices Information:::::
 	       ${this.test.Description}
 	       ${this.test.Model}
 	       ${this.test.Serial}
@@ -702,7 +845,8 @@
 	       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
 	       ${this.intDev.RAM.Modules.join('\n')}
 	       GPU Verification PASS
-	       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
+	       ${this.intDev.video.Integrated.map((v) => `${v.Description} ${v.AdapterRAM}`)}
+	       ${this.intDev.video.Dedicated.map((v) => `${v.Description} ${v.AdapterRAM}`)}
 	       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Resolution' : ''}
 	       ${this.test.hasOwnProperty('resolution') ? this.test.resolution : ''}
 	       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Touch Screen' : ''}
@@ -713,17 +857,42 @@
 	       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
 	       ${this.type == 'desktop' ? 'Cooler System' : ''}
 	       ${this.type == 'desktop' ? this.form.coolerSystem : ''}
-	       =================================Test Status========================================
+	       :::::Test Status:::::
 	       ${this.type != 'desktop' ? this.test.audio : ''}
 	       ${this.type != 'desktop' ? this.test.camera : ''}
 	       ${this.test.drivers}
 	       ${this.test.display}
 	       ${this.type == 'laptop' ? this.test.battery : ''}
+	       ${this.type == 'laptop' ? this.test.keyboard : ''}
+	       ${this.type == 'laptop' ? this.test.mic : ''}
+	       ${this.type == 'laptop' ? this.test.hotKey : ''}
+	       ${this.type == 'laptop' ? this.test.mousepad : ''}
+	       ${
+									this.type == 'laptop' && this.hotKey.mic
+										? 'Mic hotkey: It works'
+										: 'Mic hotkey: Does not work'
+								}
+	       ${
+									this.type == 'laptop' && this.hotKey.speakers
+										? 'Speackers hotkey: It works'
+										: 'Speackers hotkey: Does not work'
+								}
+	       ${
+									this.type == 'laptop' && this.hotKey.brights
+										? 'Brightness hotkey: It works'
+										: 'Brightness hotkey: Does not work'
+								}
+	       ${
+									this.type == 'laptop' && this.hotKey.privacy
+										? 'Privacy hotkey: It works'
+										: 'Privacy hotkey: Does not work'
+								}
 	       ${this.type != 'desktop' ? this.test.brightness : ''}
 	       ${this.type != 'desktop' ? this.test.spotLights : ''}
 	       ${this.form.note ? `Note: ${this.form.note}` : ''}
-	       ====================================Result==========================================
+	       :::::Result:::::
 	       Test Result is ${res}
+	       ${this.audit ? 'Audited' : ''}
 	     `.replace(/^\s*[\r\n]/gm, '')
 			},
 			async rsSave() {
@@ -733,6 +902,7 @@
 					.where(`Serial = '${this.device.Serial}'`)
 					.execute()
 				if (sh.length) {
+					console.log('myDb: ', this.myDb)
 					await this.$rsDB(this.select.db)
 						.update('test_SnResults')
 						.set(this.myDb)
@@ -778,30 +948,19 @@
 				ventanaActual.close()
 			},
 			async infoHP() {
-				const model = this.device.SKU.includes('#') ? this.device.SKU.split('#')[0] : this.device.SKU
-				const info = await this.$db.collection('pcbHP').conditions({ Model: model }).all_data().get()
-
-				if (info.length) {
-					if (info[0].hasOwnProperty('COLOR') && info[0].color) {
-						this.device.img = info[0].img
-						this.myDb.COLOR = info[0].color ? info[0].color : ''
-					} else {
-						const data = await this.$db.funcAdmin('modules/pallets/partsurfer', {
-							serial: this.device.Serial,
-							prod_num: model,
-						})
-						this.myDb.COLOR = data.color ? data.color : ''
-						this.form.adapter = data.adapter
-					}
-				} else {
-					const data = await this.$db.funcAdmin('modules/pallets/partsurfer', {
-						serial: this.device.Serial,
-						prod_num: model,
-					})
-					this.myDb.COLOR = data.color ? data.color : ''
-					this.form.adapter = data.adapter
-				}
-				this.test['color'] = this.myDb.COLOR
+				let data = await this.$db.funcAdmin('modules/test/specs', {
+					Serial: this.device.Serial,
+					sku: this.device.SKU,
+				})
+				console.log('infoHP: ', data)
+				this.myDb.COLOR = data.COLOR ? data.COLOR : ''
+				this.test['color'] = data.COLOR
+				this.componentes['Color'] = data.COLOR
+				this.form.adapter = data.adapter
+				this.componentes['Adapter'] = data.adapter
+				this.componentes.Keyboard['Backlight'] = data.Backlight
+				this.componentes.Keyboard['RGB'] = data.BacklitRGB
+				this.componentes.Keyboard['Privacy'] = data.Privacy
 			},
 			getGraphicsInfo(dxdiagContent) {
 				const cardNamePattern = /Card name: (.+)/g
@@ -843,6 +1002,7 @@
 					OPERATOR: this.user.usuario,
 					TYPE: this.type.toUpperCase(),
 					PROCESSED: this.iTest.Organization ? 'A' : 'M',
+					Authorization: this.Authorization,
 				}
 				const test = await this.$db
 					.collection('test_SnResults')
@@ -870,41 +1030,6 @@
 
 				if (res.length) {
 					this.$q.notify({ type: 'negative', message: `This unit was tested previously.` })
-					this.$q
-						.dialog({
-							title: 'Authorization Required',
-							message: 'You need to call your leader',
-							prompt: {
-								model: '',
-								type: 'password', // Hace que el campo sea de tipo contraseña
-								isValid: (val) => val.length > 0 || 'Please enter a password',
-							},
-							persistent: true,
-						})
-						.onOk(async (data) => {
-							this.$q.loading.show()
-							let i = await this.$db
-								.collection('securityTest')
-								.conditions({ key: data })
-								.limit(1)
-								.all_data()
-								.get()
-							if (i.length) {
-								this.myDb['Authorization'] = i[0].Description
-								this.$q.notify({ type: 'positive', message: `Authorizated...` })
-								this.$q.loading.hide()
-							} else {
-								this.$q.loading.hide()
-								this.$q.notify({ type: 'negative', message: `The code is bad try again...` })
-								this.checkDevice()
-							}
-						})
-						.onCancel(() => {
-							// console.log('>>>> Cancel')
-						})
-						.onDismiss(() => {
-							// console.log('I am triggered on both OK and Cancel')
-						})
 				}
 			},
 			async initializeTest() {
@@ -913,10 +1038,12 @@
 				this.componentes = await this.$cmd.executeScriptCode(components)
 
 				const itDH = await this.hddInfo(this.intDev.HDD.Units)
+				console.log(itDH)
 				this.myDb.Serial_HDD = itDH.group.Serial
 				this.myDb.Model_HDD = itDH.group.Description
 				this.myDb.HDD_CAPACITY = itDH.group.Size
 				this.myDb.RAM = this.intDev.RAM.Total
+				this.myDb.CPU = this.intDev.cpuName.join(',')
 
 				const result = await this.$cmd.executeScriptCode(getDeviceInfo)
 				if (!result) {
@@ -925,25 +1052,34 @@
 				}
 
 				this.device = result
+				if (!this.device.SKU) {
+					this.test['SKU'] = `SKU ID Check FAIL`
+					this.showNotification('No Found', 'The SKU number no found in the device.')
+				}
+				if (!this.device.Serial) {
+					this.test['Serial'] = `SN ID Check FAIL`
+					this.showNotification('No Found', 'The Serial number no found in the device.')
+				}
 				this.info = { ...this.info, ...this.device }
 				this.miniSerial = this.device.Serial.slice(0, -2)
-				this.miniSKU = this.device.SKU.split('#')[0].slice(0, -2)
-
-				await this.infoHP()
+				this.miniSKU = this.device.SKU.includes('#')
+					? this.device.SKU.split('#')[0].slice(0, -2)
+					: this.device.SKU.slice(0, -4)
 				this.myDb.Serial = result.Serial
 				this.myDb.Model = result.SKU
 
 				this.setTypeUnit()
-				if (this.commercial) this.bios = await this.$cmd.biosData()
+				this.bios = await this.$cmd.biosData()
 
 				let projectInfo = await this.getProjectInfo(result.Serial)
+				await this.infoHP()
 				if (!projectInfo) {
 					this.$q.loading.hide()
 					this.showNotification('No Found', 'The Serial number no found in the system.')
 					return
 				}
 
-				if (projectInfo.ArrivedSKU != this.device.SKU && this.type == 'laptop') {
+				if (projectInfo.ArrivedSKU !== this.device.SKU) {
 					this.$q.loading.hide()
 					this.showNotification(
 						'No Math',
@@ -980,7 +1116,15 @@
 				this.activate.comparation = false
 				this.activate.select = true
 			},
+			async simpleTest(v) {
+				this.activate[v.toLowerCase()] = true
+				await this.espera(`action${v}`)
+				this.activate[v.toLowerCase()] = false
+				return
+			},
 			async performTests() {
+				//await this.keyboardT()
+				//await this.simpleTest('Touch')
 				this.driver = await this.$cmd.executeScriptCode(drivers)
 				this.activate.drivers = true
 				await this.espera('actionDrivers')
@@ -1026,14 +1170,18 @@
 					this.activate.desktop = false
 				}
 
-				if (this.type == 'desktop' || this.type == 'all-in-one') {
+				if (this.componentes.color) {
 					this.activate.note = true
 					await this.espera('actionNote')
+					this.myDb.COLOR = rcolor ? rcolor : ''
+					this.test['color'] = rcolor
+					this.componentes['Color'] = rcolor
 					this.info = { ...this.info, ...this.form }
 					this.activate.note = false
 				}
 			},
 			async finalizeTest() {
+				this.$q.loading.show()
 				this.info = {
 					...this.info,
 					video: await this.getGPUInfo(),
@@ -1045,16 +1193,14 @@
 
 				await this.$db.funcAdmin('modules/bypass/createModel', this.componentes).then(async (v) => {
 					this.myDb['CODE'] = v.Code
-					this.myDb.Description = `${this.device.Description}\n${this.test.OS}\n${this.intDev.cpu}\n${
-						this.intDev.HDD.Total
-					} ${this.intDev.HDD.Units.join(',')}\n${this.intDev.RAM.Total} ${this.intDev.RAM.Modules.join(
-						','
-					)}`
+					this.myDb.Description = v.Description
+					this.myDb['InternalDescription'] = this.device.Description
+					this.test.color = v.Color
+					this.myDb['COLOR'] = v.Color
 				})
-
-				this.$q.loading.show()
 				this.txt = await this.report()
 				this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
+				console.log(this.$textFile)
 				if (this.file) await this.saveFile(this.file)
 				if (this.image) await this.saveFile(this.image)
 
@@ -1083,20 +1229,38 @@
 					textAlign: 'center',
 					fontSize: 12,
 				})
+				this.$q.loading.hide()
 			},
-			setTypeUnit() {
+			async setTypeUnit() {
 				if (this.device.SKU.includes('AV')) {
 					this.typeUnit = '#fa8787'
 					this.commercial = true
-				} else if (this.device.SKU.includes('UAR') || this.device.SKU.includes('U8R')) {
+					this.myDb['TYPE'] = 'CTO'
+				} else if (this.device.SKU.includes('UAR') || this.device.SKU.includes('U8')) {
+					this.myDb['TYPE'] = 'BTO'
 					this.typeUnit = '#8bfa87'
 					this.commercial = false
-				} else if (this.device.SKU.includes('UA') || this.device.SKU.includes('U8')) {
+				} else if (this.device.SKU.includes('UA')) {
+					this.myDb['TYPE'] = 'BTO'
 					this.commercial = false
 				} else {
+					this.myDb['TYPE'] = 'COM'
 					this.typeUnit = '#8bfa87'
 					this.commercial = true
 				}
+				/* if (this.commercial) {
+					let snr = await this.$db
+						.collection('snrFound')
+						.conditions({ SKU: this.device.SKU, SerialNumber: this.device.Serial })
+						.all_data()
+						.get()
+					if (!snr.length) {
+						this.showNotification(
+							'SNR not found',
+							`The SKU: ${this.device.SKU} and Serial: ${this.device.Serial} are not found to be processed. You need to talk to your leader.`
+						)
+					}
+				} */
 			},
 			async getProjectInfo(serial) {
 				let res = ''
@@ -1123,7 +1287,6 @@
 				return null
 			},
 			showNotification(title, message) {
-				this.test['Serial'] = `SN ID Check FAIL`
 				this.msn = { title, message, active: true }
 			},
 			checkBiosItems() {
@@ -1133,7 +1296,6 @@
 					'IntegratedCamera',
 					'TouchDevice',
 					'Headphone',
-					'KeyboardBacklit',
 					'LockWireless',
 					'WirelessNetwork',
 					'Bluetooth',
@@ -1152,7 +1314,7 @@
 					}
 					return false
 				})
-
+				console.log(itemsNotSet)
 				if (itemsNotSet.length > 0) {
 					this.$q.dialog({
 						title: 'BIOS Settings',
@@ -1171,6 +1333,7 @@
 				this.activate.battery = true
 				const battery = await this.$cmd.executeScriptCode(getBattery)
 				this.info = { ...this.info, battery }
+				if (battery.BatteryHealth < 85) battery.Status = 'fail'
 				this.test['battery'] = battery.Status.includes('fail')
 					? `Battery test FAIL, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
 					: `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
@@ -1179,15 +1342,10 @@
 				this.activate.mousepad = true
 				await this.espera('actionMousePad')
 				this.activate.mousepad = false
-				this.activate.hotKey = true
-				await this.espera('actionHotKey')
-				this.activate.hotKey = false
-				if (this.commercial) {
-					this.activate.components = true
-					await this.checkBiosItems()
-					await this.espera('actionComponents')
-					this.activate.components = false
-				}
+				this.activate.components = true
+				await this.checkBiosItems()
+				await this.espera('actionComponents')
+				this.activate.components = false
 			},
 			async testNonDesktopSpecifics() {
 				this.activate.audio = true
@@ -1199,11 +1357,20 @@
 				}, 4000)
 				await this.espera('actionBrightness')
 				this.activate.brightness = false
+
+				/*  */
+				//if (this.type == 'laptop') {
+				await this.simpleTest('Mic')
+				this.activate.hotKey = true
+				await this.espera('actionHotKey')
+				this.activate.hotKey = false
+				await this.simpleTest('Keyboard')
+				//}
 				this.test['spotLights'] =
 					(await this.$cmd.executeScriptCode(spotLights)).result == 'PASS'
 						? 'Spot Lights Test PASS'
 						: 'Spot Lights Test FAIL'
-				this.test['touchScreen'] = (await this.$cmd.executeScriptCode(touchScreen)).result
+				//this.test['touchScreen'] = (await this.$cmd.executeScriptCode(touchScreen)).result
 			},
 			async checkCameraAvailability() {
 				if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -1237,7 +1404,7 @@
 			},
 			async testGPU() {
 				this.activate.gpu = true
-				if (this.intDev.video.some((obj) => obj.AdapterRAM.includes('4'))) {
+				if (this.intDev.video.Dedicated.some((obj) => obj.AdapterRAM.includes('4'))) {
 					this.myGpu = await this.$cmd.getDx({ Serial: this.device.Serial })
 					this.intDev.video = this.intDev.video.map((objA) => {
 						const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
@@ -1246,17 +1413,29 @@
 				} else {
 					this.myGpu = this.intDev.video
 				}
-				const itDG = await this.GPUInfo(this.myGpu)
+				this.itDG = await this.GPUInfo(this.myGpu)
 				await this.espera('actionGPU')
 				this.activate.gpu = false
-				this.myDb.GPU = itDG.description
-				this.myDb.GPU_RAM = itDG.RAM_GPU
+				this.myDb.GPU = this.itDG.description
+				this.myDb.GPU_RAM = this.itDG.RAM_GPU
+				console.log(
+					'video: ',
+					this.intDev.video.Integrated.map((v) => `${v.Description} ${v.AdapterRAM}`)
+				)
+				this.myDb.GPUIntegrated = this.intDev.video.Integrated.map(
+					(v) => `${v.Description} ${v.AdapterRAM}`
+				).join(', ')
 			},
 			saveComponents() {
 				this.componentes = {
 					...this.componentes,
 					...this.bios,
-					GPU: this.intDev.video.length ? this.myDb.GPU : null,
+					GPU: this.intDev.video.Dedicated.length
+						? this.intDev.video.Dedicated.map((v) => `${v.Description} ${v.AdapterRAM}`)
+						: null,
+					GPUIntegrated: this.intDev.video.Integrated.length
+						? this.intDev.video.Integrated.map((v) => `${v.Description} ${v.AdapterRAM}`)
+						: null,
 					Memory: this.intDev.RAM.Total,
 					Storage: this.intDev.HDD.Disks.join(','),
 					Serial: this.device.Serial,
@@ -1285,6 +1464,7 @@
 							? this.bios.Bluetooth
 							: this.componentes.Bluetooth,
 					Keyboard: this.componentes.Keyboard,
+					Color: this.myDb.COLOR,
 				}
 			},
 			async getGPUInfo() {
@@ -1383,14 +1563,22 @@
 
 				return resultado
 			},
-			async GPUInfo(gpuArray) {
-				// Construir el objeto resultante
-				let result = {
-					description: gpuArray.map((gpu) => gpu.Description).join(', '),
-					RAM_GPU: gpuArray.map((gpu) => gpu.AdapterRAM).join(', '),
+			async GPUInfo(video) {
+				let descriptions = []
+
+				if (video.Integrated) {
+					video.Integrated.forEach((item) => {
+						descriptions.push(`${item.Description} ${item.AdapterRAM}`)
+					})
 				}
 
-				return result
+				if (video.Dedicated) {
+					video.Dedicated.forEach((item) => {
+						descriptions.push(`${item.Description} ${item.AdapterRAM}`)
+					})
+				}
+
+				return descriptions.join(', ')
 			},
 			handleCaptureResult(result) {
 				console.log(`Captura ${result ? 'exitosa' : 'fallida'}`)
@@ -1484,39 +1672,76 @@
 					cardActions3.addEventListener('click', clickHandler)
 				})
 			},
+			handleAllKeysPressed(status) {
+				this.allKeysPressed = status
+			},
+			async validation() {
+				if (!this.iTest.Organization) {
+					this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
+						'YYYY-MM-DD HH:mm:ss.SSS'
+					)
+					this.$q
+						.dialog({
+							title: 'Authorization Required',
+							message: 'You need to call your leader',
+							prompt: {
+								model: '',
+								type: 'password', // Hace que el campo sea de tipo contraseña
+								isValid: (val) => val.length > 0 || 'Please enter a password',
+							},
+							persistent: true,
+						})
+						.onOk(async (data) => {
+							this.$q.loading.show()
+							let i = await this.$db
+								.collection('securityTest')
+								.conditions({ key: data })
+								.limit(1)
+								.all_data()
+								.get()
+							if (i.length) {
+								this.Authorization = i[0].Description
+								this.$q.notify({ type: 'positive', message: `Authorizated...` })
+								this.$q.loading.hide()
+								this.info = this.iTest
+								this.myTest()
+							} else {
+								this.$q.loading.hide()
+								this.$q.notify({ type: 'negative', message: `The code is bad try again...` })
+								this.validation()
+							}
+						})
+						.onCancel(() => {
+							//this.cerrarVentana()
+						})
+						.onDismiss(() => {
+							//this.cerrarVentana()
+						})
+				} else {
+					this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
+						'YYYY-MM-DD HH:mm:ss.SSS'
+					)
+					this.info = this.iTest
+					this.myTest()
+				}
+			},
 		},
 		async beforeCreate() {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
 		},
 		async mounted() {
 			this.$q.loading.show()
+			this.$db
+				.collection('HPColor')
+				.all_data()
+				.get()
+				.then((v) => {
+					this.color = v.map((v) => `${v.Description}`)
+					this.optionsColors = this.color
+				})
 			this.iTest = await this.$cmd.executeScriptCode(imaging)
 			this.$q.loading.hide()
-			if (!this.iTest.Organization) {
-				this.$q
-					.dialog({
-						dark: true,
-						title: 'Status',
-						message: 'This unit did not go through the imaging process, do you want to continue?',
-						persistent: true,
-					})
-					.onOk(() => {
-						this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
-							'YYYY-MM-DD HH:mm:ss.SSS'
-						)
-						this.info = this.iTest
-						this.myTest()
-					})
-					.onCancel(() => {
-						this.cerrarVentana()
-					})
-			} else {
-				this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
-					'YYYY-MM-DD HH:mm:ss.SSS'
-				)
-				this.info = this.iTest
-				this.myTest()
-			}
+			await this.validation()
 		},
 	}
 </script>
