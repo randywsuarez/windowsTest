@@ -1,4 +1,8 @@
 export default `
+# Cargar ensamblado de Windows Forms
+Add-Type -AssemblyName System.Windows.Forms
+
+# Obtener todos los dispositivos con errores
 $allDevices = Get-WmiObject -Class Win32_PnPEntity -Namespace "Root\\CIMV2" | Where-Object { $_.ConfigManagerErrorCode -ne 0 }
 Start-Process "devmgmt.msc"
 $errorInfo = @{
@@ -14,11 +18,11 @@ if ($allDevices) {
         $allDevices = Get-WmiObject -Class Win32_PnPEntity -Namespace "Root\\CIMV2" | Where-Object { $_.ConfigManagerErrorCode -ne 0 }
         $msgBody = "Please check that there are no missing drivers or problems with drivers."
         $msgTitle = "Device Manager Drivers Test"
-        $msgButton = 'AbortRetryIgnore'
-        $msgImage = 'Question'
-        $result = [System.Windows.Forms.MessageBox]::Show($msgBody,$msgTitle,$msgButton,$msgImage)
+        $msgButton = [System.Windows.Forms.MessageBoxButtons]::AbortRetryIgnore
+        $msgImage = [System.Windows.Forms.MessageBoxIcon]::Question
+        $result = [System.Windows.Forms.MessageBox]::Show($msgBody, $msgTitle, $msgButton, $msgImage)
         $resDriver = ($result).value__
-        if ($resDriver -eq "3") {
+        if ($resDriver -eq "3") {  # Abort
             $errorInfo.errorMessage = "Missing Drivers"
             $errorInfo.estatusDrivers = "FAIL"
             $errorInfo.estatusVideo = ""
@@ -26,13 +30,12 @@ if ($allDevices) {
             Write-Host ($errorInfo | ConvertTo-Json)
             exit
         }
-        if ($resDriver -eq "5") {
+        if ($resDriver -eq "5") {  # Ignore
             $errorInfo.estatusDrivers = "PASS"
             $errorInfo.result = "PASS"
         }
-    } while ($resDriver -eq "4" -or $allDevices)
+    } while ($resDriver -eq "4" -or $allDevices)  # Retry or continue checking if there are devices with errors
 } else {
-
     $errorInfo.estatusDrivers = "PASS"
     $errorInfo.result = "PASS"
 }
@@ -48,17 +51,17 @@ if ($allDevices) {
 
         $msgBody = "Verify that the display adapter drivers are installed. Do you want to check again?."
         $msgTitle = "Display Adapter Drivers Test"
-        $msgButton = 'RetryCancel'
-        $msgImage = 'Question'
-        $result = [System.Windows.Forms.MessageBox]::Show($msgBody,$msgTitle,$msgButton,$msgImage)
+        $msgButton = [System.Windows.Forms.MessageBoxButtons]::RetryCancel
+        $msgImage = [System.Windows.Forms.MessageBoxIcon]::Question
+        $result = [System.Windows.Forms.MessageBox]::Show($msgBody, $msgTitle, $msgButton, $msgImage)
         $resDriver = ($result).value__
 
-        if ($resDriver -eq "2") {
+        if ($resDriver -eq "2") {  # Cancel
             Write-Host ($errorInfo | ConvertTo-Json)
             exit
         }
 
-    } while ($allDevices)
+    } while ($allDevices)  # Continue checking if there are devices with errors
     $errorInfo.estatusVideo = "PASS"
     $errorInfo.result = "PASS"
 } else {
@@ -66,4 +69,5 @@ if ($allDevices) {
     $errorInfo.result = "PASS"
 }
 Write-Host ($errorInfo | ConvertTo-Json)
+
 `
