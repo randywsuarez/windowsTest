@@ -1,56 +1,55 @@
 {
-	"name": "windowstest",
-	"version": "1.1.1",
-	"description": "Unit Test",
-	"productName": "Windows Test - Close the Loop",
-	"author": "Randy Suarez <suarez9ster@gmail.com>",
-	"private": true,
-	"scripts": {
-		"test": "echo \"No test specified\" && exit 0",
-		"dev": "quasar dev",
-		"build": "quasar build"
-	},
-	"dependencies": {
-		"@quasar/extras": "^1.16.4",
-		"adm-zip": "^0.5.10",
-		"axios": "^1.6.2",
-		"core-js": "^3.6.5",
-		"jsbarcode": "^3.11.6",
-		"moment": "^2.29.4",
-		"mssql": "7.3.5",
-		"nedb": "^1.8.0",
-		"nedb-promises": "^6.2.3",
-		"node": "^21.2.0",
-		"node-powershell": "^5.0.1",
-		"powershell": "^2.3.2",
-		"quasar": "^1.0.0",
-		"socket.io-client": "^4.7.2",
-		"uuid": "^9.0.1",
-		"vue-i18n": "8",
-		"wavesurfer.js": "^7.7.15"
-	},
-	"devDependencies": {
-		"@quasar/app": "^2.0.0",
-		"devtron": "^1.4.0",
-		"electron": "^9.0.0",
-		"electron-debug": "^3.0.1",
-		"electron-devtools-installer": "^3.0.0",
-		"electron-packager": "^14.1.1"
-	},
-	"browserslist": [
-		"last 10 Chrome versions",
-		"last 10 Firefox versions",
-		"last 4 Edge versions",
-		"last 7 Safari versions",
-		"last 8 Android versions",
-		"last 8 ChromeAndroid versions",
-		"last 8 FirefoxAndroid versions",
-		"last 10 iOS versions",
-		"last 5 Opera versions"
-	],
-	"engines": {
-		"node": ">= 10.18.1",
-		"npm": ">= 6.13.4",
-		"yarn": ">= 1.21.1"
-	}
+  "name": "windowstest",
+  "version": "0.0.1",
+  "description": "Unit Test",
+  "productName": "Windows Test - ISPT Services",
+  "author": "Randy Suarez <suarez9ster@gmail.com>",
+  "private": true,
+  "scripts": {
+    "test": "echo \"No test specified\" && exit 0",
+    "dev": "quasar dev",
+    "build": "quasar build"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.16.4",
+    "adm-zip": "^0.5.10",
+    "axios": "^1.6.2",
+    "core-js": "^3.6.5",
+    "jsbarcode": "^3.11.6",
+    "moment": "^2.29.4",
+    "mssql": "7.3.5",
+    "nedb": "^1.8.0",
+    "nedb-promises": "^6.2.3",
+    "node": "^21.2.0",
+    "node-powershell": "^5.0.1",
+    "powershell": "^2.3.2",
+    "quasar": "^1.0.0",
+    "socket.io-client": "^4.7.2",
+    "uuid": "^9.0.1",
+    "vue-i18n": "8"
+  },
+  "devDependencies": {
+    "@quasar/app": "^2.0.0",
+    "devtron": "^1.4.0",
+    "electron": "^9.0.0",
+    "electron-debug": "^3.0.1",
+    "electron-devtools-installer": "^3.0.0",
+    "electron-packager": "^14.1.1"
+  },
+  "browserslist": [
+    "last 10 Chrome versions",
+    "last 10 Firefox versions",
+    "last 4 Edge versions",
+    "last 7 Safari versions",
+    "last 8 Android versions",
+    "last 8 ChromeAndroid versions",
+    "last 8 FirefoxAndroid versions",
+    "last 10 iOS versions",
+    "last 5 Opera versions"
+  ],
+  "engines": {
+    "node": ">= 10.18.1",
+    "npm": ">= 6.13.4",
+    "yarn": ">= 1.21.1"
+  }
 }
