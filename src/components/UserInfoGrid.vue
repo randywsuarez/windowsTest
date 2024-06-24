@@ -1,11 +1,11 @@
 <template>
 	<div class="user-info-container">
 		<!-- División superior con avatar redondo -->
-		<!-- <div class="avatar-container">
-      <div class="avatar">
-        {{ initials }}
-      </div>
-    </div> -->
+		<div class="avatar-container">
+			<div class="avatar">
+				{{ initials }}
+			</div>
+		</div>
 
 		<q-card class="card">
 			<!-- División inferior con información detallada -->
@@ -14,19 +14,17 @@
 					<div class="q-page-container">
 						<div class="row">
 							<!-- Columna izquierda con la imagen (25% del ancho) -->
-							<div class="col img-container" left>
+							<div class="col-2 img-container">
 								<img :src="imageSrc" alt="Imagen" class="img-avatar" />
 							</div>
 							<!-- Columna derecha con la información (75% del ancho) -->
-							<div class="col" center>
+							<div class="col-9">
 								<div class="info-text">
-									<p class="info-user">{{ username }}</p>
 									<p class="info-title">{{ title }}</p>
 									<p class="info-subtitle">{{ subtitle }}</p>
 									<p class="info-project">{{ project }}</p>
 								</div>
 							</div>
-							<q-checkbox size="150px" v-model="localAudit" val="80px" label="Audit" class="col" right />
 						</div>
 					</div>
 				</div>
@@ -37,7 +35,6 @@
 
 <script>
 	export default {
-		name: 'UserInfoGrid',
 		props: {
 			// Propiedades para recibir valores
 			username: {
@@ -60,28 +57,15 @@
 				type: String,
 				default: 'logo.png', // Imagen por defecto
 			},
-			audit: {
-				type: Boolean,
-				default: false,
-			},
+			// Agrega más propiedades según sea necesario
 		},
 		data() {
-			return {
-				localAudit: this.audit,
-			}
+			return {}
 		},
 		computed: {
 			initials() {
 				// Obtener las primeras dos letras del nombre de usuario
 				return this.username.slice(0, 2).toUpperCase()
-			},
-		},
-		watch: {
-			localAudit(newValue) {
-				this.$emit('update:audit', newValue)
-			},
-			audit(newValue) {
-				this.localAudit = newValue
 			},
 		},
 	}
@@ -138,12 +122,6 @@
 
 	.info-title {
 		font-size: 18px;
-		font-weight: bold;
-		margin-bottom: 5px;
-	}
-
-	.info-user {
-		font-size: 24px;
 		font-weight: bold;
 		margin-bottom: 5px;
 	}

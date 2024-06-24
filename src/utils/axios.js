@@ -5,12 +5,7 @@ import env from '../utils/env'
 
 let instance = axios.create({
 	// baseURL: 'http://localhost:3000/api/',
-	baseURL:
-		LocalStorage.getItem('api') == 'public'
-			? env.mongodb.public
-			: LocalStorage.getItem('api') == 'dev'
-			? env.mongodb.dev
-			: env.mongodb.server,
+	baseURL: env.mongodb.server,
 	//baseURL: env.dev,
 	// timeout: 1000,
 	// headers: {'X-Custom-Header': 'foobar'}
