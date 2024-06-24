@@ -1,103 +1,146 @@
 <template>
-	<q-card class="teclado-card">
-		<q-card-section class="teclado-section">
-			<div class="teclado" :style="{ transform: zoomLevel }">
-				<div v-for="fila in filas" :key="fila" class="fila q-mb-sm">
-					<div v-for="tecla in fila" :key="tecla" class="tecla q-pa-xs" @click="highlightKey(tecla)">
-						{{ tecla }}
-					</div>
+	<div id="kb_box" style="min-height: 200px">
+		<div id="kb_box_l">
+			<div v-for="row in keyRows" :key="row.id" class="kb_row">
+				<div
+					v-for="key in row.keys"
+					:key="key.id"
+					:class="['kb_btn', key.size, key.class]"
+					:id="key.id"
+					:style="{ backgroundColor: key.pressed ? '#FFCA13' : '' }"
+				>
+					<span v-html="key.label"></span>
 				</div>
 			</div>
-		</q-card-section>
-	</q-card>
+		</div>
+		<div id="kb_box_b">
+			<input type="button" @click="resetKeyboard" value="Reset" class="reset_kb_btn" />
+		</div>
+	</div>
 </template>
 
 <script>
 	export default {
 		data() {
 			return {
-				filas: [
-					[
-						'Esc',
-						'F1',
-						'F2',
-						'F3',
-						'F4',
-						'F5',
-						'F6',
-						'F7',
-						'F8',
-						'F9',
-						'F10',
-						'F11',
-						'F12',
-						'Print Scrn',
-					],
-					['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
-					['Tab', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', '[', ']', '\\'],
-					['Caps Lock', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', "'", 'Enter'],
-					['Shift', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', ',', '.', '/', '↑', 'Num Lock', '*'],
-					['Ctrl', 'Win', 'Alt', ' ', 'Alt', 'Ctrl', '←', '↓', '→', '7', '8', '9', '-'],
-					[' ', ' ', ' ', '0', '.', 'Enter', '+'],
+				keyRows: [
+					{
+						id: 1,
+						keys: [
+							{ id: 'kb_btn_27', label: 'Esc', size: 'kb_btn_small', pressed: false },
+							{ id: 'kb_btn_112', label: 'F1', size: 'kb_btn_small', pressed: false },
+							{ id: 'kb_btn_113', label: 'F2', size: 'kb_btn_small', pressed: false },
+							// Agrega todas las teclas aquí siguiendo el patrón anterior
+						],
+					},
+					{
+						id: 2,
+						keys: [
+							{ id: 'kb_btn_9', label: 'Tab', size: 'kb_btn_medium', pressed: false },
+							{ id: 'kb_btn_81', label: 'Q', size: 'kb_btn_small', pressed: false },
+							{ id: 'kb_btn_87', label: 'W', size: 'kb_btn_small', pressed: false },
+							// Agrega todas las teclas aquí siguiendo el patrón anterior
+						],
+					},
+					// Agrega más filas según sea necesario
 				],
-				zoomLevel: 'scale(0.4)',
 			}
 		},
 		methods: {
-			highlightKey(tecla) {
-				// Restablecer el estilo de todas las teclas
-				this.$el.querySelectorAll('.tecla').forEach((key) => {
-					key.style.boxShadow = 'none'
-				})
-
-				// Resaltar la tecla seleccionada
-				const teclaElement = this.$el.querySelector(`.tecla:contains('${tecla}')`)
-				if (teclaElement) {
-					teclaElement.style.boxShadow = '0 0 10px rgba(0, 128, 0, 0.8)'
+			pressKey(keyId) {
+				const row = this.keyRows.find((row) => row.keys.some((key) => key.id === keyId))
+				const key = row ? row.keys.find((k) => k.id === keyId) : null
+				if (key) {
+					key.pressed = !key.pressed
+					this.checkAllKeysPressed()
 				}
 			},
+			resetKeyboard() {
+				this.keyRows.forEach((row) => row.keys.forEach((key) => (key.pressed = false)))
+				this.$emit('allKeysPressed', false)
+			},
+			checkAllKeysPressed() {
+				const allPressed = this.keyRows.every((row) => row.keys.every((key) => key.pressed))
+				this.$emit('allKeysPressed', allPressed)
+			},
+			handleKeydown(event) {
+				const keyId = `kb_btn_${event.keyCode}`
+				this.pressKey(keyId)
+			},
+			handleKeyup(event) {
+				// Logic for keyup if needed
+			},
+			addKeyboardListeners() {
+				window.addEventListener('keydown', this.handleKeydown)
+				window.addEventListener('keyup', this.handleKeyup)
+			},
+			removeKeyboardListeners() {
+				window.removeEventListener('keydown', this.handleKeydown)
+				window.removeEventListener('keyup', this.handleKeyup)
+			},
+		},
+		mounted() {
+			this.addKeyboardListeners()
+		},
+		beforeDestroy() {
+			this.removeKeyboardListeners()
 		},
 	}
 </script>
 
 <style scoped>
-	@media (max-width: 300px) {
-		.teclado-card {
-			max-width: 100%;
-		}
-	}
-	.teclado-card {
-		border-radius: 20px;
-		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-		max-width: 600px;
-		margin: auto;
-		transition: transform 0.3s ease-in-out;
-	}
-
-	.teclado-section {
-		padding: 20px;
-	}
-
-	.teclado {
-		display: grid;
-		grid-gap: 5px;
-	}
-
-	.fila {
+	#kb_box {
 		display: flex;
+		flex-direction: column;
+		align-items: center;
 	}
-
-	.tecla {
-		flex: 1;
-		padding: 15px;
+	#kb_box_l {
+		display: flex;
+		flex-direction: column;
+		flex-wrap: wrap;
+	}
+	.kb_row {
+		display: flex;
+		width: 100%;
+	}
+	.kb_btn {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		font-size: 1rem;
+		margin: 3px;
+		padding: 5px;
+		background-color: #012733;
+		border: 1px solid #ccc;
+		color: #f0f8ff;
+		box-sizing: border-box;
 		text-align: center;
+	}
+	.kb_btn_small {
+		flex: 1 1 3%;
+	}
+	.kb_btn_medium {
+		flex: 1 1 6%;
+	}
+	.kb_btn_large {
+		flex: 1 1 12%;
+	}
+	.reset_kb_btn {
+		margin-top: 20px;
+		padding: 10px 20px;
+		background-color: #102733;
+		color: white;
+		border: none;
 		border-radius: 5px;
 		cursor: pointer;
-		transition: box-shadow 0.3s ease-in-out;
-		font-size: 14px;
 	}
-
-	.tecla:hover {
-		box-shadow: 0 0 10px rgba(0, 128, 0, 0.8);
+	@media (max-width: 500px) {
+		.kb_btn {
+			font-size: 0.8rem;
+			padding: 3px;
+		}
+		.reset_kb_btn {
+			padding: 8px 16px;
+		}
 	}
 </style>

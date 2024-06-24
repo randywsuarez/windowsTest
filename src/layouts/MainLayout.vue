@@ -2,13 +2,15 @@
 	<q-layout view="lHh Lpr lFf" class="main-layout">
 		<q-header class="main-header">
 			<q-toolbar @mousedown="startDrag">
-				<q-btn flat dense round icon="logout" @click="cerrarSesion" />
+				<q-btn flat dense round icon="logout" @click="cerrarSesion" style="color: black" />
 
-				<q-toolbar-title>Windows Test - ISPT Services V{{ version }}</q-toolbar-title>
+				<q-toolbar-title style="color: black; font-size: 14px"
+					>Windows Test - Close the Loop V{{ version }}</q-toolbar-title
+				>
 
 				<!-- Botón de cierre con animación -->
 				<div class="close-button" @click="cerrarVentana">
-					<q-icon name="close" size="24px" color="white" />
+					<q-icon name="close" size="24px" color="black" />
 				</div>
 			</q-toolbar>
 		</q-header>
@@ -143,7 +145,7 @@
 						persistent: true,
 					})
 					.onOk(() => {
-						this.cerrarVentana()
+						//this.cerrarVentana()
 					})
 					.onCancel(() => {
 						this.cerrarVentana()
@@ -179,6 +181,7 @@
 							items: [
 								{ label: 'Server', value: 'server', color: 'primary' },
 								{ label: 'Public', value: 'public', color: 'secondary' },
+								{ label: 'Dev', value: 'dev', color: 'red' },
 							],
 						},
 						cancel: true,
@@ -352,26 +355,30 @@
 				window.removeEventListener('mousemove', this.dragWindow)
 				window.removeEventListener('mouseup', this.stopDrag)
 			},
+			async updSystem() {
+				this.updateService = new UpdateService(
+					env.github.user,
+					env.github.repository,
+					env.version,
+					env.token
+				)
+
+				const actualizacionDisponible = await this.updateService.verificarActualizacion()
+
+				if (actualizacionDisponible.result) {
+					clearInterval(this.intervalId)
+					this.v['current'] = env.version
+					this.v['new'] = actualizacionDisponible.version
+					this.v['body'] = actualizacionDisponible.body
+					this.updt = actualizacionDisponible.result
+				}
+			},
 		},
 		async mounted() {
 			if (!this.$q.localStorage.getItem('api')) this.$q.localStorage.set('api', 'server')
 			document.addEventListener('keydown', this.handleKeyDown)
-			this.updateService = new UpdateService(
-				env.github.user,
-				env.github.repository,
-				env.version,
-				env.token
-			)
-
-			const actualizacionDisponible = await this.updateService.verificarActualizacion()
-
-			if (actualizacionDisponible.result) {
-				clearInterval(this.intervalId)
-				this.v['current'] = env.version
-				this.v['new'] = actualizacionDisponible.version
-				this.v['body'] = actualizacionDisponible.body
-				this.updt = actualizacionDisponible.result
-			}
+			let d = await this.$db.collection('updateSystem').all_data().get()
+			if (d[0].activated && d[0].Version > env.version) await updSystem()
 		},
 		beforeDestroy() {
 			document.removeEventListener('keydown', this.handleKeyDown)

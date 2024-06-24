@@ -66,13 +66,13 @@ const items = [
 	'Touch Device',
 	'OS Recovery',
 	'Programming Mode',
-	'Permanent Disable',
 	'NumLock',
 	'Keys mapped',
-	'Keyboard Backlit',
+	'Backlit',
 	'Mobile Network',
 	'Headphone',
 	'NFC',
+	'Platform Cycle',
 ]
 
 const CmdHelper = {

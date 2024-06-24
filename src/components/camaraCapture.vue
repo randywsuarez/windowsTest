@@ -58,9 +58,11 @@
 				navigator.mediaDevices
 					.enumerateDevices()
 					.then((devices) => {
+						console.log('Camera: ', devices)
 						// Filtra solo dispositivos de entrada de video
 						this.cameras = devices.filter((device) => device.kind === 'videoinput')
 						// Filtra adicionalmente aquellos dispositivos que no contengan 'IR' o 'Infrared' en su descripción
+						console.log('Camara: ', this.cameras)
 						this.cameras = this.cameras.filter(
 							(camera) =>
 								!camera.label.toLowerCase().includes('ir') &&
