@@ -1,4 +1,4 @@
-import { app, BrowserWindow, nativeTheme } from 'electron'
+import { app, BrowserWindow, nativeTheme, session, dialog } from 'electron'
 
 try {
 	if (process.platform === 'win32' && nativeTheme.shouldUseDarkColors === true) {
@@ -21,9 +21,10 @@ function createWindow() {
 	 * Initial window options
 	 */
 	mainWindow = new BrowserWindow({
-		width: 700,
-		height: 900,
+		width: 1920,
+		height: 1080,
 		frame: false,
+		fullscreen: true,
 		useContentSize: true,
 		webPreferences: {
 			nodeIntegration: true,
@@ -45,7 +46,31 @@ function createWindow() {
 	})
 }
 
-app.on('ready', createWindow)
+app.whenReady().then(() => {
+	createWindow()
+
+	// Allow camera access
+	session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+		console.log(webContents, permission)
+		if (permission === 'media') {
+			callback(true)
+			/* const response = dialog.showMessageBoxSync(mainWindow, {
+				type: 'question',
+				buttons: ['Allow', 'Deny'],
+				title: 'Camera Access Request',
+				message: 'This application requires access to your camera. Do you allow this?',
+			})
+
+			if (response === 0) {
+				callback(true)
+			} else {
+				callback(false)
+			} */
+		} else {
+			callback(false)
+		}
+	})
+})
 
 app.on('window-all-closed', () => {
 	if (process.platform !== 'darwin') {

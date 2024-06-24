@@ -34,8 +34,9 @@ export default {
 	mongodb: {
 		server: 'http://192.168.0.2:4500/api',
 		public: 'http://47.190.184.6:4900/api',
+		dev: 'http://192.168.0.9:4400/api',
 	},
-	version: '1.1.0',
+	version: '1.1.1',
 	token: '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',
 	github: {
 		user: 'randywsuarez',

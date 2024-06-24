@@ -389,6 +389,7 @@ export default ({ Vue, router }) => {
 							}
 						})
 						.catch((e) => {
+							console.log(e.data.message)
 							if (e.data.error == 'token')
 								Dialog.create({
 									title: 'Error',
@@ -436,6 +437,7 @@ export default ({ Vue, router }) => {
 							}
 						})
 						.catch((e) => {
+							console.log(e.data.message)
 							Loading.hide()
 							if (e.data.error == 'token')
 								Dialog.create({
@@ -448,12 +450,14 @@ export default ({ Vue, router }) => {
 									router.go('/login')
 								})
 							else {
+								console.log(e)
 								Notify.create(e.data)
 							}
 							/* reject(new Error(e))
 							router.go('/login') */
 						})
 				} catch (e) {
+					console.log(e)
 					reject(new Error(e))
 				}
 			})
