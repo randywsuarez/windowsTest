@@ -302,7 +302,13 @@
 						<q-checkbox size="150px" v-model="hotKey.mic" val="80px" label="Mic" />
 						<q-checkbox size="150px" v-model="hotKey.speakers" val="80x" label="Speakers" />
 						<q-checkbox size="150px" v-model="hotKey.brights" val="80px" label="Brightness" />
-						<q-checkbox size="150px" v-model="hotKey.privacy" val="80px" label="Privacy" />
+						<q-checkbox
+							size="150px"
+							v-model="hotKey.privacy"
+							val="80px"
+							label="Privacy"
+							v-if="componentes.Keyboard.Privacy == 'YES'"
+						/>
 					</div>
 					<!-- <q-checkbox left-label v-model="hotkey.speakers" label="Speackers" /> -->
 				</q-card-section>
@@ -437,10 +443,10 @@
 				<q-card-section>
 					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
 				</q-card-section>
-				<q-card-section class="center" v-if="myGpu.length">
+				<q-card-section class="center" v-if="myGpu.length || myDb.GPUIntegrated">
 					<q-table
 						class="card"
-						title="Treats"
+						title="List"
 						:data="intDev.video"
 						dense
 						:columns="columns"
@@ -470,7 +476,7 @@
 				<q-card-section class="center" v-else>
 					<div>Wait...</div>
 				</q-card-section>
-				<q-card-actions align="right" id="actionGPU" v-show="myGpu.length">
+				<q-card-actions align="right" id="actionGPU" v-show="myGpu.length || myDb.GPUIntegrated">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
@@ -845,8 +851,7 @@
 	       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
 	       ${this.intDev.RAM.Modules.join('\n')}
 	       GPU Verification PASS
-	       ${this.intDev.video.Integrated.map((v) => `${v.Description} ${v.AdapterRAM}`)}
-	       ${this.intDev.video.Dedicated.map((v) => `${v.Description} ${v.AdapterRAM}`)}
+	       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
 	       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Resolution' : ''}
 	       ${this.test.hasOwnProperty('resolution') ? this.test.resolution : ''}
 	       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Touch Screen' : ''}
@@ -1125,6 +1130,9 @@
 			async performTests() {
 				//await this.keyboardT()
 				//await this.simpleTest('Touch')
+				/* if (this.intDev.video.length) {
+					await this.testGPU()
+				} */
 				this.driver = await this.$cmd.executeScriptCode(drivers)
 				this.activate.drivers = true
 				await this.espera('actionDrivers')
@@ -1184,7 +1192,7 @@
 				this.$q.loading.show()
 				this.info = {
 					...this.info,
-					video: await this.getGPUInfo(),
+					//video: await this.getGPUInfo(),
 					cpuName: this.intDev.cpuName,
 					cpu: this.intDev.cpu,
 					RAM: this.intDev.RAM,
@@ -1404,38 +1412,68 @@
 			},
 			async testGPU() {
 				this.activate.gpu = true
-				if (this.intDev.video.Dedicated.some((obj) => obj.AdapterRAM.includes('4'))) {
+				console.log('Activating GPU:', this.activate.gpu)
+
+				// Obtener GPUs dedicadas e integradas por separado
+				const dedicatedGPUs = this.intDev.video.filter((v) => v.Type === 'Dedicated')
+				console.log('Dedicated GPUs:', dedicatedGPUs)
+				const integratedGPUs = this.intDev.video.filter((v) => v.Type === 'Integrated')
+				console.log('Integrated GPUs:', integratedGPUs)
+
+				// Procesar GPUs dedicadas
+				if (dedicatedGPUs.some((obj) => obj.AdapterRAM.includes('4'))) {
+					console.log('Dedicated GPUs with AdapterRAM containing 4 found')
 					this.myGpu = await this.$cmd.getDx({ Serial: this.device.Serial })
+					console.log('myGpu after getDx:', this.myGpu)
+
 					this.intDev.video = this.intDev.video.map((objA) => {
 						const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
+						console.log('Matching GPU:', matchB)
 						return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
 					})
+					console.log('Updated intDev.video:', this.intDev.video)
 				} else {
-					this.myGpu = this.intDev.video
+					console.log('No dedicated GPUs with AdapterRAM containing 4 found')
+					this.myGpu = dedicatedGPUs
+					console.log('myGpu:', this.myGpu)
 				}
-				this.itDG = await this.GPUInfo(this.myGpu)
+
+				// Asignar valores para GPUs dedicadas
+				const dedicatedGPUInfoArray = await this.GPUInfo(this.myGpu)
+				console.log('Dedicated GPU Info Array:', dedicatedGPUInfoArray)
+				if (dedicatedGPUInfoArray.length > 0) {
+					const dedicatedGPUInfo = dedicatedGPUInfoArray[0]
+					console.log('Dedicated GPU Info:', dedicatedGPUInfo)
+					this.myDb.GPU = dedicatedGPUInfo.Description || dedicatedGPUInfo.description || ''
+					this.myDb.GPU_RAM = dedicatedGPUInfo.AdapterRAM || dedicatedGPUInfo.RAM_GPU || ''
+				} else {
+					this.myDb.GPU = ''
+					this.myDb.GPU_RAM = ''
+				}
+				console.log('myDb.GPU:', this.myDb.GPU)
+				console.log('myDb.GPU_RAM:', this.myDb.GPU_RAM)
+
+				// Procesar GPUs integradas
+				const integratedGPUInfo = await this.IntegratedGPUInfo(integratedGPUs)
+				console.log('Integrated GPU Info:', integratedGPUInfo)
+				this.myDb.GPUIntegrated = integratedGPUInfo.integratedInfo || ''
+				console.log('myDb.GPUIntegrated:', this.myDb.GPUIntegrated)
+
 				await this.espera('actionGPU')
+				console.log('Completed espera for actionGPU')
 				this.activate.gpu = false
-				this.myDb.GPU = this.itDG.description
-				this.myDb.GPU_RAM = this.itDG.RAM_GPU
-				console.log(
-					'video: ',
-					this.intDev.video.Integrated.map((v) => `${v.Description} ${v.AdapterRAM}`)
-				)
-				this.myDb.GPUIntegrated = this.intDev.video.Integrated.map(
-					(v) => `${v.Description} ${v.AdapterRAM}`
-				).join(', ')
+				console.log('Deactivating GPU:', this.activate.gpu)
 			},
 			saveComponents() {
 				this.componentes = {
 					...this.componentes,
 					...this.bios,
-					GPU: this.intDev.video.Dedicated.length
-						? this.intDev.video.Dedicated.map((v) => `${v.Description} ${v.AdapterRAM}`)
+					GPU: this.intDev.video.some((v) => v.type == 'Dedicated')
+						? this.intDev.video.map((v) => {
+								if (v.type == 'Dedicated') `${v.Description} ${v.AdapterRAM}`
+						  })
 						: null,
-					GPUIntegrated: this.intDev.video.Integrated.length
-						? this.intDev.video.Integrated.map((v) => `${v.Description} ${v.AdapterRAM}`)
-						: null,
+					GPUIntegrated: this.myDb.GPUIntegrated,
 					Memory: this.intDev.RAM.Total,
 					Storage: this.intDev.HDD.Disks.join(','),
 					Serial: this.device.Serial,
@@ -1563,22 +1601,22 @@
 
 				return resultado
 			},
-			async GPUInfo(video) {
-				let descriptions = []
-
-				if (video.Integrated) {
-					video.Integrated.forEach((item) => {
-						descriptions.push(`${item.Description} ${item.AdapterRAM}`)
-					})
+			async GPUInfo(gpuArray) {
+				// Construir el objeto resultante
+				let result = {
+					description: gpuArray.map((gpu) => gpu.Description).join(', '),
+					RAM_GPU: gpuArray.map((gpu) => gpu.AdapterRAM).join(', '),
 				}
 
-				if (video.Dedicated) {
-					video.Dedicated.forEach((item) => {
-						descriptions.push(`${item.Description} ${item.AdapterRAM}`)
-					})
+				return result
+			},
+			async IntegratedGPUInfo(gpuArray) {
+				// Construir el objeto resultante concatenando Description y AdapterRAM
+				let result = {
+					integratedInfo: gpuArray.map((gpu) => `${gpu.Description} ${gpu.AdapterRAM}`).join(', '),
 				}
 
-				return descriptions.join(', ')
+				return result
 			},
 			handleCaptureResult(result) {
 				console.log(`Captura ${result ? 'exitosa' : 'fallida'}`)
