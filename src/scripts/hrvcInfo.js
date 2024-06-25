@@ -1,7 +1,8 @@
-export default `$Information = @{
+export default `
+$Information = @{
     cpu = @()
     cpuName = @()
-    video = @()  # Inicializamos como un array
+    video = @()
     RAM = @{
         Total = ""
         Modules = @()
@@ -146,27 +147,27 @@ if ($wmiHddUnits) {
 $videoControllers = Get-WmiObject -Class Win32_VideoController
 
 foreach ($controller in $videoControllers) {
-    # Filtrar las tarjetas de video reales que no sean USB y tengan AdapterDACType igual a "Integrated RAMDAC"
-    if ($controller.AdapterDACType -eq "Integrated RAMDAC" -and $controller.Description -notmatch "USB") {
-        $adapterRAMBytes = $controller.AdapterRAM
-        $adapterRAMMB = [Math]::Round($adapterRAMBytes / 1MB, 2)
-        if ($adapterRAMMB -eq 0.5) {
-            $adapterRAMMB = 512
-        }
-        $adapterRAMFormatted = if ($adapterRAMMB -lt 1024) {
-            "$adapterRAMMB MB"
-        } else {
-            "$([Math]::Round($adapterRAMMB / 1024, 2)) GB"
-        }
-        $videoInfo = [PSCustomObject]@{
-            Description = $controller.Description
-            AdapterRAM = $adapterRAMFormatted
-        }
-        # Agregar el objeto de información de video al array en $Information.video
-        $Information.video += $videoInfo
+    $adapterRAMBytes = $controller.AdapterRAM
+    $adapterRAMMB = [Math]::Round($adapterRAMBytes / 1MB, 2)
+    if ($adapterRAMMB -eq 0.5) {
+        $adapterRAMMB = 512
     }
+    $adapterRAMFormatted = if ($adapterRAMMB -lt 1024) {
+        "$adapterRAMMB MB"
+    } else {
+        "$([Math]::Round($adapterRAMMB / 1024, 2)) GB"
+    }
+    $videoInfo = @{
+        Description = $controller.Description
+        AdapterRAM = $adapterRAMFormatted
+        Type = if ($controller.AdapterDACType -eq "Internal") { "Integrated" } elseif ($controller.AdapterDACType -eq "Integrated RAMDAC") { "Dedicated" } else { "Unknown" }
+    }
+
+    $Information.video += $videoInfo
 }
 
 # Convertir a JSON y mostrar el resultado
-Write-Host ($Information | ConvertTo-Json)
+$InformationJson = $Information | ConvertTo-Json -Depth 4
+Write-Host $InformationJson
+
 `
