@@ -1,14 +1,13 @@
 {
 	"name": "windowstest",
-	"version": "1.1.1",
+	"version": "1.1.4",
 	"description": "Unit Test",
 	"productName": "Windows Test - Close the Loop",
 	"author": "Randy Suarez <suarez9ster@gmail.com>",
 	"private": true,
 	"scripts": {
-		"test": "echo \"No test specified\" && exit 0",
-		"dev": "quasar dev",
-		"build": "quasar build"
+		"dev": "set NODE_OPTIONS=--max-old-space-size=8192 && npx quasar dev -m electron",
+		"build": "set NODE_OPTIONS=--max-old-space-size=8192 && npx quasar build -m electron"
 	},
 	"dependencies": {
 		"@quasar/extras": "^1.16.4",
@@ -16,6 +15,7 @@
 		"axios": "^1.6.2",
 		"core-js": "^3.6.5",
 		"jsbarcode": "^3.11.6",
+		"modernizr": "^3.13.1",
 		"moment": "^2.29.4",
 		"mssql": "7.3.5",
 		"nedb": "^1.8.0",
@@ -25,6 +25,7 @@
 		"powershell": "^2.3.2",
 		"quasar": "^1.0.0",
 		"socket.io-client": "^4.7.2",
+		"systeminformation": "^5.22.11",
 		"uuid": "^9.0.1",
 		"vue-i18n": "8",
 		"wavesurfer.js": "^7.7.15"

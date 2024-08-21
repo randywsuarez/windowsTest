@@ -18,7 +18,6 @@ let instance = axios.create({
 
 instance.interceptors.response.use(
 	function (response) {
-		console.log('paso')
 		// Do something with response data
 		// console.log(response)
 		return response.data
@@ -66,19 +65,16 @@ instance.interceptors.response.use(
 		//console.log(error.config);
 
 		return Promise.reject(data)
-	}
+	},
 )
 
 instance.interceptors.request.use(
 	function (config) {
-		// Do something before request is sent
-		console.log(config)
 		var token = LocalStorage.getItem('token')
 		if (token) {
 			if (!config.params) config.params = {}
 			config.params.access_token = token
 		}
-		console.log('config: ', config)
 		let conf = LocalStorage.getItem('empresa')
 		if (conf) config.params['conf'] = conf
 
@@ -100,7 +96,7 @@ instance.interceptors.request.use(
 	function (error) {
 		// Do something with request error
 		return Promise.reject(error)
-	}
+	},
 )
 
 export default instance
