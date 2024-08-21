@@ -81,7 +81,7 @@ foreach ($ram in $ramModules) {
 
     # Agregar descripción al array de descripciones
     $ramDescArray += @{
-        SerialNumber = $ramSerialNumber
+        SerialNumber = $ram.SerialNumber
         Description = "$capacityGB GB"
         Details = "$manufacturer, $capacityGB GB, $speed MHz, $ddrVersion"
     }
@@ -109,7 +109,7 @@ $Information.RAM.Modules = @($ramDescArray | ForEach-Object { "$($_.SerialNumber
 $wmiHddUnits = Get-WmiObject -Class Win32_DiskDrive | Where-Object { $_.MediaType -ne "Removable Media" } | Select-Object Size, Model, SerialNumber
 
 # Obtener información de los discos duros usando Get-PhysicalDisk
-$physicalHddUnits = Get-PhysicalDisk | Select-Object SerialNumber, MediaType
+$physicalHddUnits = Get-PhysicalDisk | Select-Object SerialNumber, MediaType, BusType
 
 if ($wmiHddUnits) {
     $totalHDDSize = 0
@@ -127,16 +127,22 @@ if ($wmiHddUnits) {
         } else {
             "Unknown"
         }
+        $busType = if ($matchingPhysicalDisk) {
+            $matchingPhysicalDisk.BusType
+        } else {
+            "Unknown"
+        }
 
         $hddInfo = @{
             Model = $unit.Model
             Size = $hddSize
             Serial = $unit.SerialNumber
             Type = $diskType
+            BusType = $busType
         }
 
-        $hddUnitArray += "$($hddInfo.Serial),$($hddInfo.Model),$($hddInfo.Size),$($hddInfo.Type)"
-        $diskUnitArray += "$(ConvertBytesToStandardSize -Bytes $unit.Size) $($diskType)"
+        $hddUnitArray += "$($hddInfo.Serial),$($hddInfo.Model),$($hddInfo.Size),$($hddInfo.Type),$($hddInfo.BusType)"
+        $diskUnitArray += "$(ConvertBytesToStandardSize -Bytes $unit.Size) $($diskType), $($busType)"
     }
 
     $Information.HDD.Total = ConvertBytesToStandardSize -Bytes $totalHDDSize
@@ -147,23 +153,26 @@ if ($wmiHddUnits) {
 $videoControllers = Get-WmiObject -Class Win32_VideoController
 
 foreach ($controller in $videoControllers) {
-    $adapterRAMBytes = $controller.AdapterRAM
-    $adapterRAMMB = [Math]::Round($adapterRAMBytes / 1MB, 2)
-    if ($adapterRAMMB -eq 0.5) {
-        $adapterRAMMB = 512
-    }
-    $adapterRAMFormatted = if ($adapterRAMMB -lt 1024) {
-        "$adapterRAMMB MB"
-    } else {
-        "$([Math]::Round($adapterRAMMB / 1024, 2)) GB"
-    }
-    $videoInfo = @{
-        Description = $controller.Description
-        AdapterRAM = $adapterRAMFormatted
-        Type = if ($controller.AdapterDACType -eq "Internal") { "Integrated" } elseif ($controller.AdapterDACType -eq "Integrated RAMDAC") { "Dedicated" } else { "Unknown" }
-    }
+    if ($controller.Description -notmatch "USB") {
+        $adapterRAMBytes = $controller.AdapterRAM
+        $adapterRAMMB = [Math]::Round($adapterRAMBytes / 1MB, 2)
+        if ($adapterRAMMB -eq 0.5) {
+            $adapterRAMMB = 512
+        }
+        $adapterRAMFormatted = if ($adapterRAMMB -lt 1024) {
+            "$adapterRAMMB MB"
+        } else {
+            "$([Math]::Round($adapterRAMMB / 1024, 2)) GB"
+        }
+        $videoInfo = @{
+            Description = $controller.Description
+            AdapterRAM = $adapterRAMFormatted
+            AdapterDACType = $controller.AdapterDACType
+            Type = if ($controller.AdapterDACType -eq "Internal") { "Integrated" } elseif ($controller.AdapterDACType -eq "Integrated RAMDAC") { "Dedicated" } else { "Integrated" }
+        }
 
-    $Information.video += $videoInfo
+        $Information.video += $videoInfo
+    }
 }
 
 # Convertir a JSON y mostrar el resultado

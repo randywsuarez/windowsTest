@@ -47,7 +47,8 @@
 						label="Pass"
 						@click="action = 'PASS'"
 						v-show="
-							device.Serial == `${miniSerial}${check.serial}` && device.SKU == `${miniSKU}${check.sku}`
+							device.Serial == `${miniSerial}${check.serial}` &&
+							device.SKU == `${miniSKU}${check.sku}`
 						"
 					/>
 				</q-card-actions>
@@ -129,13 +130,7 @@
 				</q-card-section>
 				<q-card-actions align="right" id="actionCamera">
 					<q-btn flat color="negative" label="Fail" @click="test['camera'] = 'Webcam test FAIL'" />
-					<q-btn
-						flat
-						color="positive"
-						v-if="Object.keys(image).length !== 0"
-						label="Pass"
-						@click="test['camera'] = 'Webcam test PASS'"
-					/>
+					<q-btn flat color="positive" label="Pass" @click="test['camera'] = 'Webcam test PASS'" />
 				</q-card-actions>
 			</q-card>
 			<!-- Keyboard Start -->
@@ -148,8 +143,18 @@
 					<p>All keys pressed: {{ allKeysPressed }}</p></q-card-section
 				>
 				<q-card-actions align="right" v-show="activate.keyboard" id="actionKeyboard">
-					<q-btn flat color="negative" label="Fail" @click="test['keyboard'] = 'Keyboard test FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="test['keyboard'] = 'Keyboard test PASS'" />
+					<q-btn
+						flat
+						color="negative"
+						label="Fail"
+						@click="test['keyboard'] = 'Keyboard test FAIL'"
+					/>
+					<q-btn
+						flat
+						color="positive"
+						label="Pass"
+						@click="test['keyboard'] = 'Keyboard test PASS'"
+					/>
 				</q-card-actions>
 			</q-card>
 			<!-- Keyboard End -->
@@ -184,7 +189,8 @@
 			<!-- Mic End -->
 			<q-card class="card" v-show="activate.brightness">
 				<q-card-section>
-					<q-card-section> <div class="text-h6">Brightness Test</div> </q-card-section><q-separator />
+					<q-card-section> <div class="text-h6">Brightness Test</div> </q-card-section
+					><q-separator />
 				</q-card-section>
 				<q-card-section class="center"> Is the brightness working? </q-card-section>
 				<q-card-actions align="right" v-show="showActions" id="actionBrightness">
@@ -246,24 +252,17 @@
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Battery Test</div> </q-card-section><q-separator />
 				</q-card-section>
-				<q-card-section class="center" v-if="battery.hasOwnProperty('DesignCapacity')">
+				<q-card-section class="center">
 					<p style="text-decoration: red">
 						<b>Battery test {{ battery.Status }}</b>
 					</p>
-					<p><b>Design Capacity</b> = {{ battery.DesignCapacity }}</p>
-					<p><b>Full Charge Capacity</b> = {{ battery.FullChargeCapacity }}</p>
-					<p><b>Battery Health</b> = {{ battery.BatteryHealth }}%</p>
-					<p><b>Cycle Count</b> = {{ battery.CycleCount }}</p>
-					<p><b>ID</b> = {{ battery.ID }}</p>
+					<p><b>Design Capacity</b> = {{ battery.designedCapacity }}</p>
+					<p><b>Full Charge Capacity</b> = {{ battery.maxCapacity }}</p>
+					<p><b>Battery Health</b> = {{ battery.estimatedLife }}%</p>
+					<p><b>Cycle Count</b> = {{ battery.cycleCount }}</p>
+					<p><b>Serial</b> = {{ battery.Serial }}</p>
 				</q-card-section>
-				<q-card-section class="center" v-else>
-					<div>Wait...</div>
-				</q-card-section>
-				<q-card-actions
-					align="right"
-					id="actionBattery"
-					v-if="battery.hasOwnProperty('DesignCapacity')"
-				>
+				<q-card-actions align="right" id="actionBattery">
 					<q-btn
 						flat
 						color="negative"
@@ -282,14 +281,25 @@
 			</q-card>
 			<q-card class="card" v-show="activate.mousepad">
 				<q-card-section>
-					<q-card-section> <div class="text-h6">Mouse Pad Test</div> </q-card-section><q-separator />
+					<q-card-section> <div class="text-h6">Mouse Pad Test</div> </q-card-section
+					><q-separator />
 				</q-card-section>
 				<q-card-section class="center">
 					<mouse-pad />
 				</q-card-section>
 				<q-card-actions align="right" id="actionMousePad">
-					<q-btn flat color="negative" label="Fail" @click="test['mousepad'] = 'Mouse pad test FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="test['mousepad'] = 'Mouse pad test PASS'" />
+					<q-btn
+						flat
+						color="negative"
+						label="Fail"
+						@click="test['mousepad'] = 'Mouse pad test FAIL'"
+					/>
+					<q-btn
+						flat
+						color="positive"
+						label="Pass"
+						@click="test['mousepad'] = 'Mouse pad test PASS'"
+					/>
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.hotKey">
@@ -319,7 +329,8 @@
 			</q-card>
 			<q-card class="card" v-show="activate.components">
 				<q-card-section>
-					<q-card-section> <div class="text-h6">Status Components</div> </q-card-section><q-separator />
+					<q-card-section> <div class="text-h6">Status Components</div> </q-card-section
+					><q-separator />
 				</q-card-section>
 				<q-card-section class="center">
 					<div class="row justify-between" scroll>
@@ -439,6 +450,34 @@
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card> -->
+			<q-card class="card" v-show="activate.information">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Information</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<ColorSelect
+						:partsurfer="partsurfer"
+						@color-selected="handleColorSelected"
+						@form-generated="resetForm"
+					/>
+				</q-card-section>
+				<q-separator />
+				<q-card-section class="center">
+					<div>
+						<!-- <pre>{{ test }}</pre> -->
+					</div>
+					<q-checkbox
+						size="xl"
+						v-model="test.touchScreen"
+						true-value="YES"
+						false-value="NO"
+						label="Touch Me"
+					/>
+				</q-card-section>
+				<q-card-actions align="right" id="actionInformation">
+					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+				</q-card-actions>
+			</q-card>
 			<q-card class="card" v-show="activate.gpu">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
@@ -466,7 +505,13 @@
 										persistent
 										v-slot="scope"
 									>
-										<q-input type="text" v-model="scope.value" dense autofocus hint="Use buttons to close" />
+										<q-input
+											type="text"
+											v-model="scope.value"
+											dense
+											autofocus
+											hint="Use buttons to close"
+										/>
 									</q-popup-edit>
 								</q-td>
 							</q-tr>
@@ -565,22 +610,20 @@
 	import VirtualKeyboard from '../components/Keyboard.vue'
 	import AudioRecorder from '../components/audioRecorder.vue'
 	import Touch from '../components/Touch.vue'
+	import ColorSelect from '../components/ColorSelect.vue'
 	import {
 		drivers,
 		windows,
 		intenalDevices,
-		getBattery,
 		getDeviceInfo,
 		GetMntBringhtness,
 		imaging,
-		resolution,
 		spotLights,
 		components,
-		touchScreen,
 	} from '../scripts'
 	import moment from 'moment'
 	import JsBarcode from 'jsbarcode'
-	import axios from 'axios'
+	//import Modernizr from 'modernizr'
 
 	export default {
 		components: {
@@ -591,6 +634,7 @@
 			VirtualKeyboard,
 			AudioRecorder,
 			Touch,
+			ColorSelect,
 		},
 		data() {
 			return {
@@ -604,10 +648,16 @@
 					speakers: false,
 					privacy: false,
 				},
+				sectionEnabled: false,
+				selectedColor: null,
+				partsurfer: {},
+				si: {},
 				allKeysPressed: false,
 				user: {},
 				device: { img: '' },
-				test: {},
+				test: {
+					touchScreen: 'NO',
+				},
 				typeUnit: '#87cefa',
 				project: {},
 				sound: 'nada',
@@ -642,6 +692,7 @@
 					hotKey: false,
 					components: false,
 					touch: false,
+					information: false,
 				},
 				showActions: false,
 				win: {},
@@ -651,10 +702,13 @@
 				select: {},
 				file: '',
 				txt: '',
-				componentes: '',
+				componentes: {
+					Keyboard: { Privacy: 'NO' },
+				},
 				image: {},
 				miniSerial: '',
 				miniSKU: '',
+				TOP: 'NO',
 				myDb: {
 					Serial: '',
 					Model: '',
@@ -734,10 +788,22 @@
 			},
 		},
 		methods: {
+			async siSave() {
+				let si = await this.$db
+					.collection('systemInformation')
+					.conditions({ Serial: this.device.Serial })
+					.admin()
+					.get()
+				if (si.length)
+					await this.$db
+						.doc(`systemInformation/${si[0]._id}`)
+						.update({ Serial: this.device.Serial, ...this.si })
+				else await this.$db.doc('systemInformation').add({ Serial: this.device.Serial, ...this.si })
+			},
 			handleAuditUpdate(newValue) {
 				this.audit = newValue
 			},
-			filterFn(val, update) {
+			/* filterFn(val, update) {
 				if (val === '') {
 					update(() => {
 						this.color = this.optionsColors
@@ -749,7 +815,7 @@
 					const needle = val.toLowerCase()
 					this.color = this.optionsColors.filter((v) => v.toLowerCase().indexOf(needle) > -1)
 				})
-			},
+			}, */
 			formatItem(item) {
 				return item.replace(/\s+/g, '').replace(/\b\w/g, (l) => l.toUpperCase())
 			},
@@ -768,7 +834,7 @@
 				try {
 					const response = await fetch(
 						`${this.select.url}/${this.project.id}/APP/PromoteImageDownloadUnit/SerchSN?sn=${this.device.Serial}&station=Image%20Download`,
-						options
+						options,
 					)
 					const data = await response.json()
 					return data._message
@@ -794,13 +860,14 @@
 						FileType: r.FileType,
 						fileExtension: r.fileExtension,
 						fileBase64Str: r.fileBase64Str,
+						systemInformationBlob: JSON.stringify(this.si),
 					}),
 				}
 
 				try {
 					const response = await fetch(
 						`${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile`,
-						options
+						options,
 					)
 					const data = await response.json()
 					return data._isSuccess
@@ -873,25 +940,25 @@
 	       ${this.type == 'laptop' ? this.test.hotKey : ''}
 	       ${this.type == 'laptop' ? this.test.mousepad : ''}
 	       ${
-									this.type == 'laptop' && this.hotKey.mic
-										? 'Mic hotkey: It works'
-										: 'Mic hotkey: Does not work'
-								}
+						this.type == 'laptop' && this.hotKey.mic
+							? 'Mic hotkey: It works'
+							: 'Mic hotkey: Does not work'
+					}
 	       ${
-									this.type == 'laptop' && this.hotKey.speakers
-										? 'Speackers hotkey: It works'
-										: 'Speackers hotkey: Does not work'
-								}
+						this.type == 'laptop' && this.hotKey.speakers
+							? 'Speackers hotkey: It works'
+							: 'Speackers hotkey: Does not work'
+					}
 	       ${
-									this.type == 'laptop' && this.hotKey.brights
-										? 'Brightness hotkey: It works'
-										: 'Brightness hotkey: Does not work'
-								}
+						this.type == 'laptop' && this.hotKey.brights
+							? 'Brightness hotkey: It works'
+							: 'Brightness hotkey: Does not work'
+					}
 	       ${
-									this.type == 'laptop' && this.hotKey.privacy
-										? 'Privacy hotkey: It works'
-										: 'Privacy hotkey: Does not work'
-								}
+						this.type == 'laptop' && this.hotKey.privacy
+							? 'Privacy hotkey: It works'
+							: 'Privacy hotkey: Does not work'
+					}
 	       ${this.type != 'desktop' ? this.test.brightness : ''}
 	       ${this.type != 'desktop' ? this.test.spotLights : ''}
 	       ${this.form.note ? `Note: ${this.form.note}` : ''}
@@ -957,7 +1024,9 @@
 					Serial: this.device.Serial,
 					sku: this.device.SKU,
 				})
+				this.partsurfer = data
 				console.log('infoHP: ', data)
+				this.color = data.COLOR
 				this.myDb.COLOR = data.COLOR ? data.COLOR : ''
 				this.test['color'] = data.COLOR
 				this.componentes['Color'] = data.COLOR
@@ -978,11 +1047,11 @@
 					const dedicatedMemoryMatch = dedicatedMemoryPattern.exec(dxdiagContent)
 					const dedicatedMemoryString = dedicatedMemoryMatch
 						? dedicatedMemoryMatch[1].trim()
-						: 'No se encontró'
+						: 'No Found'
 					const dedicatedMemoryInGB =
-						dedicatedMemoryString !== 'No se encontró'
+						dedicatedMemoryString !== 'No Found'
 							? `${Math.round(parseFloat(dedicatedMemoryString.replace(' MB', '')) / 1024)} GB`
-							: 'No se encontró'
+							: 'No Found'
 
 					graphicsInfoArray.push({ Description: cardName, AdapterRAM: dedicatedMemoryInGB })
 				}
@@ -1039,11 +1108,8 @@
 			},
 			async initializeTest() {
 				this.$q.loading.show()
-				this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
-				this.componentes = await this.$cmd.executeScriptCode(components)
 
 				const itDH = await this.hddInfo(this.intDev.HDD.Units)
-				console.log(itDH)
 				this.myDb.Serial_HDD = itDH.group.Serial
 				this.myDb.Model_HDD = itDH.group.Description
 				this.myDb.HDD_CAPACITY = itDH.group.Size
@@ -1057,6 +1123,7 @@
 				}
 
 				this.device = result
+				await this.siSave()
 				if (!this.device.SKU) {
 					this.test['SKU'] = `SKU ID Check FAIL`
 					this.showNotification('No Found', 'The SKU number no found in the device.')
@@ -1088,7 +1155,7 @@
 					this.$q.loading.hide()
 					this.showNotification(
 						'No Math',
-						`SKUs are not the same, Device: ${this.device.SKU} <> System: ${projectInfo.ArrivedSKU}`
+						`SKUs are not the same, Device: ${this.device.SKU} <> System: ${projectInfo.ArrivedSKU}`,
 					)
 					return
 				}
@@ -1110,6 +1177,7 @@
 							? `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
 							: '',
 					Description: `Product Description: ${this.device.Description}`,
+					touchScreen: `NO`,
 				}
 
 				this.$q.loading.hide()
@@ -1123,13 +1191,29 @@
 			},
 			async simpleTest(v) {
 				this.activate[v.toLowerCase()] = true
+				//console.log(`${v.toLowerCase()}: ${this.activate[v.toLowerCase()]}`)
 				await this.espera(`action${v}`)
 				this.activate[v.toLowerCase()] = false
 				return
 			},
 			async performTests() {
 				//await this.keyboardT()
-				//await this.simpleTest('Touch')
+				//Modulo de Color
+				this.$q.loading.show()
+				this.si = await this.si
+				this.$q.loading.hide()
+				this.si.battery['estimatedLife'] = (
+					(this.si.battery.maxCapacity / this.si.battery.designedCapacity) *
+					100
+				).toFixed(0)
+				console.log('SI: ', this.si)
+				let ts = await this.isTouchDevice()
+				//this.test.touchScreen = ts ? 'YES' : 'NO'
+				this.test.touchScreen = this.partsurfer.Display.TouchScreen
+				//this.partsurfer.Display.TouchScreen
+				console.log('TouchScreen: ', this.test, this.partsurfer)
+				await this.simpleTest('Information')
+
 				/* if (this.intDev.video.length) {
 					await this.testGPU()
 				} */
@@ -1155,8 +1239,10 @@
 				}
 
 				if (this.type == 'laptop' || this.type == 'all-in-one') {
-					const mires = await this.$cmd.executeScriptCode(resolution)
-					this.test['resolution'] = mires.resolution
+					//const mires = await this.$cmd.executeScriptCode(resolution)
+					this.test[
+						'resolution'
+					] = `${this.si.graphics.displays[0].resolutionX}x${this.si.graphics.displays[0].resolutionY}`
 					await this.checkCameraAvailability()
 					this.activate.camera = true
 					await this.espera('actionCamera')
@@ -1181,23 +1267,25 @@
 				if (this.componentes.color) {
 					this.activate.note = true
 					await this.espera('actionNote')
-					this.myDb.COLOR = rcolor ? rcolor : ''
-					this.test['color'] = rcolor
-					this.componentes['Color'] = rcolor
-					this.info = { ...this.info, ...this.form }
 					this.activate.note = false
 				}
+				this.myDb.COLOR = this.color
+				this.test['color'] = this.color
+				this.componentes['Color'] = this.color
+				this.info = { ...this.info, ...this.form }
+				this.componentes['TYPE'] = this.type.toUpperCase()
 			},
 			async finalizeTest() {
 				this.$q.loading.show()
 				this.info = {
 					...this.info,
-					//video: await this.getGPUInfo(),
+					video: await this.intDev.video,
 					cpuName: this.intDev.cpuName,
 					cpu: this.intDev.cpu,
 					RAM: this.intDev.RAM,
 					HDD: this.intDev.HDD,
 				}
+				console.log('Before Create: ', this.componentes)
 
 				await this.$db.funcAdmin('modules/bypass/createModel', this.componentes).then(async (v) => {
 					this.myDb['CODE'] = v.Code
@@ -1208,7 +1296,6 @@
 				})
 				this.txt = await this.report()
 				this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
-				console.log(this.$textFile)
 				if (this.file) await this.saveFile(this.file)
 				if (this.image) await this.saveFile(this.image)
 
@@ -1322,11 +1409,12 @@
 					}
 					return false
 				})
-				console.log(itemsNotSet)
 				if (itemsNotSet.length > 0) {
 					this.$q.dialog({
 						title: 'BIOS Settings',
-						message: `The following BIOS settings need to be adjusted:\n\n${itemsNotSet.join(', ')}`,
+						message: `The following BIOS settings need to be adjusted:\n\n${itemsNotSet.join(
+							', ',
+						)}`,
 						persistent: true,
 						ok: {
 							label: 'Restart',
@@ -1338,15 +1426,34 @@
 				}
 			},
 			async testLaptopSpecifics() {
-				this.activate.battery = true
-				const battery = await this.$cmd.executeScriptCode(getBattery)
+				//this.activate.battery = true
+				let battery = await this.si.battery
+				let bp = (
+					await this.$db
+						.collection('TestSettings')
+						.conditions({ _id: '66c35f2666f2870d80e978ad' })
+						.all_data()
+						.get()
+				)[0]
+				battery['Status'] = battery.estimatedLife < bp.BatteryPercentage ? 'fail' : 'pass'
+				if (battery.Status.includes('fail')) {
+					this.test[
+						'battery'
+					] = `Battery test FAIL, Design Capacity = ${battery.designedCapacity}, Full Charge Capacity = ${battery.maxCapacity}, Battery Health = ${battery.estimatedLife}%, Cycle Count = ${battery.cycleCount} Serial = ${battery.serial}`
+					await this.$db
+						.doc('failTest')
+						.add({ Serial: this.device.Serial, type: 'battery', result: this.test.battery })
+				} else {
+					this.test[
+						'battery'
+					] = `Battery test PASS, Design Capacity = ${battery.designedCapacity}, Full Charge Capacity = ${battery.maxCapacity}, Battery Health = ${battery.estimatedLife}%, Cycle Count = ${battery.cycleCount} Serial = ${battery.serial}`
+				}
+
 				this.info = { ...this.info, battery }
-				if (battery.BatteryHealth < 85) battery.Status = 'fail'
-				this.test['battery'] = battery.Status.includes('fail')
-					? `Battery test FAIL, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
-					: `Battery test PASS, Design Capacity = ${battery.DesignCapacity}, Full Charge Capacity= ${battery.FullChargeCapacity}, Battery Health= ${battery.BatteryHealth}%, Cycle Count= ${battery.CycleCount} ID= ${battery.ID}`
 				this.battery = battery
-				this.activate.battery = false
+				await this.simpleTest('Battery')
+				/* await this.espera('actionBattery')
+				this.activate.battery = false */
 				this.activate.mousepad = true
 				await this.espera('actionMousePad')
 				this.activate.mousepad = false
@@ -1389,7 +1496,6 @@
 							this.camera = cameras.length > 0
 						})
 						.catch((error) => {
-							console.error('Error al enumerar dispositivos:', error)
 							this.camera = true
 						})
 				} else {
@@ -1412,67 +1518,66 @@
 			},
 			async testGPU() {
 				this.activate.gpu = true
-				console.log('Activating GPU:', this.activate.gpu)
 
 				// Obtener GPUs dedicadas e integradas por separado
+				/* this.intDev.video = [
+					{
+						Description: 'NVIDIA GeForce MX550',
+						AdapterRAM: '2 GB',
+						AdapterDACType: 'Integrated RAMDAC',
+						Type: 'Dedicated',
+					},
+					{
+						Description: 'NVIDIA GeForce MX900',
+						AdapterRAM: '1 GB',
+						AdapterDACType: 'Integrated RAMDAC',
+						Type: 'Dedicated',
+					},
+					{
+						Description: 'Intel(R) Iris(R) Xe Graphics',
+						AdapterRAM: '128 MB',
+						AdapterDACType: 'Internal',
+						Type: 'Integrated',
+					},
+				] */
 				const dedicatedGPUs = this.intDev.video.filter((v) => v.Type === 'Dedicated')
-				console.log('Dedicated GPUs:', dedicatedGPUs)
 				const integratedGPUs = this.intDev.video.filter((v) => v.Type === 'Integrated')
-				console.log('Integrated GPUs:', integratedGPUs)
 
 				// Procesar GPUs dedicadas
 				if (dedicatedGPUs.some((obj) => obj.AdapterRAM.includes('4'))) {
-					console.log('Dedicated GPUs with AdapterRAM containing 4 found')
 					this.myGpu = await this.$cmd.getDx({ Serial: this.device.Serial })
-					console.log('myGpu after getDx:', this.myGpu)
 
 					this.intDev.video = this.intDev.video.map((objA) => {
 						const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
-						console.log('Matching GPU:', matchB)
 						return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
 					})
-					console.log('Updated intDev.video:', this.intDev.video)
 				} else {
-					console.log('No dedicated GPUs with AdapterRAM containing 4 found')
 					this.myGpu = dedicatedGPUs
-					console.log('myGpu:', this.myGpu)
 				}
 
 				// Asignar valores para GPUs dedicadas
 				const dedicatedGPUInfoArray = await this.GPUInfo(this.myGpu)
-				console.log('Dedicated GPU Info Array:', dedicatedGPUInfoArray)
-				if (dedicatedGPUInfoArray.length > 0) {
-					const dedicatedGPUInfo = dedicatedGPUInfoArray[0]
-					console.log('Dedicated GPU Info:', dedicatedGPUInfo)
-					this.myDb.GPU = dedicatedGPUInfo.Description || dedicatedGPUInfo.description || ''
-					this.myDb.GPU_RAM = dedicatedGPUInfo.AdapterRAM || dedicatedGPUInfo.RAM_GPU || ''
+				if (dedicatedGPUInfoArray.GPU != null) {
+					this.myDb.GPU = dedicatedGPUInfoArray.GPU
+					this.myDb.GPU_RAM = dedicatedGPUInfoArray.RAM_GPU
 				} else {
 					this.myDb.GPU = ''
 					this.myDb.GPU_RAM = ''
 				}
-				console.log('myDb.GPU:', this.myDb.GPU)
-				console.log('myDb.GPU_RAM:', this.myDb.GPU_RAM)
-
 				// Procesar GPUs integradas
 				const integratedGPUInfo = await this.IntegratedGPUInfo(integratedGPUs)
-				console.log('Integrated GPU Info:', integratedGPUInfo)
-				this.myDb.GPUIntegrated = integratedGPUInfo.integratedInfo || ''
-				console.log('myDb.GPUIntegrated:', this.myDb.GPUIntegrated)
+				this.myDb.GPUIntegrated = integratedGPUInfo || ''
 
 				await this.espera('actionGPU')
-				console.log('Completed espera for actionGPU')
 				this.activate.gpu = false
-				console.log('Deactivating GPU:', this.activate.gpu)
 			},
-			saveComponents() {
+			async saveComponents() {
 				this.componentes = {
 					...this.componentes,
 					...this.bios,
-					GPU: this.intDev.video.some((v) => v.type == 'Dedicated')
-						? this.intDev.video.map((v) => {
-								if (v.type == 'Dedicated') `${v.Description} ${v.AdapterRAM}`
-						  })
-						: null,
+					GPU: await this.IntegratedGPUInfo(
+						this.intDev.video.filter((v) => v.Type === 'Dedicated'),
+					),
 					GPUIntegrated: this.myDb.GPUIntegrated,
 					Memory: this.intDev.RAM.Total,
 					Storage: this.intDev.HDD.Disks.join(','),
@@ -1502,7 +1607,7 @@
 							? this.bios.Bluetooth
 							: this.componentes.Bluetooth,
 					Keyboard: this.componentes.Keyboard,
-					Color: this.myDb.COLOR,
+					Color: this.color,
 				}
 			},
 			async getGPUInfo() {
@@ -1604,23 +1709,19 @@
 			async GPUInfo(gpuArray) {
 				// Construir el objeto resultante
 				let result = {
-					description: gpuArray.map((gpu) => gpu.Description).join(', '),
+					GPU: gpuArray.map((gpu) => gpu.Description).join(', '),
 					RAM_GPU: gpuArray.map((gpu) => gpu.AdapterRAM).join(', '),
+					General: gpuArray.map((gpu) => gpu.AdapterRAM).join(', '),
 				}
 
 				return result
 			},
 			async IntegratedGPUInfo(gpuArray) {
 				// Construir el objeto resultante concatenando Description y AdapterRAM
-				let result = {
-					integratedInfo: gpuArray.map((gpu) => `${gpu.Description} ${gpu.AdapterRAM}`).join(', '),
-				}
 
-				return result
+				return gpuArray.map((gpu) => `${gpu.Description} ${gpu.AdapterRAM}`).join(', ')
 			},
 			handleCaptureResult(result) {
-				console.log(`Captura ${result ? 'exitosa' : 'fallida'}`)
-
 				this.$children[0].$emit('stopCamera')
 				// Realizar acciones adicionales según el resultado de la captura
 				if (result) {
@@ -1630,7 +1731,6 @@
 				}
 			},
 			handleAction(action) {
-				console.log(`${action} button clicked`)
 				this.test['camera'] = `Webcam test ${action.toUpperCase()} `
 				this.activate.camera = false
 			},
@@ -1671,6 +1771,19 @@
 						}
 					})
 					.catch((err) => console.error(err))
+			},
+			handleColorSelected(color) {
+				if (color) {
+					this.selectedColor = color // Manejar la selección de color desde el componente hijo
+					this.color = color
+
+					this.myDb.COLOR = color
+					this.test['color'] = color
+					this.componentes['Color'] = color
+				}
+			},
+			resetForm() {
+				this.selectedColor = null // Resetear `selectedColor` al limpiar el formulario
 			},
 			async espera(a) {
 				return new Promise((resolve) => {
@@ -1716,7 +1829,7 @@
 			async validation() {
 				if (!this.iTest.Organization) {
 					this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
-						'YYYY-MM-DD HH:mm:ss.SSS'
+						'YYYY-MM-DD HH:mm:ss.SSS',
 					)
 					this.$q
 						.dialog({
@@ -1757,29 +1870,58 @@
 						})
 				} else {
 					this.iTest.Date = moment(this.iTest.Date, 'MM/DD/YYYY, h:mm:ss A').format(
-						'YYYY-MM-DD HH:mm:ss.SSS'
+						'YYYY-MM-DD HH:mm:ss.SSS',
 					)
 					this.info = this.iTest
 					this.myTest()
 				}
 			},
+			async isTouchDevice() {
+				// Verificar soporte para eventos táctiles
+				const hasTouchEvents =
+					'ontouchstart' in window ||
+					window.TouchEvent ||
+					'ontouchstart' in document.documentElement
+
+				// Verificar puntos táctiles disponibles
+				const hasTouchPoints = navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0
+
+				// Verificar si el puntero es menos preciso (generalmente táctil)
+				const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches
+
+				// Verificar el User Agent del navegador
+				const isMobileUserAgent = /Mobi|Android/i.test(navigator.userAgent)
+
+				// Verificar si Modernizr detecta soporta eventos táctiles
+				//const isModernizrTouch = Modernizr.touch
+
+				// Combinación de todas las verificaciones
+				return (
+					hasTouchEvents || hasTouchPoints || hasCoarsePointer || isMobileUserAgent //||
+					//isModernizrTouch
+				)
+			},
 		},
 		async beforeCreate() {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
+			this.si = this.$si()
 		},
 		async mounted() {
 			this.$q.loading.show()
-			this.$db
+			/* this.$db
 				.collection('HPColor')
 				.all_data()
 				.get()
 				.then((v) => {
 					this.color = v.map((v) => `${v.Description}`)
 					this.optionsColors = this.color
-				})
+				}) */
 			this.iTest = await this.$cmd.executeScriptCode(imaging)
 			this.$q.loading.hide()
-			await this.validation()
+			this.validation()
+
+			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
+			this.componentes = await this.$cmd.executeScriptCode(components)
 		},
 	}
 </script>

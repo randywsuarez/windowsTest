@@ -134,7 +134,7 @@
 		async created() {
 			this.version = env.version
 			this.startInternetCheckInterval()
-			this.test = await this.$cmd.executeScriptCode(winDate)
+			/* this.test = await this.$cmd.executeScriptCode(winDate)
 			console.log(this.test)
 			if (!this.test.result)
 				this.$q
@@ -145,7 +145,7 @@
 						persistent: true,
 					})
 					.onOk(() => {
-						//this.cerrarVentana()
+						this.cerrarVentana()
 					})
 					.onCancel(() => {
 						this.cerrarVentana()
@@ -153,10 +153,8 @@
 					})
 					.onDismiss(() => {
 						// console.log('I am triggered on both OK and Cancel')
-					})
+					}) */
 			let credencialesGuardadas = await this.$rsNeDB('credenciales').findOne({})
-			console.log('randy: ', credencialesGuardadas)
-			//console.log(credencialesGuardadas)
 			if (credencialesGuardadas == null) {
 				console.log('sin registro')
 				this.$q.loading.hide()
@@ -182,6 +180,7 @@
 								{ label: 'Server', value: 'server', color: 'primary' },
 								{ label: 'Public', value: 'public', color: 'secondary' },
 								{ label: 'Dev', value: 'dev', color: 'red' },
+								{ label: 'Local', value: 'local', color: 'orange' },
 							],
 						},
 						cancel: true,
@@ -360,7 +359,7 @@
 					env.github.user,
 					env.github.repository,
 					env.version,
-					env.token
+					env.token,
 				)
 
 				const actualizacionDisponible = await this.updateService.verificarActualizacion()
@@ -378,7 +377,7 @@
 			if (!this.$q.localStorage.getItem('api')) this.$q.localStorage.set('api', 'server')
 			document.addEventListener('keydown', this.handleKeyDown)
 			let d = await this.$db.collection('updateSystem').all_data().get()
-			if (d[0].activated && d[0].Version > env.version) await updSystem()
+			if (d[0].activated && env.version < d[0].Version) await this.updSystem()
 		},
 		beforeDestroy() {
 			document.removeEventListener('keydown', this.handleKeyDown)
