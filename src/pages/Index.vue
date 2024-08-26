@@ -774,6 +774,7 @@
 					{ label: 'NFC', value: 'NFC' },
 					{ label: 'Platform Cycle', value: 'Cycle' },
 				],
+				infoSystem: {},
 			}
 		},
 		computed: {
@@ -788,6 +789,24 @@
 			},
 		},
 		methods: {
+			async brands() {
+				async function getValueByPath(obj, path) {
+					return path.split('.').reduce((o, p) => o && o[p], obj)
+				}
+				console.log('infoSystem: ', this.infoSystem)
+				let info = await this.$db
+					.collection('typeBrands')
+					.conditions({ brand: this.infoSystem.system.manufacturer.split(' ')[0].toUpperCase() })
+					.admin()
+					.get()
+				if (info.length) {
+					info = info[0]
+					this.device.Serial = await getValueByPath(this.infoSystem, info.serial)
+					this.device.SKU = await getValueByPath(this.infoSystem, info.sku)
+					this.device.Description = await getValueByPath(this.infoSystem, info.description)
+					this.device.brand = this.infoSystem.system.manufacturer.split(' ')[0].toUpperCase()
+				}
+			},
 			async siSave() {
 				let si = await this.$db
 					.collection('systemInformation')
@@ -803,19 +822,6 @@
 			handleAuditUpdate(newValue) {
 				this.audit = newValue
 			},
-			/* filterFn(val, update) {
-				if (val === '') {
-					update(() => {
-						this.color = this.optionsColors
-					})
-					return
-				}
-
-				update(() => {
-					const needle = val.toLowerCase()
-					this.color = this.optionsColors.filter((v) => v.toLowerCase().indexOf(needle) > -1)
-				})
-			}, */
 			formatItem(item) {
 				return item.replace(/\s+/g, '').replace(/\b\w/g, (l) => l.toUpperCase())
 			},
@@ -1108,7 +1114,7 @@
 			},
 			async initializeTest() {
 				this.$q.loading.show()
-
+				console.log(this.intDev)
 				const itDH = await this.hddInfo(this.intDev.HDD.Units)
 				this.myDb.Serial_HDD = itDH.group.Serial
 				this.myDb.Model_HDD = itDH.group.Description
@@ -1116,14 +1122,16 @@
 				this.myDb.RAM = this.intDev.RAM.Total
 				this.myDb.CPU = this.intDev.cpuName.join(',')
 
-				const result = await this.$cmd.executeScriptCode(getDeviceInfo)
+				/* const result = await this.$cmd.executeScriptCode(getDeviceInfo)
 				if (!result) {
 					console.error('Error ejecutando script:', error)
 					return
 				}
 
-				this.device = result
-				await this.siSave()
+				this.device = result */
+				await this.brands()
+				console.log('brands: ', this.device)
+
 				if (!this.device.SKU) {
 					this.test['SKU'] = `SKU ID Check FAIL`
 					this.showNotification('No Found', 'The SKU number no found in the device.')
@@ -1137,14 +1145,16 @@
 				this.miniSKU = this.device.SKU.includes('#')
 					? this.device.SKU.split('#')[0].slice(0, -2)
 					: this.device.SKU.slice(0, -4)
-				this.myDb.Serial = result.Serial
-				this.myDb.Model = result.SKU
+				this.myDb.Serial = this.device.Serial
+				this.myDb.Model = this.device.SKU
 
 				this.setTypeUnit()
-				this.bios = await this.$cmd.biosData()
+				if (this.device.brand == 'HP') {
+					await this.infoHP()
+					this.bios = await this.$cmd.biosData()
+				}
 
-				let projectInfo = await this.getProjectInfo(result.Serial)
-				await this.infoHP()
+				let projectInfo = await this.getProjectInfo(this.device.Serial)
 				if (!projectInfo) {
 					this.$q.loading.hide()
 					this.showNotification('No Found', 'The Serial number no found in the system.')
@@ -1184,9 +1194,10 @@
 				this.activate.type = true
 				await this.espera2('actionType')
 				this.activate.type = false
-				this.activate.comparation = true
+				await this.simpleTest('Comparation')
+				/* this.activate.comparation = true
 				await this.espera('actionComparation')
-				this.activate.comparation = false
+				this.activate.comparation = false */
 				this.activate.select = true
 			},
 			async simpleTest(v) {
@@ -1201,14 +1212,13 @@
 				//Modulo de Color
 				this.$q.loading.show()
 				this.si = await this.si
+				await this.siSave()
 				this.$q.loading.hide()
 				this.si.battery['estimatedLife'] = (
 					(this.si.battery.maxCapacity / this.si.battery.designedCapacity) *
 					100
 				).toFixed(0)
 				console.log('SI: ', this.si)
-				let ts = await this.isTouchDevice()
-				//this.test.touchScreen = ts ? 'YES' : 'NO'
 				this.test.touchScreen = this.partsurfer.Display.TouchScreen
 				//this.partsurfer.Display.TouchScreen
 				console.log('TouchScreen: ', this.test, this.partsurfer)
@@ -1458,9 +1468,11 @@
 				await this.espera('actionMousePad')
 				this.activate.mousepad = false
 				this.activate.components = true
-				await this.checkBiosItems()
-				await this.espera('actionComponents')
-				this.activate.components = false
+				if (this.device.brand == 'HP') {
+					await this.checkBiosItems()
+					await this.espera('actionComponents')
+					this.activate.components = false
+				}
 			},
 			async testNonDesktopSpecifics() {
 				this.activate.audio = true
@@ -1474,13 +1486,13 @@
 				this.activate.brightness = false
 
 				/*  */
-				//if (this.type == 'laptop') {
-				await this.simpleTest('Mic')
-				this.activate.hotKey = true
-				await this.espera('actionHotKey')
-				this.activate.hotKey = false
-				await this.simpleTest('Keyboard')
-				//}
+				if (this.type == 'laptop') {
+					await this.simpleTest('Mic')
+					this.activate.hotKey = true
+					await this.espera('actionHotKey')
+					this.activate.hotKey = false
+					await this.simpleTest('Keyboard')
+				}
 				this.test['spotLights'] =
 					(await this.$cmd.executeScriptCode(spotLights)).result == 'PASS'
 						? 'Spot Lights Test PASS'
@@ -1876,52 +1888,20 @@
 					this.myTest()
 				}
 			},
-			async isTouchDevice() {
-				// Verificar soporte para eventos táctiles
-				const hasTouchEvents =
-					'ontouchstart' in window ||
-					window.TouchEvent ||
-					'ontouchstart' in document.documentElement
-
-				// Verificar puntos táctiles disponibles
-				const hasTouchPoints = navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0
-
-				// Verificar si el puntero es menos preciso (generalmente táctil)
-				const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches
-
-				// Verificar el User Agent del navegador
-				const isMobileUserAgent = /Mobi|Android/i.test(navigator.userAgent)
-
-				// Verificar si Modernizr detecta soporta eventos táctiles
-				//const isModernizrTouch = Modernizr.touch
-
-				// Combinación de todas las verificaciones
-				return (
-					hasTouchEvents || hasTouchPoints || hasCoarsePointer || isMobileUserAgent //||
-					//isModernizrTouch
-				)
-			},
 		},
 		async beforeCreate() {
+			this.infoSystem = await this.$system()
 			this.user = await this.$rsNeDB('credenciales').findOne({})
 			this.si = this.$si()
 		},
 		async mounted() {
 			this.$q.loading.show()
-			/* this.$db
-				.collection('HPColor')
-				.all_data()
-				.get()
-				.then((v) => {
-					this.color = v.map((v) => `${v.Description}`)
-					this.optionsColors = this.color
-				}) */
 			this.iTest = await this.$cmd.executeScriptCode(imaging)
 			this.$q.loading.hide()
-			this.validation()
-
 			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
+			console.log('intenalDevices: ', this.intDev)
 			this.componentes = await this.$cmd.executeScriptCode(components)
+			this.validation()
 		},
 	}
 </script>

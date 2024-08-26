@@ -1,5 +1,4 @@
 const si = require('systeminformation')
-const fs = require('fs')
 
 async function safeGetData(func) {
 	try {
@@ -10,12 +9,28 @@ async function safeGetData(func) {
 	}
 }
 
-async function getSystemInfo() {
+async function getSystemBiosBaseboard() {
 	try {
 		const results = await Promise.all([
 			safeGetData(si.system),
 			safeGetData(si.bios),
 			safeGetData(si.baseboard),
+		])
+
+		return {
+			system: results[0],
+			bios: results[1],
+			baseboard: results[2],
+		}
+	} catch (error) {
+		console.error('Error getting system, BIOS, and baseboard information:', error)
+		return null
+	}
+}
+
+async function getSystemInfo() {
+	try {
+		const results = await Promise.all([
 			safeGetData(si.chassis),
 			safeGetData(si.osInfo),
 			safeGetData(si.uuid),
@@ -35,25 +50,22 @@ async function getSystemInfo() {
 		])
 
 		return {
-			system: results[0],
-			bios: results[1],
-			baseboard: results[2],
-			chassis: results[3],
-			osInfo: results[4],
-			uuid: results[5],
-			versions: results[6],
-			cpu: results[7],
-			mem: results[8],
-			memLayout: results[9],
-			battery: results[10],
-			graphics: results[11],
-			diskLayout: results[12],
-			blockDevices: results[13],
-			fsSize: results[14],
-			fsStats: results[15],
-			networkInterfaces: results[16],
-			audio: results[17],
-			bluetooth: results[18],
+			chassis: results[0],
+			osInfo: results[1],
+			uuid: results[2],
+			versions: results[3],
+			cpu: results[4],
+			mem: results[5],
+			memLayout: results[6],
+			battery: results[7],
+			graphics: results[8],
+			diskLayout: results[9],
+			blockDevices: results[10],
+			fsSize: results[11],
+			fsStats: results[12],
+			networkInterfaces: results[13],
+			audio: results[14],
+			bluetooth: results[15],
 		}
 	} catch (error) {
 		console.error('Error getting system information:', error)
@@ -62,6 +74,17 @@ async function getSystemInfo() {
 }
 
 module.exports = ({ Vue }) => {
+	// Prototype para obtener solo system, bios y baseboard
+	Vue.prototype.$system = async function () {
+		try {
+			return await getSystemBiosBaseboard()
+		} catch (error) {
+			console.error('Error getting system, BIOS, and baseboard information:', error)
+			return null
+		}
+	}
+
+	// Prototype para obtener toda la información del sistema, excepto system, bios y baseboard
 	Vue.prototype.$si = async function () {
 		try {
 			const systemInfo = await getSystemInfo()

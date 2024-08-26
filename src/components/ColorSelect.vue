@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<!-- Selector de color -->
+		<!-- Selector de color con imagen y color box -->
 		<q-select
 			v-model="selectedColor"
 			label="COLOR"
@@ -13,8 +13,38 @@
 			@filter="filterColors"
 			@input="emitColorSelected"
 			class="q-mb-md"
-			:style="{ textTransform: 'uppercase' }"
-		/>
+			:style="{ textTransform: 'uppercase', height: '56px' }"
+		>
+			<template v-slot:option="scope">
+				<q-item v-bind="scope.itemProps" v-on="scope.itemEvents" class="q-hoverable">
+					<!-- Image thumbnail on the left with hover effect -->
+					<div class="image-container">
+						<q-avatar square size="32px" class="q-mr-sm">
+							<img v-if="scope.opt.image" :src="scope.opt.image" alt="color thumbnail" />
+							<q-icon v-else name="image_not_supported" />
+						</q-avatar>
+						<div v-if="scope.opt.image" class="image-popup">
+							<img :src="scope.opt.image" alt="color thumbnail" width="400px" />
+						</div>
+					</div>
+
+					<!-- Color label in the center -->
+					<q-item-section>{{ scope.opt.label }}</q-item-section>
+
+					<!-- Color box on the right with adjustable width -->
+					<q-item-section side v-if="scope.opt.color">
+						<div
+							:style="{
+								backgroundColor: scope.opt.color,
+								width: '72px' /* 3 times the original width */,
+								height: '24px',
+								borderRadius: '4px',
+							}"
+						></div>
+					</q-item-section>
+				</q-item>
+			</template>
+		</q-select>
 	</div>
 </template>
 
@@ -48,32 +78,24 @@
 		methods: {
 			async initializeColors(partsurfer) {
 				try {
-					// Si existe partsurfer.COLOR, seleccionarlo pero continuar con la inicialización
 					if (partsurfer && partsurfer.COLOR) {
-						//console.log('DEBUG: specs.COLOR =', partsurfer.COLOR)
 						this.selectedColor = partsurfer.COLOR.toUpperCase()
 						this.emitColorSelected(this.selectedColor)
 					}
 
-					// Obtener la lista de colores generales
 					let colors = await this.$db.collection('HPColor').admin().get()
-					this.colorOptions = Array.from(
-						new Set(colors.map((v) => v.Description.toUpperCase())),
-					).map((color) => ({
-						label: color,
-						value: color,
+					this.colorOptions = colors.map((color) => ({
+						label: color.Description.toUpperCase(),
+						value: color.Description.toUpperCase(),
+						color: color.Color || '', // Default to empty string if no color
+						image: color.Image || '', // Default to empty string if no image
 					}))
 
-					//console.log('DEBUG: colorOptions =', this.colorOptions)
-
-					// Si hay colores recomendados, agregarlos
 					if (partsurfer.ColorList && partsurfer.ColorList.length > 0) {
 						this.setRecommendedColors(partsurfer.ColorList)
 					}
 
-					// Actualizar las opciones filtradas
 					this.filteredColorOptions = [...this.colorOptions]
-					//console.log('DEBUG: filteredColorOptions =', this.filteredColorOptions)
 				} catch (error) {
 					console.error('Error during colors initialization:', error)
 					Notify.create({
@@ -89,6 +111,8 @@
 					...recommendedColors.map((color) => ({
 						label: color.toUpperCase(),
 						value: color.toUpperCase(),
+						color: color.Color || '', // Default to empty string if no color
+						image: color.Image || '', // Default to empty string if no image
 					})),
 				]
 				this.colorOptions = [...recommended, ...this.colorOptions]
@@ -99,7 +123,6 @@
 					this.filteredColorOptions = this.colorOptions.filter(
 						(option) => option.header || option.label.includes(needle),
 					)
-					//console.log('DEBUG: Filtered Color Options =', this.filteredColorOptions)
 				})
 			},
 			emitColorSelected(color) {
@@ -112,5 +135,27 @@
 <style scoped>
 	.q-mb-md {
 		margin-bottom: 16px;
+	}
+
+	/* Container for the image with hover effect */
+	.image-container {
+		position: relative;
+		display: inline-block;
+	}
+
+	/* Enlarged image on hover */
+	.image-container .image-popup {
+		display: none;
+		position: absolute;
+		top: -210px; /* Adjust as needed */
+		left: 40px; /* Adjust as needed */
+		z-index: 100;
+		max-width: 400px; /* Max width for the enlarged image */
+		pointer-events: none; /* Ensure the image popup does not interfere with selection */
+	}
+
+	/* Show the enlarged image on hover */
+	.image-container:hover .image-popup {
+		display: block;
 	}
 </style>
