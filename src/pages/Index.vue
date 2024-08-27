@@ -459,6 +459,7 @@
 						:partsurfer="partsurfer"
 						@color-selected="handleColorSelected"
 						@form-generated="resetForm"
+						:brand="device.brand"
 					/>
 				</q-card-section>
 				<q-separator />
@@ -816,7 +817,7 @@
 				if (si.length)
 					await this.$db
 						.doc(`systemInformation/${si[0]._id}`)
-						.update({ Serial: this.device.Serial, ...this.si })
+						.update({ Serial: this.device.Serial, ...this.infoSystem, ...this.si })
 				else await this.$db.doc('systemInformation').add({ Serial: this.device.Serial, ...this.si })
 			},
 			handleAuditUpdate(newValue) {
@@ -1160,8 +1161,8 @@
 					this.showNotification('No Found', 'The Serial number no found in the system.')
 					return
 				}
-
-				if (projectInfo.ArrivedSKU !== this.device.SKU) {
+				//if (this.device.brand == 'HP')
+				if (projectInfo.ArrivedSKU !== this.device.SKU && this.device.brand == 'HP') {
 					this.$q.loading.hide()
 					this.showNotification(
 						'No Math',
@@ -1194,7 +1195,7 @@
 				this.activate.type = true
 				await this.espera2('actionType')
 				this.activate.type = false
-				await this.simpleTest('Comparation')
+				if (this.device.brand == 'HP') await this.simpleTest('Comparation')
 				/* this.activate.comparation = true
 				await this.espera('actionComparation')
 				this.activate.comparation = false */
@@ -1219,8 +1220,8 @@
 					100
 				).toFixed(0)
 				console.log('SI: ', this.si)
-				this.test.touchScreen = this.partsurfer.Display.TouchScreen
-				//this.partsurfer.Display.TouchScreen
+				this.test.touchScreen =
+					this.device.brand == 'HP' ? this.partsurfer.Display.TouchScreen : 'NO'
 				console.log('TouchScreen: ', this.test, this.partsurfer)
 				await this.simpleTest('Information')
 
@@ -1467,8 +1468,8 @@
 				this.activate.mousepad = true
 				await this.espera('actionMousePad')
 				this.activate.mousepad = false
-				this.activate.components = true
 				if (this.device.brand == 'HP') {
+					this.activate.components = true
 					await this.checkBiosItems()
 					await this.espera('actionComponents')
 					this.activate.components = false
@@ -1826,7 +1827,7 @@
 							cardActions.removeEventListener('click', clickHandler)
 							cardActions2.removeEventListener('click', clickHandler)
 							cardActions3.removeEventListener('click', clickHandler)
-							resolve()
+							return resolve()
 						}
 					}
 
@@ -1897,10 +1898,11 @@
 		async mounted() {
 			this.$q.loading.show()
 			this.iTest = await this.$cmd.executeScriptCode(imaging)
-			this.$q.loading.hide()
 			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
-			console.log('intenalDevices: ', this.intDev)
+			//console.log('intenalDevices: ', this.intDev)
 			this.componentes = await this.$cmd.executeScriptCode(components)
+			//console.log('components: ', this.componentes)
+			this.$q.loading.hide()
 			this.validation()
 		},
 	}

@@ -57,6 +57,10 @@
 				type: Object,
 				required: true,
 			},
+			brand: {
+				type: String,
+				required: true,
+			},
 		},
 		data() {
 			return {
@@ -74,6 +78,14 @@
 					}
 				},
 			},
+			brand: {
+				immediate: true,
+				handler(newVal) {
+					if (newVal) {
+						this.initializeColors(this.partsurfer)
+					}
+				},
+			},
 		},
 		methods: {
 			async initializeColors(partsurfer) {
@@ -83,7 +95,10 @@
 						this.emitColorSelected(this.selectedColor)
 					}
 
-					let colors = await this.$db.collection('HPColor').admin().get()
+					let colors = await this.$db
+						.collection(`${this.brand == 'HP' ? 'HPColor' : 'GenericColor'}`)
+						.admin()
+						.get()
 					this.colorOptions = colors.map((color) => ({
 						label: color.Description.toUpperCase(),
 						value: color.Description.toUpperCase(),
