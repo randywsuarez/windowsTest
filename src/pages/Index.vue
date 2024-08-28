@@ -1446,7 +1446,13 @@
 						.all_data()
 						.get()
 				)[0]
-				battery['Status'] = battery.estimatedLife < bp.BatteryPercentage ? 'fail' : 'pass'
+				battery['Status'] =
+					battery.maxCapacity == 0
+						? 'fail'
+						: battery.estimatedLife < bp.BatteryPercentage
+						? 'fail'
+						: 'pass'
+
 				if (battery.Status.includes('fail')) {
 					this.test[
 						'battery'
@@ -1621,6 +1627,7 @@
 							: this.componentes.Bluetooth,
 					Keyboard: this.componentes.Keyboard,
 					Color: this.color,
+					version: this.$env.version,
 				}
 			},
 			async getGPUInfo() {
@@ -1732,7 +1739,17 @@
 			async IntegratedGPUInfo(gpuArray) {
 				// Construir el objeto resultante concatenando Description y AdapterRAM
 
-				return gpuArray.map((gpu) => `${gpu.Description} ${gpu.AdapterRAM}`).join(', ')
+				return gpuArray
+					.map(
+						(gpu) =>
+							`${gpu.Description} ${
+								!gpu.Description.includes(gpu.AdapterRAM) &&
+								!gpu.Description.includes(gpu.AdapterRAM.replace(/\s+/g, ''))
+									? gpu.AdapterRAM
+									: ''
+							}`,
+					)
+					.join(', ')
 			},
 			handleCaptureResult(result) {
 				this.$children[0].$emit('stopCamera')

@@ -101,36 +101,30 @@ foreach ($capacityGB in $ramCapacityCounts.Keys) {
 $ramTotalDesc += ($ramDetailsArray -join ", ") + ")"
 
 # Agregar información de RAM al objeto
-#$Information.RAM.Total = $ramTotalDesc
 $Information.RAM.Total = "$ramTotalGB GB"
 $Information.RAM.Modules = @($ramDescArray | ForEach-Object { "$($_.SerialNumber),$($_.Details)" })
 
-# Obtener información de los discos duros usando Get-WmiObject
-$wmiHddUnits = Get-WmiObject -Class Win32_DiskDrive | Where-Object { $_.MediaType -ne "Removable Media" } | Select-Object Size, Model, SerialNumber
+# Obtener información de los discos duros usando Get-PhysicalDisk y excluyendo discos USB
+$physicalHddUnits = Get-PhysicalDisk | Where-Object { $_.BusType -ne 'USB' } | Select-Object SerialNumber, MediaType, BusType, Size, DeviceID, Model
 
-# Obtener información de los discos duros usando Get-PhysicalDisk
-$physicalHddUnits = Get-PhysicalDisk | Select-Object SerialNumber, MediaType, BusType
-
-if ($wmiHddUnits) {
+if ($physicalHddUnits) {
     $totalHDDSize = 0
     $hddUnitArray = @()
     $diskUnitArray = @()
 
-    foreach ($unit in $wmiHddUnits) {
+    foreach ($unit in $physicalHddUnits) {
         $hddSize = ConvertBytesToStandardSize -Bytes $unit.Size
         $totalHDDSize += $unit.Size
 
-        # Buscar el tipo de disco correspondiente por SerialNumber
-        $matchingPhysicalDisk = $physicalHddUnits | Where-Object { $_.SerialNumber -eq $unit.SerialNumber }
-        $diskType = if ($matchingPhysicalDisk) {
-            $matchingPhysicalDisk.MediaType
+        $diskType = if ($unit.MediaType) {
+            $unit.MediaType
         } else {
             "Unknown"
         }
-        $busType = if ($matchingPhysicalDisk) {
-            $matchingPhysicalDisk.BusType
+        $busType = if ($unit.BusType) {
+            $unit.BusType
         } else {
-            "Unknown"
+            ""
         }
 
         $hddInfo = @{
@@ -141,14 +135,17 @@ if ($wmiHddUnits) {
             BusType = $busType
         }
 
-        $hddUnitArray += "$($hddInfo.Serial),$($hddInfo.Model),$($hddInfo.Size),$($hddInfo.Type),$($hddInfo.BusType)"
-        $diskUnitArray += "$(ConvertBytesToStandardSize -Bytes $unit.Size) $($diskType), $($busType)"
+        # Construir la cadena dependiendo si el BusType está definido
+        $busTypeString = if ($busType) { " $busType" } else { "" }
+        $hddUnitArray += "$($hddInfo.Serial),$($hddInfo.Model),$($hddInfo.Size) $($diskType)$busTypeString"
+        $diskUnitArray += "$($hddSize) $($diskType)$busTypeString"
     }
 
     $Information.HDD.Total = ConvertBytesToStandardSize -Bytes $totalHDDSize
     $Information.HDD.Units = $hddUnitArray
     $Information.HDD.Disks = $diskUnitArray
 }
+
 # Obtener todas las tarjetas de video
 $videoControllers = Get-WmiObject -Class Win32_VideoController
 
