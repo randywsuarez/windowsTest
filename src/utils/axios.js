@@ -10,6 +10,8 @@ let instance = axios.create({
 			? env.mongodb.public
 			: LocalStorage.getItem('api') == 'dev'
 			? env.mongodb.dev
+			: LocalStorage.getItem('api') == 'local'
+			? env.mongodb.local
 			: env.mongodb.server,
 	//baseURL: env.dev,
 	// timeout: 1000,
