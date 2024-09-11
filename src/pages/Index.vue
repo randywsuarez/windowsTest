@@ -7,7 +7,9 @@
 		<user-info-grid
 			v-show="activate.select"
 			:username="user.usuario"
-			:project="project.id"
+			:project="`${project.id}${
+				infoTest.ProgramType != 'BatteryPercentage' ? ' - ' + infoTest.ProgramType : ''
+			}`"
 			:title="device.Description"
 			:subtitle="`${device.SKU} - ${device.Serial}`"
 			:imageSrc="device.img ? device.img : `${type}.png`"
@@ -655,7 +657,7 @@
 				si: {},
 				allKeysPressed: false,
 				user: {},
-				device: { img: '' },
+				device: { img: '', brand: '' },
 				test: {
 					touchScreen: 'NO',
 				},
@@ -776,6 +778,7 @@
 					{ label: 'Platform Cycle', value: 'Cycle' },
 				],
 				infoSystem: {},
+				infoTest: {},
 			}
 		},
 		computed: {
@@ -867,7 +870,7 @@
 						FileType: r.FileType,
 						fileExtension: r.fileExtension,
 						fileBase64Str: r.fileBase64Str,
-						systemInformationBlob: JSON.stringify(this.si),
+						systemInformationBlob: { ...this.infoSystem, ...this.si },
 					}),
 				}
 
@@ -905,13 +908,17 @@
 				this.myDb.DateStart = lastdate.start
 
 				return `
-	       ISP Windows Test Ver:4.03 - ${this.project.id}
+	       CTL Windows Test - ${THIS.$env.version} - ${this.project.id}
 	       Operator ID: ${this.select.id}
 	       Operator Name:${this.user.usuario}
 	       Start Date: ${this.test.Date}
 	       Start Time: ${this.test.startTime}
 	       End Date: ${lastdate.date}
 	       End Time: ${lastdate.time}
+         Program: ${this.infoTest.ProgramType}
+         Battery Program: ${this.infoTest.batteryProgram}
+         BOL: ${this.infoTest.BOL}
+
 	       :::::Devices Information:::::
 	       ${this.test.Description}
 	       ${this.test.Model}
@@ -936,6 +943,7 @@
 	       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
 	       ${this.type == 'desktop' ? 'Cooler System' : ''}
 	       ${this.type == 'desktop' ? this.form.coolerSystem : ''}
+
 	       :::::Test Status:::::
 	       ${this.type != 'desktop' ? this.test.audio : ''}
 	       ${this.type != 'desktop' ? this.test.camera : ''}
@@ -969,6 +977,7 @@
 	       ${this.type != 'desktop' ? this.test.brightness : ''}
 	       ${this.type != 'desktop' ? this.test.spotLights : ''}
 	       ${this.form.note ? `Note: ${this.form.note}` : ''}
+
 	       :::::Result:::::
 	       Test Result is ${res}
 	       ${this.audit ? 'Audited' : ''}
@@ -1027,12 +1036,10 @@
 				ventanaActual.close()
 			},
 			async infoHP() {
-				let data = await this.$db.funcAdmin('modules/test/specs', {
-					Serial: this.device.Serial,
-					sku: this.device.SKU,
-				})
+				let data = this.infoTest.Specs
 				this.partsurfer = data
 				console.log('infoHP: ', data)
+				this.test.touchScreen = data.touchScreen
 				this.color = data.COLOR
 				this.myDb.COLOR = data.COLOR ? data.COLOR : ''
 				this.test['color'] = data.COLOR
@@ -1087,7 +1094,7 @@
 				}
 				const test = await this.$db
 					.collection('test_SnResults')
-					.conditions({ Serial: this.device.Serial })
+					.conditions({ Serial: this.device.Serial, TYPE: this.type.toUpperCase() })
 					.limit(1)
 					.all_data()
 					.get()
@@ -1102,14 +1109,19 @@
 				await this.$cmd.executeScriptCode(['Stop-Computer -ComputerName localhost'])
 			},
 			async checkDevice() {
-				const res = await this.$rsDB(this.project.db)
+				this.infoTest = await this.$db.funcAdmin('modules/test/infoTest', {
+					Serial: this.device.Serial,
+					Model: this.device.SKU,
+					Name: this.project.db,
+				})
+				/* const res = await this.$rsDB(this.project.db)
 					.select('Serial')
 					.from('test_SnResults')
 					.where(`Serial = '${this.device.Serial}'`)
 					.limit(1)
-					.execute()
+					.execute() */
 
-				if (res.length) {
+				if (this.infoTest.Status) {
 					this.$q.notify({ type: 'negative', message: `This unit was tested previously.` })
 				}
 			},
@@ -1148,18 +1160,17 @@
 					: this.device.SKU.slice(0, -4)
 				this.myDb.Serial = this.device.Serial
 				this.myDb.Model = this.device.SKU
-
-				this.setTypeUnit()
-				if (this.device.brand == 'HP') {
-					await this.infoHP()
-					this.bios = await this.$cmd.biosData()
-				}
-
 				let projectInfo = await this.getProjectInfo(this.device.Serial)
 				if (!projectInfo) {
 					this.$q.loading.hide()
 					this.showNotification('No Found', 'The Serial number no found in the system.')
 					return
+				}
+				await this.checkDevice()
+				this.setTypeUnit()
+				if (this.device.brand == 'HP') {
+					await this.infoHP()
+					this.bios = await this.$cmd.biosData()
 				}
 				//if (this.device.brand == 'HP')
 				if (projectInfo.ArrivedSKU !== this.device.SKU && this.device.brand == 'HP') {
@@ -1176,8 +1187,6 @@
 					this.showNotification('Error', 'The unit has not passed through any previous station.')
 					return
 				}
-
-				await this.checkDevice()
 				const datetime = await this.DateTime()
 				this.test = {
 					Date: datetime.date,
@@ -1308,6 +1317,7 @@
 				this.txt = await this.report()
 				this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
 				if (this.file) await this.saveFile(this.file)
+				console.log(this.image)
 				if (this.image) await this.saveFile(this.image)
 
 				this.info = { ...this.info, report: this.txt }
@@ -1387,6 +1397,7 @@
 							operator: u.id,
 						}
 						this.select = { ...x, ...u }
+						//console.log('Select: ', this.select)
 						return res[0]
 					}
 				}
@@ -1439,17 +1450,10 @@
 			async testLaptopSpecifics() {
 				//this.activate.battery = true
 				let battery = await this.si.battery
-				let bp = (
-					await this.$db
-						.collection('TestSettings')
-						.conditions({ _id: '66c35f2666f2870d80e978ad' })
-						.all_data()
-						.get()
-				)[0]
 				battery['Status'] =
 					battery.maxCapacity == 0
 						? 'fail'
-						: battery.estimatedLife < bp.BatteryPercentage
+						: battery.estimatedLife < this.infoTest.batteryProgram
 						? 'fail'
 						: 'pass'
 
@@ -1628,6 +1632,8 @@
 					Keyboard: this.componentes.Keyboard,
 					Color: this.color,
 					version: this.$env.version,
+					ProgramType: this.infoTest.ProgramType,
+					BOL: this.infoTest.BOL,
 				}
 			},
 			async getGPUInfo() {
@@ -1740,15 +1746,14 @@
 				// Construir el objeto resultante concatenando Description y AdapterRAM
 
 				return gpuArray
-					.map(
-						(gpu) =>
-							`${gpu.Description} ${
-								!gpu.Description.includes(gpu.AdapterRAM) &&
-								!gpu.Description.includes(gpu.AdapterRAM.replace(/\s+/g, ''))
-									? gpu.AdapterRAM
-									: ''
-							}`,
-					)
+					.map((gpu) => {
+						const descriptionNoSpaces = gpu.Description.replace(/\s+/g, '')
+						const adapterRAMNoSpaces = gpu.AdapterRAM.replace(/\s+/g, '')
+
+						return descriptionNoSpaces.includes(adapterRAMNoSpaces)
+							? gpu.Description.replace(/(\d)([a-zA-Z]+)/, '$1 $2')
+							: `${gpu.Description} ${gpu.AdapterRAM}`
+					})
 					.join(', ')
 			},
 			handleCaptureResult(result) {
@@ -1776,14 +1781,11 @@
 			},
 			DateTime() {
 				let options = { method: 'GET' }
-				return fetch('https://worldtimeapi.org/api/timezone/America/Chicago', options)
+				return fetch('https://timeapi.io/api/Time/current/zone?timeZone=America/Chicago', options)
 					.then((response) => response.json())
 					.then((r) => {
-						let comp = new Date(r.datetime)
-						let date = r.datetime.split('T')[0]
-						let time = r.datetime.split('T')[1]
-						let wipe = r.datetime
-						let fechaInicialMoment = moment(wipe)
+						let comp = new Date(r.dateTime)
+						let fechaInicialMoment = moment(r.dateTime)
 						let minutosAleatorios1 = Math.floor(Math.random() * 10) + 1
 						let fecha1 = fechaInicialMoment.clone().subtract(minutosAleatorios1, 'minutes')
 						let minutosAleatorios2 = Math.floor(Math.random() * 11) + 25
@@ -1791,13 +1793,14 @@
 						let fechaFormateadaInicial = fechaInicialMoment.format('YYYY-MM-DD HH:mm:ss.SSS')
 						let fechaFormateada1 = fecha1.format('YYYY-MM-DD HH:mm:ss.SSS')
 						let fechaFormateada2 = fecha2.format('YYYY-MM-DD HH:mm:ss.SSS')
+
 						return {
-							date: date,
-							time: time,
-							complete: comp,
-							start: fechaFormateada1,
-							end: fechaFormateada2,
-							wipe: fechaFormateadaInicial,
+							date: r.date, // Formato "MM/DD/YYYY"
+							time: r.time, // Formato "HH:mm"
+							complete: comp, // Objeto Date
+							start: fechaFormateada1, // Fecha restada con minutos aleatorios
+							end: fechaFormateada2, // Otra fecha restada
+							wipe: fechaFormateadaInicial, // Fecha original en el formato deseado
 						}
 					})
 					.catch((err) => console.error(err))

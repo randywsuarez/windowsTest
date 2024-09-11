@@ -70,7 +70,9 @@ foreach ($ram in $ramModules) {
     }
 
     $ramDesc = "$capacityGB GB $ddrVersion"
-    $ramSerialNumber = $ram.SerialNumber
+
+    # Asignar el número de serie si existe, de lo contrario, dejar en blanco
+    $ramSerialNumber = if ($ram.SerialNumber) { $ram.SerialNumber } else { "" }
 
     # Contar la cantidad de módulos por capacidad
     if ($ramCapacityCounts.ContainsKey($capacityGB)) {
@@ -81,13 +83,15 @@ foreach ($ram in $ramModules) {
 
     # Agregar descripción al array de descripciones
     $ramDescArray += @{
-        SerialNumber = $ram.SerialNumber
+        SerialNumber = $ramSerialNumber
         Description = "$capacityGB GB"
         Details = "$manufacturer, $capacityGB GB, $speed MHz, $ddrVersion"
     }
 
-    # Agregar número de serie al array de números de serie
-    $ramSerialNumbers[$ramSerialNumber] = $null
+    # Agregar número de serie al array de números de serie, solo si no está en blanco
+    if ($ramSerialNumber -ne "") {
+        $ramSerialNumbers[$ramSerialNumber] = $null
+    }
 }
 
 # Construir la descripción total de RAM
@@ -175,5 +179,4 @@ foreach ($controller in $videoControllers) {
 # Convertir a JSON y mostrar el resultado
 $InformationJson = $Information | ConvertTo-Json -Depth 4
 Write-Host $InformationJson
-
 `
