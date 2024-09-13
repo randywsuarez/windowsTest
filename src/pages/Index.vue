@@ -486,6 +486,13 @@
 					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
 				</q-card-section>
 				<q-card-section class="center" v-if="myGpu.length || myDb.GPUIntegrated">
+					<q-checkbox
+						size="150px"
+						v-model="noGPU"
+						val="80px"
+						label="No GPU"
+						v-if="type == 'desktop'"
+					/>
 					<q-table
 						class="card"
 						title="List"
@@ -779,6 +786,7 @@
 				],
 				infoSystem: {},
 				infoTest: {},
+				noGPU: false,
 			}
 		},
 		computed: {
@@ -836,22 +844,25 @@
 				const options = {
 					method: 'POST',
 					headers: {
-						tenant: `${this.select.tenant}`,
+						tenant: `${this.project.id}`,
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
 				}
-
-				try {
-					const response = await fetch(
-						`${this.select.url}/${this.project.id}/APP/PromoteImageDownloadUnit/SerchSN?sn=${this.device.Serial}&station=Image%20Download`,
+				console.log(this.project)
+				return this.$db
+					.funcAdmin('modules/test/moveStation', {
 						options,
-					)
-					const data = await response.json()
-					return data._message
-				} catch (err) {
-					console.error(err)
-					return err._message
-				}
+						Serial: this.test.Serial,
+						Project: this.project.id,
+						System: this.select.url,
+					})
+					.then((v) => {
+						return v
+					})
+					.catch((err) => {
+						console.error(err)
+						return err
+					})
 			},
 			async saveFile(r) {
 				r.EmployeeID = this.select.id
@@ -860,31 +871,33 @@
 					headers: {
 						cookie:
 							'.AspNetCore.Identity.Application=CfDJ8Pv0WhnmHWxAjuPCJCw7jtyhZLq6S3nyRzfIHKZJOYQtEQ9hL9aX19OzrTjV8uk1xdI9dU-1YPI33AaECMgBFlaESDpOOX2FDk7S2tqsC0gJ1_7V7msodnLjsBAqAgSWnlUVvYl5ijgqNA4qsVC9W8wczbPIbCOuc-SodELJK0o-Mh6ua73Z9I3UleU85L4i0Rwzab_Dolm34AliuJHCwSX3KiisitNWY_sva5QYM8lRePNIy8c41JXlBkwluWhmN6xvOm9Qo3go5bVf2b8Qk3VCe96yOwSmNvyc3RddSBN-45SbH_VCx9ujjiRjqf3t6RmK7viqOz7IW9-pQw7ZBBefbtqSUGFmN8gzXkjD6sg-2fbWJODEvkyJOSQjFKy__-30bXqQ32Tmts8Bb7-yTcJmymXAOhMqRtV8q2X48q3pmZEnUDpTxPkLnsorXbmzMgoWVLC-QapXQBwGO9jr2YoL2Q2DRhPvNPzXo8Ly0wB-0gedagBVhj9CKr6ridtZQwv1jTu_wnf-J5T6XvtLOsUmyAN-7wW6fXi8hKk-z3gTeT0SHDhbQPViVMnB3sKZkewxHdX1Mb1QPot5nlytpkdNDfT4vybqpUrFTczco7aDTNU55ORyCjpF6quntw7-LF2rrTYT2UZZlWWlnRZOr5Bhz-Vn_0cNMl_b1_-Zy9_vrvxiYm4BWKKIjf8sVZzY-ayC5vWuRdsxaKS61SD6JFVIbf_sO6Vat2y6R3HTblNM9BHT0T7VLZ0yRwZF5vO_ty6kZxeTUZyhLA8jDAp-p5npa1D3f-gqirOhsa6m8TIjKxn5GH54HA4KaHqkg; ARRAffinity=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961; ARRAffinitySameSite=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961',
-						tenant: `${this.select.tenant}`,
+						tenant: `${this.project.id}`,
 						'Content-Type': 'application/json',
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
-					body: JSON.stringify({
+					body: {
 						SerialNumber: r.SerialNumber,
 						EmployeeID: this.select.id,
 						FileType: r.FileType,
 						fileExtension: r.fileExtension,
 						fileBase64Str: r.fileBase64Str,
 						systemInformationBlob: { ...this.infoSystem, ...this.si },
-					}),
+						//systemInformationBlob: await JSON.stringify({ ...this.infoSystem, ...this.si }),
+					},
 				}
-
-				try {
-					const response = await fetch(
-						`${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile`,
+				return this.$db
+					.funcAdmin('modules/test/UploadFile', {
 						options,
-					)
-					const data = await response.json()
-					return data._isSuccess
-				} catch (err) {
-					console.error(err)
-					return false
-				}
+						Project: this.project.id,
+						System: this.select.url,
+					})
+					.then((v) => {
+						return v._isSuccess
+					})
+					.catch((err) => {
+						console.error(err)
+						return false
+					})
 			},
 			activateCamera() {
 				this.componentKey += 1
@@ -908,7 +921,7 @@
 				this.myDb.DateStart = lastdate.start
 
 				return `
-	       CTL Windows Test - ${THIS.$env.version} - ${this.project.id}
+	       CTL Windows Test - ${this.$env.version} - ${this.project.id}
 	       Operator ID: ${this.select.id}
 	       Operator Name:${this.user.usuario}
 	       Start Date: ${this.test.Date}
@@ -932,7 +945,11 @@
 	       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
 	       ${this.intDev.RAM.Modules.join('\n')}
 	       GPU Verification PASS
-	       ${this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)}
+	       ${
+						this.type == 'desktop' && this.noGPU
+							? ''
+							: this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)
+					}
 	       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Resolution' : ''}
 	       ${this.test.hasOwnProperty('resolution') ? this.test.resolution : ''}
 	       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Touch Screen' : ''}
@@ -1001,7 +1018,7 @@
 					await this.$rsDB(this.select.db).insert('test_SnResults').fields(this.myDb).execute()
 				}
 			},
-			async upload(file, type) {
+			/* async upload(file, type) {
 				try {
 					const result = await this.$cmd.savePS({
 						apiUrl: `${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
@@ -1028,7 +1045,7 @@
 					console.error('Error:', error)
 					return false
 				}
-			},
+			}, */
 			cerrarVentana() {
 				this.sdDevice()
 				const { remote } = require('electron')
@@ -1318,7 +1335,7 @@
 				this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
 				if (this.file) await this.saveFile(this.file)
 				console.log(this.image)
-				if (this.image) await this.saveFile(this.image)
+				if (this.image && this.type != 'desktop') await this.saveFile(this.image)
 
 				this.info = { ...this.info, report: this.txt }
 				await this.rsSave()
@@ -1381,7 +1398,7 @@
 			async getProjectInfo(serial) {
 				let res = ''
 				for (let x of this.$env.project) {
-					const u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
+					let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
 					res = await this.$rsDB(x.db)
 						.select('SerialNumber, ArrivedSKU, StationID, SKU')
 						.from('sfis_WorkTracking')
@@ -1592,21 +1609,29 @@
 				this.myDb.GPUIntegrated = integratedGPUInfo || ''
 
 				await this.espera('actionGPU')
+				if (this.type == 'desktop' && this.noGPU) {
+					this.myDb.GPU = ''
+					this.myDb.GPU_RAM = ''
+				}
 				this.activate.gpu = false
 			},
 			async saveComponents() {
+				console.log(this.componentes, this.bios)
 				this.componentes = {
 					...this.componentes,
 					...this.bios,
-					GPU: await this.IntegratedGPUInfo(
-						this.intDev.video.filter((v) => v.Type === 'Dedicated'),
-					),
-					GPUIntegrated: this.myDb.GPUIntegrated,
+					GPU:
+						this.type == 'desktop' && this.noGPU
+							? ''
+							: await this.IntegratedGPUInfo(
+									this.intDev.video.filter((v) => v.Type === 'Dedicated'),
+							  ),
+					GPUIntegrated: this.myDb.GPUIntegrated.replace(/\s+/g, ' ').trim(),
 					Memory: this.intDev.RAM.Total,
 					Storage: this.intDev.HDD.Disks.join(','),
 					Serial: this.device.Serial,
 					Model: this.device.SKU,
-					Description: this.device.Description,
+					Description: this.device.Description.replace(/\s+/g, ' ').trim(),
 					OSEdition: this.test.OS,
 					SmartCard:
 						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('SmartCard')
@@ -1624,7 +1649,7 @@
 						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('WirelessNetwork')
 							? this.bios.WirelessNetwork
 							: this.componentes.WWAN,
-					CPU: this.intDev.cpu.join(','),
+					CPU: this.intDev.cpu.join(',').replace(/\s+/g, ' ').trim(),
 					Bluetooth:
 						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('Bluetooth')
 							? this.bios.Bluetooth
@@ -1634,6 +1659,11 @@
 					version: this.$env.version,
 					ProgramType: this.infoTest.ProgramType,
 					BOL: this.infoTest.BOL,
+					DB: this.project.db,
+					Display: {
+						Resolution: `${this.si.graphics.displays[0].resolutionX}x${this.si.graphics.displays[0].resolutionY}`,
+						TouchScreen: this.test.touchScreen,
+					},
 				}
 			},
 			async getGPUInfo() {
@@ -1752,7 +1782,7 @@
 
 						return descriptionNoSpaces.includes(adapterRAMNoSpaces)
 							? gpu.Description.replace(/(\d)([a-zA-Z]+)/, '$1 $2')
-							: `${gpu.Description} ${gpu.AdapterRAM}`
+							: `${gpu.Description.replace(/\s+/g, ' ').trim()} ${gpu.AdapterRAM}`
 					})
 					.join(', ')
 			},
@@ -1921,7 +1951,7 @@
 			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
 			//console.log('intenalDevices: ', this.intDev)
 			this.componentes = await this.$cmd.executeScriptCode(components)
-			//console.log('components: ', this.componentes)
+			console.log('components: ', this.componentes)
 			this.$q.loading.hide()
 			this.validation()
 		},

@@ -121,24 +121,34 @@
 				}
 			},
 			setRecommendedColors(recommendedColors) {
-				const recommended = [
-					{ label: 'RECOMMENDED', header: true, disable: true },
-					...recommendedColors.map((color) => ({
+				// Crear el encabezado RECOMMENDED y luego agregar los colores recomendados debajo
+				const recommendedHeader = { label: 'RECOMMENDED', header: true, disable: true }
+				const recommended = recommendedColors.map((color) => {
+					const foundColor =
+						this.colorOptions.find(
+							(option) => option.label.toUpperCase() === color.toUpperCase(),
+						) || {}
+					return {
 						label: color.toUpperCase(),
 						value: color.toUpperCase(),
-						color: color.Color || '', // Default to empty string if no color
-						image: color.Image || '', // Default to empty string if no image
-					})),
-				]
-				this.colorOptions = [...recommended, ...this.colorOptions]
-			},
-			filterColors(val, update) {
-				const needle = val.toUpperCase()
-				update(() => {
-					this.filteredColorOptions = this.colorOptions.filter(
-						(option) => option.header || option.label.includes(needle),
-					)
+						color: foundColor.color || color.Color || '', // Prioriza el color encontrado, si no el color dado
+						image: foundColor.image || color.Image || '', // Prioriza la imagen encontrada, si no la imagen dada
+					}
 				})
+
+				// Crear la opción GENERAL como encabezado para los colores no recomendados
+				const generalHeader = { label: 'GENERAL', header: true, disable: true }
+				const nonRecommended = this.colorOptions.filter(
+					(option) => !recommendedColors.includes(option.label.toUpperCase()),
+				)
+
+				// Combinar todo: primero los recomendados con su encabezado, luego los generales
+				this.colorOptions = [
+					recommendedHeader, // Primero, el encabezado RECOMMENDED
+					...recommended, // Después, los colores recomendados
+					generalHeader, // Luego, el encabezado GENERAL
+					...nonRecommended, // Finalmente, los colores no recomendados
+				]
 			},
 			emitColorSelected(color) {
 				this.$emit('color-selected', color.value)
