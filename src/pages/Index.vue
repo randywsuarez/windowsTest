@@ -1370,7 +1370,7 @@
 					this.commercial = true
 					this.myDb['TYPE'] = 'CTO'
 				} else if (this.device.SKU.includes('UAR') || this.device.SKU.includes('U8')) {
-					this.myDb['TYPE'] = 'BTO'
+					this.myDb['TYPE'] = 'CTO'
 					this.typeUnit = '#8bfa87'
 					this.commercial = false
 				} else if (this.device.SKU.includes('UA')) {
@@ -1853,7 +1853,12 @@
 					let cardActions = document.querySelector(`#${a}`)
 					let clickHandler = (event) => {
 						let target = event.target
-						if (target.innerText === 'PASS' || target.innerText === 'FAIL') {
+
+						// Convertir el texto del target a mayúsculas para la comparación
+						let targetText = target.innerText.toUpperCase()
+
+						// Comparar el texto en mayúsculas
+						if (targetText === 'PASS' || targetText === 'FAIL') {
 							cardActions.removeEventListener('click', clickHandler)
 							resolve()
 						}
