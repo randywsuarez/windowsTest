@@ -136,19 +136,33 @@
 					}
 				})
 
-				// Crear la opción GENERAL como encabezado para los colores no recomendados
+				// Ordenar los recomendados por label
+				recommended.sort((a, b) => a.label.localeCompare(b.label))
+
+				// Crear el encabezado GENERAL como encabezado para los colores no recomendados
 				const generalHeader = { label: 'GENERAL', header: true, disable: true }
 				const nonRecommended = this.colorOptions.filter(
 					(option) => !recommendedColors.includes(option.label.toUpperCase()),
 				)
 
+				// Ordenar los no recomendados por label
+				nonRecommended.sort((a, b) => a.label.localeCompare(b.label))
+
 				// Combinar todo: primero los recomendados con su encabezado, luego los generales
 				this.colorOptions = [
 					recommendedHeader, // Primero, el encabezado RECOMMENDED
-					...recommended, // Después, los colores recomendados
+					...recommended, // Después, los colores recomendados (ordenados alfabéticamente)
 					generalHeader, // Luego, el encabezado GENERAL
-					...nonRecommended, // Finalmente, los colores no recomendados
+					...nonRecommended, // Finalmente, los colores no recomendados (ordenados alfabéticamente)
 				]
+			},
+			filterColors(val, update) {
+				const needle = val.toUpperCase()
+				update(() => {
+					this.filteredColorOptions = this.colorOptions.filter(
+						(option) => option.header || option.label.includes(needle),
+					)
+				})
 			},
 			emitColorSelected(color) {
 				this.$emit('color-selected', color.value)
