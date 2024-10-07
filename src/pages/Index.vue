@@ -43,16 +43,7 @@
 				</q-card-section>
 				<q-card-actions align="right" id="actionComparation">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-					<q-btn
-						flat
-						color="positive"
-						label="Pass"
-						@click="action = 'PASS'"
-						v-show="
-							device.Serial == `${miniSerial}${check.serial}` &&
-							device.SKU == `${miniSKU}${check.sku}`
-						"
-					/>
+					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" :disable="!isValid" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.type">
@@ -132,6 +123,12 @@
 				</q-card-section>
 				<q-card-actions align="right" id="actionCamera">
 					<q-btn flat color="negative" label="Fail" @click="test['camera'] = 'Webcam test FAIL'" />
+					<q-btn
+						flat
+						color="primary"
+						label="No Camera (PASS)"
+						@click="test['camera'] = 'No Webcam test PASS'"
+					/>
 					<q-btn flat color="positive" label="Pass" @click="test['camera'] = 'Webcam test PASS'" />
 				</q-card-actions>
 			</q-card>
@@ -514,6 +511,7 @@
 										buttons
 										persistent
 										v-slot="scope"
+										v-if="type == 'DESKTOP'"
 									>
 										<q-input
 											type="text"
@@ -799,6 +797,12 @@
 			rightItems() {
 				return this.items.slice(Math.ceil(this.items.length / 3))
 			},
+			isValid() {
+				return (
+					this.device.Serial === `${this.miniSerial}${this.check.serial}` &&
+					this.device.SKU === `${this.miniSKU}${this.check.sku}`
+				)
+			},
 		},
 		methods: {
 			async brands() {
@@ -829,7 +833,10 @@
 					await this.$db
 						.doc(`systemInformation/${si[0]._id}`)
 						.update({ Serial: this.device.Serial, ...this.infoSystem, ...this.si })
-				else await this.$db.doc('systemInformation').add({ Serial: this.device.Serial, ...this.si })
+				else
+					await this.$db
+						.doc('systemInformation')
+						.add({ Serial: this.device.Serial, ...this.infoSystem, ...this.si })
 			},
 			handleAuditUpdate(newValue) {
 				this.audit = newValue
@@ -928,9 +935,9 @@
 	       Start Time: ${this.test.startTime}
 	       End Date: ${lastdate.date}
 	       End Time: ${lastdate.time}
-         Program: ${this.infoTest.ProgramType}
-         Battery Program: ${this.infoTest.batteryProgram}
-         BOL: ${this.infoTest.BOL}
+	        Program: ${this.infoTest.ProgramType}
+	        Battery Program: ${this.infoTest.batteryProgram}
+	        BOL: ${this.infoTest.BOL}
 
 	       :::::Devices Information:::::
 	       ${this.test.Description}
@@ -1221,10 +1228,10 @@
 				this.activate.type = true
 				await this.espera2('actionType')
 				this.activate.type = false
-				if (this.device.brand == 'HP') await this.simpleTest('Comparation')
-				/* this.activate.comparation = true
-				await this.espera('actionComparation')
-				this.activate.comparation = false */
+				//if (this.device.brand == 'HP') await this.simpleTest('Comparation')
+				this.activate.comparation = true
+				await this.espera3('actionComparation')
+				this.activate.comparation = false
 				this.activate.select = true
 			},
 			async simpleTest(v) {
@@ -1636,7 +1643,9 @@
 					SmartCard:
 						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('SmartCard')
 							? this.bios.SmartCard
-							: null,
+							: Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('SmartCard')
+							? this.bios.SmartCard
+							: '',
 					NFC:
 						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('NFC')
 							? this.bios.NFC
@@ -1854,6 +1863,53 @@
 					let clickHandler = (event) => {
 						let target = event.target
 
+						// Verificar si el botón tiene el atributo 'disable'
+						if (target.hasAttribute('disable')) {
+							// Si el botón tiene el atributo 'disable' pero está habilitado (disable es falso), hacer el proceso
+							if (target.disabled) {
+								// Si está deshabilitado, no hacemos nada
+								return
+							}
+						}
+
+						// Si el botón no tiene 'disable', o si tiene y está habilitado, se sigue el proceso
+						console.log(event)
+
+						// Convertir el texto del target a mayúsculas para la comparación
+						let targetText = target.innerText.toUpperCase()
+
+						// Comparar el texto en mayúsculas
+						if (targetText.includes('PASS') || targetText === 'FAIL') {
+							cardActions.removeEventListener('click', clickHandler)
+							resolve()
+						}
+					}
+
+					cardActions.addEventListener('click', clickHandler)
+				})
+			},
+			async espera3(a) {
+				return new Promise((resolve) => {
+					let cardActions = document.querySelector(`#${a}`)
+					let self = this // Guardamos la referencia a "this" en una variable
+
+					let clickHandler = (event) => {
+						let target = event.target
+
+						// Verificar si el botón tiene la propiedad 'disabled' y si está deshabilitado
+						if (target.hasAttribute('disabled') && target.disabled) {
+							// Si el botón está deshabilitado, no hacemos nada
+							return
+						}
+
+						// Validar el valor de self.isValid (this.isValid)
+						if (!self.isValid) {
+							console.log('El valor de isValid es falso, no se puede continuar.')
+							return
+						}
+
+						console.log(event)
+
 						// Convertir el texto del target a mayúsculas para la comparación
 						let targetText = target.innerText.toUpperCase()
 
@@ -1867,6 +1923,7 @@
 					cardActions.addEventListener('click', clickHandler)
 				})
 			},
+
 			async espera2(a) {
 				return new Promise((resolve) => {
 					let cardActions = document.querySelector(`#${a} #laptop`)

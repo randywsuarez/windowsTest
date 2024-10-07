@@ -19,13 +19,13 @@ export default {
 			url: 'https://dev-sfis.ispt.app/api',
 		}, */
 		{
-			db: 'SfisDB',
+			db: 'SFisDB',
 			admin: 'SfisAdminDB',
 			id: 'HPRefurbish',
 			url: 'https://sfis.ispt.app/api',
 		},
 		{
-			db: 'Sfis_HP_RevenueDB',
+			db: 'SFis_HP_RevenueDB',
 			admin: 'Sfis_HP_RevenueAdminDB',
 			id: 'ISP-PC',
 			url: 'https://shared-revenue.ispt.app/api',
