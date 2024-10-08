@@ -100,7 +100,7 @@ const CmdHelper = {
 		employeeID,
 		fileType,
 		token,
-		callback
+		callback,
 	) {
 		const powershellScriptPath = path.join(scriptsDirectory, `${scriptPath}.ps1`)
 
@@ -140,7 +140,6 @@ const CmdHelper = {
 
 			ps.on('end', (code) => {
 				try {
-					console.log(outputData)
 					const result = JSON.parse(outputData)
 					resolve(result)
 				} catch (parseError) {
@@ -228,7 +227,6 @@ if (Test-Path $filePath -PathType Leaf) {
 			ps.on('end', (code) => {
 				try {
 					const result = JSON.parse(outputData)
-					console.log('txt upload: ', result._isSuccess)
 					resolve(result._isSuccess)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
@@ -309,7 +307,6 @@ if (Test-Path $filePath -PathType Leaf) {
 			ps.on('end', (code) => {
 				try {
 					const result = JSON.parse(outputData)
-					console.log('img upload: ', result._isSuccess)
 					resolve(result._isSuccess)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
@@ -459,7 +456,6 @@ if (Test-Path $archivoDestino) {
 			ps.on('end', (code) => {
 				try {
 					const result = outputData
-					console.log(code)
 					resolve(result)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
@@ -504,7 +500,6 @@ if (Test-Path $archivoDestino) {
 			ps.on('end', (code) => {
 				try {
 					const result = JSON.parse(outputData)
-					console.log('Fin: ', result._isSuccess)
 					resolve(result._isSuccess)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
@@ -536,7 +531,7 @@ if (Test-Path $archivoDestino) {
 
 			// Escuchar los outputs de la consola
 			ps.on('output', (data) => {
-				console.log(data)
+				//console.log(data)
 			})
 
 			// Escuchar si hay errores
@@ -553,7 +548,6 @@ if (Test-Path $archivoDestino) {
 							reject(err)
 						}
 						let re = await checkItems(items, data)
-						console.log('Contenido de config.txt:', re)
 						resolve(re)
 						//console.log('Contenido de config.txt:', data)
 					})
@@ -561,7 +555,6 @@ if (Test-Path $archivoDestino) {
 					console.error('Error parsing output as JSON:', parseError.message)
 					resolve(false)
 				}
-				console.log(`El proceso terminó con el código ${code}`)
 				// Leer el archivo de configuración después de que el proceso ha terminado
 			})
 		})

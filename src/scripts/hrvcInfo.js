@@ -1,7 +1,8 @@
-export default `$Information = @{
+export default `
+$Information = @{
     cpu = @()
     cpuName = @()
-    video = @()  # Inicializamos como un array
+    video = @()
     RAM = @{
         Total = ""
         Modules = @()
@@ -69,7 +70,9 @@ foreach ($ram in $ramModules) {
     }
 
     $ramDesc = "$capacityGB GB $ddrVersion"
-    $ramSerialNumber = $ram.SerialNumber
+
+    # Asignar el número de serie si existe, de lo contrario, dejar en blanco
+    $ramSerialNumber = if ($ram.SerialNumber) { $ram.SerialNumber } else { "" }
 
     # Contar la cantidad de módulos por capacidad
     if ($ramCapacityCounts.ContainsKey($capacityGB)) {
@@ -85,8 +88,10 @@ foreach ($ram in $ramModules) {
         Details = "$manufacturer, $capacityGB GB, $speed MHz, $ddrVersion"
     }
 
-    # Agregar número de serie al array de números de serie
-    $ramSerialNumbers[$ramSerialNumber] = $null
+    # Agregar número de serie al array de números de serie, solo si no está en blanco
+    if ($ramSerialNumber -ne "") {
+        $ramSerialNumbers[$ramSerialNumber] = $null
+    }
 }
 
 # Construir la descripción total de RAM
@@ -100,31 +105,30 @@ foreach ($capacityGB in $ramCapacityCounts.Keys) {
 $ramTotalDesc += ($ramDetailsArray -join ", ") + ")"
 
 # Agregar información de RAM al objeto
-#$Information.RAM.Total = $ramTotalDesc
 $Information.RAM.Total = "$ramTotalGB GB"
 $Information.RAM.Modules = @($ramDescArray | ForEach-Object { "$($_.SerialNumber),$($_.Details)" })
 
-# Obtener información de los discos duros usando Get-WmiObject
-$wmiHddUnits = Get-WmiObject -Class Win32_DiskDrive | Where-Object { $_.MediaType -ne "Removable Media" } | Select-Object Size, Model, SerialNumber
+# Obtener información de los discos duros usando Get-PhysicalDisk y excluyendo discos USB
+$physicalHddUnits = Get-PhysicalDisk | Where-Object { $_.BusType -ne 'USB' } | Select-Object SerialNumber, MediaType, BusType, Size, DeviceID, Model
 
-# Obtener información de los discos duros usando Get-PhysicalDisk
-$physicalHddUnits = Get-PhysicalDisk | Select-Object SerialNumber, MediaType
-
-if ($wmiHddUnits) {
+if ($physicalHddUnits) {
     $totalHDDSize = 0
     $hddUnitArray = @()
     $diskUnitArray = @()
 
-    foreach ($unit in $wmiHddUnits) {
+    foreach ($unit in $physicalHddUnits) {
         $hddSize = ConvertBytesToStandardSize -Bytes $unit.Size
         $totalHDDSize += $unit.Size
 
-        # Buscar el tipo de disco correspondiente por SerialNumber
-        $matchingPhysicalDisk = $physicalHddUnits | Where-Object { $_.SerialNumber -eq $unit.SerialNumber }
-        $diskType = if ($matchingPhysicalDisk) {
-            $matchingPhysicalDisk.MediaType
+        $diskType = if ($unit.MediaType) {
+            $unit.MediaType
         } else {
             "Unknown"
+        }
+        $busType = if ($unit.BusType) {
+            $unit.BusType
+        } else {
+            ""
         }
 
         $hddInfo = @{
@@ -132,22 +136,25 @@ if ($wmiHddUnits) {
             Size = $hddSize
             Serial = $unit.SerialNumber
             Type = $diskType
+            BusType = $busType
         }
 
-        $hddUnitArray += "$($hddInfo.Serial),$($hddInfo.Model),$($hddInfo.Size),$($hddInfo.Type)"
-        $diskUnitArray += "$(ConvertBytesToStandardSize -Bytes $unit.Size) $($diskType)"
+        # Construir la cadena dependiendo si el BusType está definido
+        $busTypeString = if ($busType) { " $busType" } else { "" }
+        $hddUnitArray += "$($hddInfo.Serial),$($hddInfo.Model),$($hddInfo.Size) $($diskType)$busTypeString"
+        $diskUnitArray += "$($hddSize) $($diskType)$busTypeString"
     }
 
     $Information.HDD.Total = ConvertBytesToStandardSize -Bytes $totalHDDSize
     $Information.HDD.Units = $hddUnitArray
     $Information.HDD.Disks = $diskUnitArray
 }
+
 # Obtener todas las tarjetas de video
 $videoControllers = Get-WmiObject -Class Win32_VideoController
 
 foreach ($controller in $videoControllers) {
-    # Filtrar las tarjetas de video reales que no sean USB y tengan AdapterDACType igual a "Integrated RAMDAC"
-    if ($controller.AdapterDACType -eq "Integrated RAMDAC" -and $controller.Description -notmatch "USB") {
+    if ($controller.Description -notmatch "USB") {
         $adapterRAMBytes = $controller.AdapterRAM
         $adapterRAMMB = [Math]::Round($adapterRAMBytes / 1MB, 2)
         if ($adapterRAMMB -eq 0.5) {
@@ -158,15 +165,18 @@ foreach ($controller in $videoControllers) {
         } else {
             "$([Math]::Round($adapterRAMMB / 1024, 2)) GB"
         }
-        $videoInfo = [PSCustomObject]@{
+        $videoInfo = @{
             Description = $controller.Description
             AdapterRAM = $adapterRAMFormatted
+            AdapterDACType = $controller.AdapterDACType
+            Type = if ($controller.AdapterDACType -eq "Internal") { "Integrated" } elseif ($controller.AdapterDACType -eq "Integrated RAMDAC") { "Dedicated" } else { "Integrated" }
         }
-        # Agregar el objeto de información de video al array en $Information.video
+
         $Information.video += $videoInfo
     }
 }
 
 # Convertir a JSON y mostrar el resultado
-Write-Host ($Information | ConvertTo-Json)
+$InformationJson = $Information | ConvertTo-Json -Depth 4
+Write-Host $InformationJson
 `

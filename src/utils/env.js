@@ -19,23 +19,25 @@ export default {
 			url: 'https://dev-sfis.ispt.app/api',
 		}, */
 		{
-			db: 'SfisDB',
+			db: 'SFisDB',
 			admin: 'SfisAdminDB',
 			id: 'HPRefurbish',
 			url: 'https://sfis.ispt.app/api',
 		},
 		{
-			db: 'Sfis_HP_RevenueDB',
+			db: 'SFis_HP_RevenueDB',
 			admin: 'Sfis_HP_RevenueAdminDB',
 			id: 'ISP-PC',
 			url: 'https://shared-revenue.ispt.app/api',
 		},
 	],
 	mongodb: {
-		dev: 'http://localhost:4500/api',
-		server: 'http://192.168.0.2:4500/api',
+		server: 'http://10.0.0.2:4500/api',
+		public: 'http://47.190.184.6:4900/api',
+		dev: 'http://192.168.0.7:4400/api',
+		local: 'http://localhost:4400/api',
 	},
-	version: '1.1.0',
+	version: '1.1.7',
 	token: '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',
 	github: {
 		user: 'randywsuarez',
