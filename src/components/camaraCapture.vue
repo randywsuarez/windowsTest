@@ -1,180 +1,106 @@
-<!-- src/components/CamaraCapture.vue -->
 <template>
-	<div style="transform: scale(0.5)">
-		<!-- Menú desplegable para seleccionar la cámara -->
-		<!-- <q-select
+	<div>
+		<!-- Mostrar el selector solo si hay más de una cámara disponible -->
+		<q-select
+			v-if="cameraOptions.length > 1"
 			v-model="selectedCamera"
 			:options="cameraOptions"
-			label="Seleccionar cámara"
+			label="Select Camera"
 			@input="changeCamera"
-		/> -->
+		/>
 
 		<!-- Elemento de video para mostrar la transmisión de la cámara -->
-		<video v-show="showVideo" ref="video" width="400" height="300" autoplay></video>
-		<img v-show="showCapturedImage" :src="capturedImage" alt="Captured Image" style="width: 200px" />
-
-		<!-- Contador regresivo -->
-		<div v-if="countdown > 0" class="countdown">{{ countdown }}</div>
+		<video ref="video" width="400" height="300" autoplay playsinline></video>
+		<img
+			v-show="showCapturedImage"
+			:src="capturedImage"
+			alt="Captured Image"
+			style="width: 200px"
+		/>
 	</div>
 </template>
 
 <script>
 	export default {
-		name: 'CamaraCapture', // Nombre del componente
-		props: {
-			imageName: {
-				type: String,
-				default: '',
-			},
-		},
+		name: 'CamaraCapture',
 		data() {
 			return {
 				capturedImage: '',
 				showCapturedImage: false,
-				showVideo: true,
 				videoStream: null,
 				selectedCamera: null,
 				cameras: [],
-				countdown: 5, // Inicia el contador regresivo en 5 segundos
+				cameraOptions: [],
 			}
 		},
 		mounted() {
-			this.initializeCamera()
-			this.startCountdown()
-			this.$parent.$on('stopCamera', () => {
-				this.stopCamera()
-			})
+			this.getCameras()
 		},
 		beforeDestroy() {
 			this.stopCamera()
 		},
-		watch: {
-			selectedCamera() {
-				this.changeCamera()
-			},
-		},
 		methods: {
-			initializeCamera() {
+			// Obtiene las cámaras disponibles
+			getCameras() {
 				navigator.mediaDevices
 					.enumerateDevices()
 					.then((devices) => {
-						// Filtra solo dispositivos de entrada de video
 						this.cameras = devices.filter((device) => device.kind === 'videoinput')
-						// Filtra adicionalmente aquellos dispositivos que no contengan 'IR' o 'Infrared' en su descripción
-						this.cameras = this.cameras.filter(
-							(camera) =>
-								!camera.label.toLowerCase().includes('ir') &&
-								!camera.label.toLowerCase().includes('infrared')
-						)
+						this.cameraOptions = this.cameras.map((camera) => ({
+							label: camera.label,
+							value: camera.deviceId,
+						}))
 
-						if (this.cameras.length > 0) {
-							this.selectedCamera = this.cameras[0].deviceId
-							this.changeCamera()
-						} else {
-							console.warn('No se encontraron cámaras disponibles sin IR.')
+						// Selecciona la primera cámara por defecto y comienza la transmisión
+						if (this.cameraOptions.length > 0) {
+							this.selectedCamera = this.cameraOptions[0].value
+							this.startCamera()
 						}
 					})
-					.catch((error) => {
-						console.error('Error al enumerar dispositivos:', error)
+					.catch((err) => {
+						console.error('Error accessing cameras: ', err)
+						alert('No se pudo acceder a la cámara: ' + err.message)
 					})
 			},
-			stopCamera() {
-				if (this.videoStream) {
-					// Pausar la reproducción del video
-					this.$refs.video.pause()
 
-					// Detener todas las pistas de la transmisión de la cámara
-					this.videoStream.getTracks().forEach((track) => track.stop())
+			// Inicia la cámara seleccionada
+			startCamera() {
+				if (this.selectedCamera) {
+					const constraints = {
+						video: {
+							deviceId: { exact: this.selectedCamera },
+							brightness: 0.7, // Ajustar brillo si es compatible
+							contrast: 0.8, // Ajustar contraste si es compatible
+							exposureMode: 'auto', // Configuración de exposición automática
+							exposureCompensation: 0.5, // Compensación de exposición si es compatible
+						},
+					}
+					navigator.mediaDevices
+						.getUserMedia(constraints)
+						.then((stream) => {
+							this.videoStream = stream
+							this.$refs.video.srcObject = stream
+						})
+						.catch((err) => {
+							console.error('Error starting camera: ', err)
+							alert('No se pudo iniciar la cámara: ' + err.message)
+						})
 				}
 			},
+
+			// Cambia la cámara seleccionada y reinicia el flujo
 			changeCamera() {
 				this.stopCamera()
-
-				navigator.mediaDevices
-					.getUserMedia({
-						video: {
-							deviceId: this.selectedCamera ? { exact: this.selectedCamera } : undefined,
-						},
-					})
-					.then((stream) => {
-						this.videoStream = stream
-						this.$refs.video.srcObject = stream
-					})
-					.catch((error) => {
-						console.error('Error al acceder a la cámara:', error)
-					})
+				this.startCamera()
 			},
-			startCountdown() {
-				const countdownInterval = setInterval(() => {
-					this.countdown--
 
-					if (this.countdown === 0) {
-						clearInterval(countdownInterval)
-						this.myPic() // Llama a la función myPic() al llegar a cero el contador
-					}
-				}, 1000)
-			},
-			myPic() {
-				let res = {
-					SerialNumber: this.imageName,
-					EmployeeID: '',
-					FileType: '2',
-					fileExtension: '.jpg',
-					fileBase64Str: '',
+			// Detiene la cámara actual
+			stopCamera() {
+				if (this.videoStream) {
+					const tracks = this.videoStream.getTracks()
+					tracks.forEach((track) => track.stop())
 				}
-				// Captura la imagen y guarda el valor base64 en una variable
-				const canvas = document.createElement('canvas')
-				const context = canvas.getContext('2d')
-				canvas.width = this.$refs.video.videoWidth
-				canvas.height = this.$refs.video.videoHeight
-				context.drawImage(this.$refs.video, 0, 0, canvas.width, canvas.height)
-				const imageDataURL = canvas.toDataURL('image/jpeg')
-
-				// Imprime el valor base64 en la consola
-				//console.log('Imagen capturada:', imageDataURL)
-				this.capturedImage = imageDataURL
-				this.showCapturedImage = true
-				this.showVideo = false
-				console.log(this.imageName)
-				if (this.imageName) {
-					this.$uploadImage(`${this.imageName}.jpg`, imageDataURL)
-					res.fileBase64Str = imageDataURL.replace(/^data:image\/jpeg;base64,/, '')
-					this.$emit('input', res)
-					this.stopCamera()
-				}
-			},
-			captureImage() {
-				this.showVideo = true
-				this.myPic()
-			},
-			async recargarComponente() {
-				this.showVideo = true
-				this.showCapturedImage = false
-				this.initializeCamera()
-				this.startCountdown()
-			},
-		},
-		computed: {
-			cameraOptions() {
-				return this.cameras.map((camera) => ({
-					label: camera.label || `Cámara ${this.cameras.indexOf(camera) + 1}`,
-					value: camera.deviceId,
-				}))
 			},
 		},
 	}
 </script>
-
-<style scoped>
-	/* Agrega estilos si es necesario */
-	.countdown {
-		position: absolute;
-		top: 10px;
-		right: 10px;
-		font-size: 24px;
-		color: #fff;
-		background-color: #000;
-		padding: 10px;
-		border-radius: 5px;
-	}
-</style>
