@@ -906,6 +906,56 @@
 						return false
 					})
 			},
+			async verifyDPK(r) {
+				r.EmployeeID = this.select.id
+				const options = {
+					method: 'POST',
+					headers: {
+						tenant: `${this.project.id}`,
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${this.select.authToken}`,
+					},
+					body: {
+						SerialNumber: device.Serial,
+						ExistingProductKey: this.win.keyWindows,
+						ExistingProductEdition: this.win.os,
+					},
+				}
+				return await this.$db.funcAdmin('modules/test/verifyDPK', {
+					options,
+					Project: this.project.id,
+					System: this.select.url,
+					data: {
+						SerialNumber: device.Serial,
+						ExistingProductKey: this.win.keyWindows,
+						ExistingProductEdition: this.win.os,
+					},
+				})
+			},
+			async statusDPK(r) {
+				r.EmployeeID = this.select.id
+				const options = {
+					method: 'POST',
+					headers: {
+						tenant: `${this.project.id}`,
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${this.select.authToken}`,
+					},
+					body: {
+						SerialNumber: device.Serial,
+						NewProductKey: this.win.keyWindows,
+					},
+				}
+				return await this.$db.funcAdmin('modules/test/verifyDPK', {
+					options,
+					Project: this.project.id,
+					System: this.select.url,
+					data: {
+						SerialNumber: device.Serial,
+						NewProductKey: '55555-55555-55555-55555-55555',
+					},
+				})
+			},
 			activateCamera() {
 				this.componentKey += 1
 				this.$nextTick(() => {
