@@ -1,4 +1,4 @@
-export { default as drivers } from './checkDrivers'
+export { default as drivers } from './drivers'
 export { default as windows } from './checkWindows'
 export { default as intenalDevices } from './hrvcInfo'
 export { default as getBattery } from './battery'
