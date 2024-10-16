@@ -209,12 +209,30 @@
 			</q-card>
 			<q-card class="card" v-show="activate.drivers">
 				<q-card-section>
-					<q-card-section> <div class="text-h6">Drivers Test</div> </q-card-section><q-separator />
+					<div class="row items-center no-wrap">
+						<div class="col">
+							<div class="text-h6">Drivers Test</div>
+						</div>
+						<div class="col-auto">
+							<q-btn
+								round
+								color="primary"
+								icon="restart_alt"
+								@click="$cmd.executeScriptCode(drivers)"
+							/>
+						</div>
+					</div>
 				</q-card-section>
+				<q-separator />
 				<q-card-section class="center">
 					Is the Drivers and Video working?
-					<div>Driver: {{ driver.estatusDrivers }}</div>
-					<div>Video: {{ driver.estatusVideo }}</div>
+					<div>Driver: {{ driver.status }}</div>
+					<div>Video: {{ driver.video ? 'PASS' : 'FAIL' }}</div>
+					<q-list bordered v-if="driver.missingDrivers.length">
+						<q-item v-for="(d, k) in driver.missingDrivers" :key="k">
+							<q-item-section>d</q-item-section>
+						</q-item>
+					</q-list>
 				</q-card-section>
 				<q-card-actions align="right" id="actionDrivers">
 					<q-btn
@@ -423,32 +441,6 @@
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
-			<!-- <q-card class="card" v-show="activate.color">
-				<q-card-section>
-					<q-card-section> <div class="text-h6">Note</div> </q-card-section><q-separator />
-				</q-card-section>
-				<q-card-section class="center">
-					<q-select
-						filled
-						v-model="rcolor"
-						use-input
-						input-debounce="0"
-						label="Select Color"
-						:options="optionsColors"
-						@filter="filterFn"
-						behavior="dialog"
-					>
-						<template v-slot:no-option>
-							<q-item>
-								<q-item-section class="text-grey"> No results </q-item-section>
-							</q-item>
-						</template>
-					</q-select>
-				</q-card-section>
-				<q-card-actions align="right" id="actionColor">
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
-				</q-card-actions>
-			</q-card> -->
 			<q-card class="card" v-show="activate.information">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Information</div> </q-card-section><q-separator />
@@ -463,9 +455,7 @@
 				</q-card-section>
 				<q-separator />
 				<q-card-section class="center">
-					<div>
-						<!-- <pre>{{ test }}</pre> -->
-					</div>
+					<div></div>
 					<q-checkbox
 						size="xl"
 						v-model="test.touchScreen"
@@ -706,7 +696,9 @@
 				win: {},
 				intDev: {},
 				getDev: {},
-				driver: {},
+				driver: {
+					missingDrivers: [],
+				},
 				select: {},
 				file: '',
 				txt: '',
@@ -785,6 +777,7 @@
 				infoSystem: {},
 				infoTest: {},
 				noGPU: false,
+				datetime: '',
 			}
 		},
 		computed: {
@@ -916,7 +909,7 @@
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
 					body: {
-						SerialNumber: device.Serial,
+						SerialNumber: this.device.Serial,
 						ExistingProductKey: this.win.keyWindows,
 						ExistingProductEdition: this.win.os,
 					},
@@ -926,7 +919,7 @@
 					Project: this.project.id,
 					System: this.select.url,
 					data: {
-						SerialNumber: device.Serial,
+						SerialNumber: this.device.Serial,
 						ExistingProductKey: this.win.keyWindows,
 						ExistingProductEdition: this.win.os,
 					},
@@ -942,7 +935,7 @@
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
 					body: {
-						SerialNumber: device.Serial,
+						SerialNumber: this.device.Serial,
 						NewProductKey: this.win.keyWindows,
 					},
 				}
@@ -1075,34 +1068,6 @@
 					await this.$rsDB(this.select.db).insert('test_SnResults').fields(this.myDb).execute()
 				}
 			},
-			/* async upload(file, type) {
-				try {
-					const result = await this.$cmd.savePS({
-						apiUrl: `${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
-						filePath: file,
-						tenant: this.select.tenant,
-						token: this.select.authToken,
-					})
-					return result
-				} catch (error) {
-					console.error('Error:', error)
-					return false
-				}
-			},
-			async uploadImg(file, type) {
-				try {
-					const result = await this.$cmd.saveImg({
-						apiUrl: `${this.select.url}/${this.project.id}/Testing/TestFilesResultsUpload/UploadFile?SerialNumber=${this.device.Serial}&EmployeeID=${this.select.id}&FileType=${type}`,
-						filePath: file,
-						tenant: this.select.tenant,
-						token: this.select.authToken,
-					})
-					return result
-				} catch (error) {
-					console.error('Error:', error)
-					return false
-				}
-			}, */
 			cerrarVentana() {
 				this.sdDevice()
 				const { remote } = require('electron')
@@ -1188,12 +1153,6 @@
 					Model: this.device.SKU,
 					Name: this.project.db,
 				})
-				/* const res = await this.$rsDB(this.project.db)
-					.select('Serial')
-					.from('test_SnResults')
-					.where(`Serial = '${this.device.Serial}'`)
-					.limit(1)
-					.execute() */
 
 				if (this.infoTest.Status) {
 					this.$q.notify({ type: 'negative', message: `This unit was tested previously.` })
@@ -1208,14 +1167,6 @@
 				this.myDb.HDD_CAPACITY = itDH.group.Size
 				this.myDb.RAM = this.intDev.RAM.Total
 				this.myDb.CPU = this.intDev.cpuName.join(',')
-
-				/* const result = await this.$cmd.executeScriptCode(getDeviceInfo)
-				if (!result) {
-					console.error('Error ejecutando script:', error)
-					return
-				}
-
-				this.device = result */
 				await this.brands()
 				console.log('brands: ', this.device)
 
@@ -1261,7 +1212,7 @@
 					this.showNotification('Error', 'The unit has not passed through any previous station.')
 					return
 				}
-				const datetime = await this.DateTime()
+				const datetime = this.datetime
 				this.test = {
 					Date: datetime.date,
 					startTime: datetime.time,
@@ -1311,17 +1262,16 @@
 				/* if (this.intDev.video.length) {
 					await this.testGPU()
 				} */
-				this.driver = await this.$cmd.executeScriptCode(drivers)
+				await this.$cmd.executeScriptCode(`Start-Process "devmgmt.msc"`)
 				this.activate.drivers = true
 				await this.espera('actionDrivers')
 				this.test['drivers'] =
-					this.driver.estatusDrivers == 'PASS'
+					this.driver.status == 'PASS'
 						? 'Device Manager Drivers Test PASS'
 						: 'Device Manager Drivers Test FAIL'
-				this.test['display'] =
-					this.driver.estatusVideo == 'PASS'
-						? 'Display Adapter Drivers Test PASS'
-						: 'Display Adapter Drivers Test FAIL'
+				this.test['display'] = this.driver.video
+					? 'Display Adapter Drivers Test PASS'
+					: 'Display Adapter Drivers Test FAIL'
 				this.activate.drivers = false
 
 				if (this.type == 'laptop') {
@@ -1438,19 +1388,6 @@
 					this.typeUnit = '#8bfa87'
 					this.commercial = true
 				}
-				/* if (this.commercial) {
-					let snr = await this.$db
-						.collection('snrFound')
-						.conditions({ SKU: this.device.SKU, SerialNumber: this.device.Serial })
-						.all_data()
-						.get()
-					if (!snr.length) {
-						this.showNotification(
-							'SNR not found',
-							`The SKU: ${this.device.SKU} and Serial: ${this.device.Serial} are not found to be processed. You need to talk to your leader.`
-						)
-					}
-				} */
 			},
 			async getProjectInfo(serial) {
 				let res = ''
@@ -1615,34 +1552,12 @@
 			},
 			async testGPU() {
 				this.activate.gpu = true
-
-				// Obtener GPUs dedicadas e integradas por separado
-				/* this.intDev.video = [
-					{
-						Description: 'NVIDIA GeForce MX550',
-						AdapterRAM: '2 GB',
-						AdapterDACType: 'Integrated RAMDAC',
-						Type: 'Dedicated',
-					},
-					{
-						Description: 'NVIDIA GeForce MX900',
-						AdapterRAM: '1 GB',
-						AdapterDACType: 'Integrated RAMDAC',
-						Type: 'Dedicated',
-					},
-					{
-						Description: 'Intel(R) Iris(R) Xe Graphics',
-						AdapterRAM: '128 MB',
-						AdapterDACType: 'Internal',
-						Type: 'Integrated',
-					},
-				] */
 				const dedicatedGPUs = this.intDev.video.filter((v) => v.Type === 'Dedicated')
 				const integratedGPUs = this.intDev.video.filter((v) => v.Type === 'Integrated')
 
 				// Procesar GPUs dedicadas
 				if (dedicatedGPUs.some((obj) => obj.AdapterRAM.includes('4'))) {
-					this.myGpu = await this.$cmd.getDx({ Serial: this.device.Serial })
+					this.myGpu = await this.myGpu
 
 					this.intDev.video = this.intDev.video.map((objA) => {
 						const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
@@ -2053,17 +1968,38 @@
 			},
 		},
 		async beforeCreate() {
-			this.infoSystem = await this.$system()
-			this.user = await this.$rsNeDB('credenciales').findOne({})
-			this.si = this.$si()
+			try {
+				this.user = await this.$rsNeDB('credenciales').findOne({})
+				this.si = this.$si()
+			} catch (error) {
+				console.error('Error during beforeCreate:', error)
+			}
 		},
 		async mounted() {
 			this.$q.loading.show()
-			this.iTest = await this.$cmd.executeScriptCode(imaging)
-			this.intDev = await this.$cmd.executeScriptCode(intenalDevices)
-			//console.log('intenalDevices: ', this.intDev)
-			this.componentes = await this.$cmd.executeScriptCode(components)
+			let [is, it, id, cp, dt, dr] = await Promise.all([
+				this.$system(),
+				this.$cmd.executeScriptCode(imaging),
+				this.$cmd.executeScriptCode(intenalDevices),
+				this.$cmd.executeScriptCode(components),
+				this.DateTime(),
+				this.$cmd.executeScriptCode(drivers),
+			])
+			this.infoSystem = is
+			this.iTest = it
+			this.intDev = id
+			this.componentes = cp
+			this.datetime = dt
+			this.driver = JSON.parse(JSON.stringify(dr))
 			console.log('components: ', this.componentes)
+			console.log(this.infoSystem)
+			if (
+				this.intDev.video
+					.filter((v) => v.Type === 'Dedicated')
+					.some((obj) => obj.AdapterRAM.includes('4'))
+			)
+				this.myGpu = this.$cmd.getDx({ Serial: this.infoSystem.system.serial })
+			console.log('Drivers: ', this.driver)
 			this.$q.loading.hide()
 			this.validation()
 		},
