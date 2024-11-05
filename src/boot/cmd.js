@@ -127,7 +127,7 @@ const CmdHelper = {
 		return new Promise(async (resolve) => {
 			let ps = new PowerShell([[code]])
 			let outputData = ''
-			//console.log(code)
+			console.log(code)
 
 			ps.on('output', (data) => {
 				outputData += data
@@ -140,7 +140,7 @@ const CmdHelper = {
 
 			ps.on('end', (code) => {
 				try {
-					const result = JSON.parse(outputData)
+					const result = outputData.includes('{') ? JSON.parse(outputData) : outputData
 					resolve(result)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
@@ -152,13 +152,6 @@ const CmdHelper = {
 				console.error(err)
 				resolve(false)
 			})
-			/* await ps.addCommand('Start-Process')
-			await ps.addArgument('powershell.exe')
-			await ps.addArgument('-Verb')
-			await ps.addArgument('RunAs')
-			await ps.addArgument('-ArgumentList')
-			await ps.addArgument(`-NoProfile -ExecutionPolicy Bypass -Command "& {${code}}"`)
-			await ps.invoke() */
 		})
 	},
 	savePS: async (params) => {
