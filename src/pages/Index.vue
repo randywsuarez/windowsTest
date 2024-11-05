@@ -230,7 +230,7 @@
 					<div>Video: {{ driver.video ? 'PASS' : 'FAIL' }}</div>
 					<q-list bordered v-if="driver.missingDrivers.length">
 						<q-item v-for="(d, k) in driver.missingDrivers" :key="k">
-							<q-item-section>d</q-item-section>
+							<q-item-section>{{ d }}</q-item-section>
 						</q-item>
 					</q-list>
 				</q-card-section>
@@ -256,6 +256,7 @@
 				<q-card-section class="center" v-if="win.os">
 					<div>{{ win.os }}</div>
 					<div>{{ win.keyWindows }}</div>
+					<div>{{ win.licenseDetails }}</div>
 				</q-card-section>
 				<q-card-section class="center" v-else>
 					<div>Wait...</div>
@@ -597,6 +598,21 @@
 					</q-card-actions>
 				</q-card>
 			</q-dialog>
+			<!--
+			<q-dialog v-model="winChange" class="login-card" persistent>
+				<q-card class="bg-white text-dark q-pa-md" style="max-width: 400px">
+					<q-card-section class="text-center">
+						<q-icon name="error" color="negative" size="40px" />
+						<div class="text-h6 q-mt-md">Failed to change the DPK</div>
+						<p>Please click retry or call your supervisor</p>
+					</q-card-section>
+
+					<q-card-actions align="center">
+						<q-btn color="negative" label="Retry" @click="retryAction" />
+					</q-card-actions>
+				</q-card>
+			</q-dialog>
+      -->
 		</div>
 	</q-page>
 </template>
@@ -613,11 +629,13 @@
 		drivers,
 		windows,
 		intenalDevices,
-		getDeviceInfo,
 		GetMntBringhtness,
 		imaging,
 		spotLights,
 		components,
+		aWin,
+		sWin,
+		dWin,
 	} from '../scripts'
 	import moment from 'moment'
 	import JsBarcode from 'jsbarcode'
@@ -655,6 +673,7 @@
 				device: { img: '', brand: '' },
 				test: {
 					touchScreen: 'NO',
+					hotKey: 'NO',
 				},
 				typeUnit: '#87cefa',
 				project: {},
@@ -778,6 +797,7 @@
 				infoTest: {},
 				noGPU: false,
 				datetime: '',
+				winChange: false,
 			}
 		},
 		computed: {
@@ -899,8 +919,7 @@
 						return false
 					})
 			},
-			async verifyDPK(r) {
-				r.EmployeeID = this.select.id
+			async verifyDPK() {
 				const options = {
 					method: 'POST',
 					headers: {
@@ -914,7 +933,7 @@
 						ExistingProductEdition: this.win.os,
 					},
 				}
-				return await this.$db.funcAdmin('modules/test/verifyDPK', {
+				return await this.$db.funcAdmin('modules/ispt/verifyDPK', {
 					options,
 					Project: this.project.id,
 					System: this.select.url,
@@ -926,7 +945,6 @@
 				})
 			},
 			async statusDPK(r) {
-				r.EmployeeID = this.select.id
 				const options = {
 					method: 'POST',
 					headers: {
@@ -939,13 +957,36 @@
 						NewProductKey: this.win.keyWindows,
 					},
 				}
-				return await this.$db.funcAdmin('modules/test/verifyDPK', {
+				return await this.$db.funcAdmin('modules/ispt/verifyDPK', {
 					options,
 					Project: this.project.id,
 					System: this.select.url,
 					data: {
-						SerialNumber: device.Serial,
-						NewProductKey: '55555-55555-55555-55555-55555',
+						SerialNumber: this.device.Serial,
+						NewProductKey: this.win.keyWindows,
+					},
+				})
+			},
+			async failDPK(r) {
+				const options = {
+					method: 'POST',
+					headers: {
+						tenant: `${this.project.id}`,
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${this.select.authToken}`,
+					},
+					body: {
+						SerialNumber: this.device.Serial,
+						dpk: this.win.keyWindows,
+					},
+				}
+				return await this.$db.funcAdmin('modules/ispt/failDPK', {
+					options,
+					Project: this.project.id,
+					System: this.select.url,
+					data: {
+						SerialNumber: this.device.Serial,
+						dpk: this.win.keyWindows,
 					},
 				})
 			},
@@ -988,6 +1029,7 @@
 	       ${this.test.Serial}
 	       Windows OS Name: ${this.test.OS} (${this.iTest.Organization ? 'A' : 'M'})
 	       Windows Product Key: ${this.test.keyWindows}
+	       Windows Product Key old: ${this.test.oldKeyWin}
 	       ${this.test.windows}
 	       ${this.test.color ? `Color: ${this.test.color}` : ''}
 	       Hard Drive: ${this.intDev.HDD.Total}
@@ -1188,6 +1230,7 @@
 				let projectInfo = await this.getProjectInfo(this.device.Serial)
 				if (!projectInfo) {
 					this.$q.loading.hide()
+					this.winChange = true
 					this.showNotification('No Found', 'The Serial number no found in the system.')
 					return
 				}
@@ -1537,19 +1580,90 @@
 				}
 			},
 			async testWindows() {
+				this.$q.loading.show({
+					message:
+						'Obtaining <b>DPK</b> status.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
+				})
+				this.win = await this.win
 				this.activate.windows = true
-				this.win = await this.$cmd.executeScriptCode(windows)
-				this.info = { ...this.info, ...this.win }
+				//await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`)
+				this.$q.loading.hide()
+				console.log(this.win, this.infoTest.ProductKeys)
+				if (this.infoTest.DPK) {
+					let nDPK = this.win.hasOwnProperty('fail') ? this.win.fail : await this.verifyDPK()
+					console.log('nDPK: ', nDPK)
+					if (nDPK.error) {
+						setTimeout(() => {
+							this.$q.notify({
+								type: 'negative',
+								message: nDPK.errorMessage,
+							})
+						}, 30000)
+					} else {
+						this.$q.loading.show({
+							message:
+								'Deactivating the active <b>DPK</b><br/><span class="text-orange text-weight-bold">Hang on...</span>',
+						})
+						await this.$cmd.executeScriptCode(dWin)
+						let ndpk = aWin
+							.replace('$dpk', nDPK.replacementProductKey)
+							.replace('$mode', this.infoTest.DPKMode)
+
+						this.$q.loading.hide()
+						this.$q.loading.show({
+							message:
+								'Activating <b>Windows</b><br/><span class="text-orange text-weight-bold">Hang on...</span>',
+						})
+						let iny = await this.$cmd.executeScriptCode(ndpk)
+						console.log('iny: ', iny)
+						this.$q.loading.hide()
+						if (iny.error) {
+							console.log(iny.message)
+							this.$q
+								.dialog({
+									title: 'Alert<em>!</em>',
+									message: `<em>The following DPK </em> <span class="text-red">${nDPK.replacementProductKey}</span> <strong> is invalid</strong>`,
+									html: true,
+								})
+								.onOk(async () => {
+									if (this.infoTest.DPKRetry) {
+										this.win.fail = await this.failDPK()
+										await this.testWindows()
+									}
+								})
+								.onCancel(() => {
+									// console.log('Cancel')
+								})
+								.onDismiss(() => {
+									// console.log('I am triggered on both OK and Cancel')
+								})
+						} else {
+							this.$q.notify({
+								type: 'positive',
+								message: iny.message,
+							})
+							this.win.oldKeyWin = this.win.keyWindows
+							this.win.keyWindows = iny.productKeyUsed
+							this.win.licenseDetails = iny.message
+							let sDPK = await this.statusDPK()
+							console.log('sDPK: ', sDPK)
+							await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`)
+						}
+					}
+				}
 				await this.espera('actionWindows')
+				this.info = { ...this.info, ...this.win }
 				this.activate.windows = false
 				this.test['windows'] =
-					this.action == 'PASS' && this.win.activationStatus
+					this.action == 'PASS' && this.win.activate
 						? 'Windows Activation Test PASS'
 						: 'Windows Activation Test FAIL'
-				this.test['OS'] = this.win.os
-				this.myDb.OS = this.win.os
+				this.test['OS'] = this.win.edition
+				this.myDb.OS = this.win.edition
 				this.test['keyWindows'] = this.win.keyWindows
+				this.test['oldKeyWin'] = this.win.oldKeyWin
 			},
+
 			async testGPU() {
 				this.activate.gpu = true
 				const dedicatedGPUs = this.intDev.video.filter((v) => v.Type === 'Dedicated')
@@ -1976,7 +2090,12 @@
 			}
 		},
 		async mounted() {
-			this.$q.loading.show()
+			this.$q.loading.show({
+				message:
+					'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
+			})
+			console.log('Begin System Information...')
+			this.win = this.$cmd.executeScriptCode(sWin)
 			let [is, it, id, cp, dt, dr] = await Promise.all([
 				this.$system(),
 				this.$cmd.executeScriptCode(imaging),
@@ -1985,12 +2104,13 @@
 				this.DateTime(),
 				this.$cmd.executeScriptCode(drivers),
 			])
+			console.log('End System Information...')
 			this.infoSystem = is
 			this.iTest = it
 			this.intDev = id
 			this.componentes = cp
 			this.datetime = dt
-			this.driver = JSON.parse(JSON.stringify(dr))
+			this.driver = dr
 			console.log('components: ', this.componentes)
 			console.log(this.infoSystem)
 			if (

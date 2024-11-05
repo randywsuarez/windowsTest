@@ -1,5 +1,6 @@
 const sql = require('mssql')
 import env from '../utils/env'
+import { Notify, Dialog, Loading } from 'quasar'
 
 export default async ({ Vue }) => {
 	class RsDB {
@@ -25,13 +26,20 @@ export default async ({ Vue }) => {
 
 				return result.recordset
 			} catch (error) {
-				console.error(`Error executing SQL query: ${error.message}`, error) // Mostrar el error completo en la consola
-				this.$q.notify({
-					type: 'negative',
-					message: `Error executing SQL query: ${error.message}`, // Mostrar solo el mensaje de error en la notificación
-					timeout: 5000, // Tiempo que la notificación estará visible (5 segundos)
-					position: 'top', // Posición de la notificación en la pantalla
+				console.error(`Error executing SQL query: ${error.message}`, error)
+				Dialog.create({
+					title: 'Error',
+					message: `Error executing SQL query: ${error.message}`,
 				})
+					.onOk(() => {
+						// console.log('OK')
+					})
+					.onCancel(() => {
+						// console.log('Cancel')
+					})
+					.onDismiss(() => {
+						// console.log('I am triggered on both OK and Cancel')
+					})
 				throw new Error(`Error executing SQL query: ${error.message}`)
 			}
 		}
