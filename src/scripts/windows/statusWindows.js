@@ -69,8 +69,8 @@ function Get-WindowsActivationInfo {
             keyWindows      = if ($windowsKey -ne $null) { $windowsKey } else { "Key not found" }
             licenseStatus   = $licenseStatus
             licenseDetails  = $statusDescription
-            edition         = $edition
-            os              = $osDescription
+            os              = $edition
+            edition         = $osDescription
         }
 
         $licensesArray += $licenseObject
@@ -82,8 +82,8 @@ function Get-WindowsActivationInfo {
             keyWindows      = "No license found"
             licenseStatus   = 0
             licenseDetails  = "Unlicensed - No license found"
-            edition         = "Unknown"
-            os              = $osDescription
+            os              = "Unknown"
+            edition         = $osDescription
         }
     }
 

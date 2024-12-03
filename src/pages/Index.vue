@@ -1042,7 +1042,7 @@
 					body: {
 						SerialNumber: this.device.Serial,
 						ExistingProductKey: this.win.keyWindows,
-						ExistingProductEdition: this.win.os,
+						ExistingProductEdition: this.win.edition,
 					},
 				}
 				return await this.$db.funcAdmin('modules/ispt/verifyDPK', {
@@ -1052,7 +1052,7 @@
 					data: {
 						SerialNumber: this.device.Serial,
 						ExistingProductKey: this.win.keyWindows,
-						ExistingProductEdition: this.win.os,
+						ExistingProductEdition: this.win.edition,
 					},
 				})
 			},
@@ -1318,8 +1318,13 @@
 				}
 			},
 			async sdDevice() {
+				this.$q.loading.show()
 				if (this.audit) await this.$cmd.executeScriptCode(['Stop-Computer -ComputerName localhost'])
-				else this.$cmd.executeScriptCode(Sysprep)
+				else {
+					let code = await this.$db.funcAdmin(`modules/powershell/sysprep`)
+					await this.$cmd.executeScriptCode(code)
+				}
+				this.$q.loading.hide()
 			},
 			async checkDevice() {
 				this.infoTest = await this.$db.funcAdmin('modules/test/infoTest', {
