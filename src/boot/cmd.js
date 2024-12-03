@@ -1,3 +1,5 @@
+import { components } from 'src/scripts'
+
 const { exec } = require('child_process')
 const PowerShell = require('powershell')
 const path = require('path')
@@ -5,7 +7,33 @@ const fs = require('fs')
 
 const currentDirectory = __dirname
 const scriptsDirectory = path.join(currentDirectory, '..', 'scripts')
+async function checkComponentsPresence(fileContent) {
+	// Definimos los componentes a buscar y sus patrones asociados
+	const components = [
+		{ name: 'Fingerprint', pattern: /Fingerprint/i },
+		{ name: 'Backlight', pattern: /Backlit keyboard|Keyboard Backlight/i },
+		{ name: 'TouchScreen', pattern: /Touch Screen|Touch Device/i },
+		{ name: 'WWAN', pattern: /WWAN|Mobile Network Device|GPS Combo Device/i },
+		{ name: 'Privacy', pattern: /Privacy|HP Sure View/i },
+		{ name: 'SmartCard', pattern: /Smart Card/i },
+		{ name: 'NFC', pattern: /NFC/i },
+		{ name: 'Webcam', pattern: /Camera/i },
+		{ name: 'Bluetooth', pattern: /Bluetooth/i },
+		{ name: 'Audio', pattern: /Audio/i },
+		{ name: 'Microphone', pattern: /Microphone/i },
+		{ name: 'WLAN', pattern: /WLAN|Wireless Network/i },
+	]
 
+	// Creamos un objeto para almacenar los resultados
+	const result = {}
+
+	// Iteramos sobre cada componente y verificamos su presencia
+	components.forEach((component) => {
+		result[component.name] = component.pattern.test(fileContent) ? 'YES' : 'NO'
+	})
+
+	return result
+}
 async function checkItems(items, documentText) {
 	function capitalizeAndRemoveSpaces(str) {
 		return str.replace(/\b\w/g, (char) => char.toUpperCase()).replace(/\s+/g, '')
@@ -541,6 +569,8 @@ if (Test-Path $archivoDestino) {
 							reject(err)
 						}
 						let re = await checkItems(items, data)
+						let comp = await checkComponentsPresence(data)
+						re = { ...re, components: comp }
 						resolve(re)
 						//console.log('Contenido de config.txt:', data)
 					})

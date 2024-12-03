@@ -47,6 +47,8 @@ async function getSystemInfo() {
 			safeGetData(si.networkInterfaces),
 			safeGetData(si.audio),
 			safeGetData(si.bluetoothDevices),
+			//safeGetData(si.net),
+			//safeGetData(si.wifiConnections),
 		])
 
 		return {
@@ -66,6 +68,8 @@ async function getSystemInfo() {
 			networkInterfaces: results[13],
 			audio: results[14],
 			bluetooth: results[15],
+			//net: results[16],
+			//wifiConnections: results[17],
 		}
 	} catch (error) {
 		console.error('Error getting system information:', error)
