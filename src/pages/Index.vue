@@ -62,6 +62,7 @@
 						ref="all-in-one"
 						><img src="all-in-one.png"
 					/></q-btn>
+					<!-- <q-btn color="positive" :label="audit ? 'Shut Down' : 'SysPrep'" @click="sdDevice" /> -->
 				</q-card-section>
 			</q-card>
 			<q-card class="card" v-show="activate.audio">
@@ -127,9 +128,14 @@
 						flat
 						color="primary"
 						label="No Camera (PASS)"
-						@click="test['camera'] = 'No Webcam test PASS'"
+						@click=";(test['camera'] = 'No Webcam test PASS'), (componentes.Webcam = 'NO')"
 					/>
-					<q-btn flat color="positive" label="Pass" @click="test['camera'] = 'Webcam test PASS'" />
+					<q-btn
+						flat
+						color="positive"
+						label="Pass"
+						@click=";(test['camera'] = 'Webcam test PASS'), (componentes.Webcam = 'YES')"
+					/>
 				</q-card-actions>
 			</q-card>
 			<!-- Keyboard Start -->
@@ -337,6 +343,13 @@
 							label="Privacy"
 							v-if="componentes.Keyboard.Privacy == 'YES'"
 						/>
+						<!-- <q-checkbox
+							size="150px"
+							v-model="componentes.Keyboard.Privacy"
+							val="80px"
+							label="Privacy"
+							v-if="componentes.Keyboard.Privacy == 'YES'"
+						/> -->
 					</div>
 					<!-- <q-checkbox left-label v-model="hotkey.speakers" label="Speackers" /> -->
 				</q-card-section>
@@ -464,6 +477,49 @@
 						false-value="NO"
 						label="Touch Me"
 					/>
+					<q-checkbox
+						size="xl"
+						v-model="test.WWAN"
+						true-value="YES"
+						false-value="NO"
+						label="WWAN"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="test.Privacy"
+						true-value="YES"
+						false-value="NO"
+						label="Privacy"
+					/>
+					<q-checkbox size="xl" v-model="test.NFC" true-value="YES" false-value="NO" label="NFC" />
+					<q-checkbox
+						size="xl"
+						v-model="test.SmartCard"
+						true-value="YES"
+						false-value="NO"
+						label="Smart Card"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="componentes.Keyboard.Backlight"
+						true-value="YES"
+						false-value="NO"
+						label="Backlight"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="componentes.Keyboard.RGB"
+						true-value="YES"
+						false-value="NO"
+						label="RGB Keyboard"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="test.Fingerprint"
+						true-value="YES"
+						false-value="NO"
+						label="Fingerprint"
+					/>
 				</q-card-section>
 				<q-card-actions align="right" id="actionInformation">
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
@@ -553,9 +609,48 @@
 						<div class="col-6 justify-center">
 							<svg width="75%" id="barcode2"></svg>
 						</div>
-						<q-btn flat color="positive" label="Shutdown" @click="sdDevice" />
+						<q-btn color="positive" :label="audit ? 'Shut Down' : 'SysPrep'" @click="sdDevice" />
 					</q-card-section>
 				</q-card-section>
+			</q-card>
+
+			<q-card class="card" v-show="activate.Storage">
+				<q-card-section>
+					<q-card-section> <div class="text-h6">Storage</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<div class="disk-list">
+						<q-list bordered padding>
+							<q-item v-for="(disk, index) in disks" :key="index">
+								<q-item-section avatar>
+									<q-icon name="windows" color="blue" size="40px" />
+								</q-item-section>
+
+								<q-item-section>
+									<q-item-label>{{ disk.name }}</q-item-label>
+									<!-- <q-item-label caption>{{ disk.totalSpace }}</q-item-label> -->
+									<q-item-label caption>{{ disk.description }}</q-item-label>
+								</q-item-section>
+
+								<!--
+        <q-item-section>
+          <q-item-label>{{ disk.name }}</q-item-label>
+          <q-item-label caption>{{ disk.freeSpace }} free of {{ disk.totalSpace }}</q-item-label>
+          <q-linear-progress :value="calculatePercentage(disk.free, disk.total)" color="primary" rounded />
+        </q-item-section>
+        -->
+
+								<!-- <q-item-section side>
+									<q-btn flat icon="delete" color="negative" @click="formatDisk(disk.device)" />
+								</q-item-section> -->
+							</q-item>
+						</q-list>
+					</div>
+				</q-card-section>
+				<q-card-actions align="right" id="actionStorage">
+					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
+					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+				</q-card-actions>
 			</q-card>
 			<q-dialog v-model="msn.active" persistent transition-show="scale" transition-hide="scale">
 				<q-card class="card" style="width: 300px">
@@ -636,6 +731,7 @@
 		aWin,
 		sWin,
 		dWin,
+		Sysprep,
 	} from '../scripts'
 	import moment from 'moment'
 	import JsBarcode from 'jsbarcode'
@@ -674,6 +770,11 @@
 				test: {
 					touchScreen: 'NO',
 					hotKey: 'NO',
+					WWAN: 'NO',
+					Privacy: 'NO',
+					NFC: 'NO',
+					SmartCard: 'NO',
+					Fingerprint: 'NO',
 				},
 				typeUnit: '#87cefa',
 				project: {},
@@ -710,6 +811,7 @@
 					components: false,
 					touch: false,
 					information: false,
+					Storage: false,
 				},
 				showActions: false,
 				win: {},
@@ -728,6 +830,7 @@
 				miniSerial: '',
 				miniSKU: '',
 				TOP: 'NO',
+				disks: [],
 				myDb: {
 					Serial: '',
 					Model: '',
@@ -818,6 +921,15 @@
 			},
 		},
 		methods: {
+			calculatePercentage(free, total) {
+				return (total - free) / total
+			},
+			formatDisk(diskName) {
+				if (confirm(`Are you sure you want to format disk ${diskName}?`)) {
+					// Add format logic here
+					console.log(`Formatting disk ${diskName}...`)
+				}
+			},
 			async brands() {
 				async function getValueByPath(obj, path) {
 					return path.split('.').reduce((o, p) => o && o[p], obj)
@@ -957,7 +1069,7 @@
 						NewProductKey: this.win.keyWindows,
 					},
 				}
-				return await this.$db.funcAdmin('modules/ispt/verifyDPK', {
+				return await this.$db.funcAdmin('modules/ispt/statusDPK', {
 					options,
 					Project: this.project.id,
 					System: this.select.url,
@@ -1012,85 +1124,85 @@
 				this.myDb.DateStart = lastdate.start
 
 				return `
-	       CTL Windows Test - ${this.$env.version} - ${this.project.id}
-	       Operator ID: ${this.select.id}
-	       Operator Name:${this.user.usuario}
-	       Start Date: ${this.test.Date}
-	       Start Time: ${this.test.startTime}
-	       End Date: ${lastdate.date}
-	       End Time: ${lastdate.time}
-	        Program: ${this.infoTest.ProgramType}
-	        Battery Program: ${this.infoTest.batteryProgram}
-	        BOL: ${this.infoTest.BOL}
+		       CTL Windows Test - ${this.$env.version} - ${this.project.id}
+		       Operator ID: ${this.select.id}
+		       Operator Name:${this.user.usuario}
+		       Start Date: ${this.test.Date}
+		       Start Time: ${this.test.startTime}
+		       End Date: ${lastdate.date}
+		       End Time: ${lastdate.time}
+		        Program: ${this.infoTest.ProgramType}
+		        Battery Program: ${this.infoTest.batteryProgram}
+		        BOL: ${this.infoTest.BOL}
 
-	       :::::Devices Information:::::
-	       ${this.test.Description}
-	       ${this.test.Model}
-	       ${this.test.Serial}
-	       Windows OS Name: ${this.test.OS} (${this.iTest.Organization ? 'A' : 'M'})
-	       Windows Product Key: ${this.test.keyWindows}
-	       Windows Product Key old: ${this.test.oldKeyWin}
-	       ${this.test.windows}
-	       ${this.test.color ? `Color: ${this.test.color}` : ''}
-	       Hard Drive: ${this.intDev.HDD.Total}
-	       ${this.intDev.HDD.Units.join('\n')}
-	       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
-	       ${this.intDev.RAM.Modules.join('\n')}
-	       GPU Verification PASS
-	       ${
-						this.type == 'desktop' && this.noGPU
-							? ''
-							: this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)
-					}
-	       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Resolution' : ''}
-	       ${this.test.hasOwnProperty('resolution') ? this.test.resolution : ''}
-	       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Touch Screen' : ''}
-	       ${this.test.hasOwnProperty('touchScreen') ? this.test.touchScreen : ''}
-	       CPU
-	       ${this.intDev.cpu.join('\n')}
-	       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
-	       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
-	       ${this.type == 'desktop' ? 'Cooler System' : ''}
-	       ${this.type == 'desktop' ? this.form.coolerSystem : ''}
+		       :::::Devices Information:::::
+		       ${this.test.Description}
+		       ${this.test.Model}
+		       ${this.test.Serial}
+		       Windows OS Name: ${this.test.OS} (${this.iTest.Organization ? 'A' : 'M'})
+		       Windows Product Key: ${this.test.keyWindows}
+		       Windows Product Key old: ${this.test.oldKeyWin}
+		       ${this.test.windows}
+		       ${this.test.color ? `Color: ${this.test.color}` : ''}
+		       Hard Drive: ${this.intDev.HDD.Total}
+		       ${this.disks.map((disk) => disk.specs).join('\n')}
+		       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
+		       ${this.intDev.RAM.Modules.join('\n')}
+		       GPU Verification PASS
+		       ${
+							this.type == 'desktop' && this.noGPU
+								? ''
+								: this.intDev.video.map((v) => `${v.Description} ${v.AdapterRAM}`)
+						}
+		       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Resolution' : ''}
+		       ${this.test.hasOwnProperty('resolution') ? this.test.resolution : ''}
+		       ${this.type == 'laptop' || this.type == 'all-in-one' ? 'Touch Screen' : ''}
+		       ${this.test.hasOwnProperty('touchScreen') ? this.test.touchScreen : ''}
+		       CPU
+		       ${this.intDev.cpu.join('\n')}
+		       ${this.type == 'desktop' ? 'Adapter/Power Supply' : ''}
+		       ${this.type == 'desktop' ? `${this.form.adapter}W` : ''}
+		       ${this.type == 'desktop' ? 'Cooler System' : ''}
+		       ${this.type == 'desktop' ? this.form.coolerSystem : ''}
 
-	       :::::Test Status:::::
-	       ${this.type != 'desktop' ? this.test.audio : ''}
-	       ${this.type != 'desktop' ? this.test.camera : ''}
-	       ${this.test.drivers}
-	       ${this.test.display}
-	       ${this.type == 'laptop' ? this.test.battery : ''}
-	       ${this.type == 'laptop' ? this.test.keyboard : ''}
-	       ${this.type == 'laptop' ? this.test.mic : ''}
-	       ${this.type == 'laptop' ? this.test.hotKey : ''}
-	       ${this.type == 'laptop' ? this.test.mousepad : ''}
-	       ${
-						this.type == 'laptop' && this.hotKey.mic
-							? 'Mic hotkey: It works'
-							: 'Mic hotkey: Does not work'
-					}
-	       ${
-						this.type == 'laptop' && this.hotKey.speakers
-							? 'Speackers hotkey: It works'
-							: 'Speackers hotkey: Does not work'
-					}
-	       ${
-						this.type == 'laptop' && this.hotKey.brights
-							? 'Brightness hotkey: It works'
-							: 'Brightness hotkey: Does not work'
-					}
-	       ${
-						this.type == 'laptop' && this.hotKey.privacy
-							? 'Privacy hotkey: It works'
-							: 'Privacy hotkey: Does not work'
-					}
-	       ${this.type != 'desktop' ? this.test.brightness : ''}
-	       ${this.type != 'desktop' ? this.test.spotLights : ''}
-	       ${this.form.note ? `Note: ${this.form.note}` : ''}
+		       :::::Test Status:::::
+		       ${this.type != 'desktop' ? this.test.audio : ''}
+		       ${this.type != 'desktop' ? this.test.camera : ''}
+		       ${this.test.drivers}
+		       ${this.test.display}
+		       ${this.type == 'laptop' ? this.test.battery : ''}
+		       ${this.type == 'laptop' ? this.test.keyboard : ''}
+		       ${this.type == 'laptop' ? this.test.mic : ''}
+		       ${this.type == 'laptop' ? this.test.hotKey : ''}
+		       ${this.type == 'laptop' ? this.test.mousepad : ''}
+		       ${
+							this.type == 'laptop' && this.hotKey.mic
+								? 'Mic hotkey: It works'
+								: 'Mic hotkey: Does not work'
+						}
+		       ${
+							this.type == 'laptop' && this.hotKey.speakers
+								? 'Speackers hotkey: It works'
+								: 'Speackers hotkey: Does not work'
+						}
+		       ${
+							this.type == 'laptop' && this.hotKey.brights
+								? 'Brightness hotkey: It works'
+								: 'Brightness hotkey: Does not work'
+						}
+		       ${
+							this.type == 'laptop' && this.hotKey.privacy
+								? 'Privacy hotkey: It works'
+								: 'Privacy hotkey: Does not work'
+						}
+		       ${this.type != 'desktop' ? this.test.brightness : ''}
+		       ${this.type != 'desktop' ? this.test.spotLights : ''}
+		       ${this.form.note ? `Note: ${this.form.note}` : ''}
 
-	       :::::Result:::::
-	       Test Result is ${res}
-	       ${this.audit ? 'Audited' : ''}
-	     `.replace(/^\s*[\r\n]/gm, '')
+		       :::::Result:::::
+		       Test Result is ${res}
+		       ${this.audit ? 'Audited' : ''}
+		     `.replace(/^\s*[\r\n]/gm, '')
 			},
 			async rsSave() {
 				let sh = await this.$rsDB(this.select.db)
@@ -1111,7 +1223,7 @@
 				}
 			},
 			cerrarVentana() {
-				this.sdDevice()
+				//this.sdDevice()
 				const { remote } = require('electron')
 				const ventanaActual = remote.getCurrentWindow()
 				ventanaActual.close()
@@ -1120,16 +1232,35 @@
 				let data = this.infoTest.Specs
 				this.partsurfer = data
 				console.log('infoHP: ', data)
-				this.test.touchScreen = data.touchScreen
+				this.test.touchScreen =
+					this.bios && this.bios.TouchScreen ? this.bios.TouchScreen : data.touchScreen
 				this.color = data.COLOR
 				this.myDb.COLOR = data.COLOR ? data.COLOR : ''
 				this.test['color'] = data.COLOR
 				this.componentes['Color'] = data.COLOR
 				this.form.adapter = data.adapter
 				this.componentes['Adapter'] = data.adapter
-				this.componentes.Keyboard['Backlight'] = data.Backlight
+				this.componentes.Keyboard['Backlight'] =
+					this.bios && this.bios.components.Backlight
+						? this.bios.components.Backlight
+						: data.Backlight
 				this.componentes.Keyboard['RGB'] = data.BacklitRGB
-				this.componentes.Keyboard['Privacy'] = data.Privacy
+				this.componentes.Keyboard['Privacy'] =
+					this.bios && this.bios.components.Privacy ? this.bios.components.Privacy : data.Privacy
+				console.log('wwan: ', this.bios.WWAN)
+				this.test['WWAN'] =
+					this.bios && this.bios.components.WWAN ? this.bios.components.WWAN : 'NO'
+				this.test.NFC = this.bios && this.bios.components.NFC ? this.bios.components.NFC : 'NO'
+				this.test.Fingerprint =
+					this.bios && this.bios.Fingerprint
+						? this.bios.components.Fingerprint
+						: this.componentes.Fingerprint
+				this.test.Webcam =
+					this.bios && this.bios.components.Webcam ? this.bios.components.Webcam : 'NO'
+				this.test.SmartCard =
+					this.bios && this.bios.components.SmartCard ? this.bios.components.SmartCard : 'NO'
+
+				console.log('Test: ', this.test)
 			},
 			getGraphicsInfo(dxdiagContent) {
 				const cardNamePattern = /Card name: (.+)/g
@@ -1187,7 +1318,8 @@
 				}
 			},
 			async sdDevice() {
-				await this.$cmd.executeScriptCode(['Stop-Computer -ComputerName localhost'])
+				if (this.audit) await this.$cmd.executeScriptCode(['Stop-Computer -ComputerName localhost'])
+				else this.$cmd.executeScriptCode(Sysprep)
 			},
 			async checkDevice() {
 				this.infoTest = await this.$db.funcAdmin('modules/test/infoTest', {
@@ -1237,8 +1369,9 @@
 				await this.checkDevice()
 				this.setTypeUnit()
 				if (this.device.brand == 'HP') {
-					await this.infoHP()
 					this.bios = await this.$cmd.biosData()
+					await this.infoHP()
+					console.log('BIOS: ', this.bios)
 				}
 				//if (this.device.brand == 'HP')
 				if (projectInfo.ArrivedSKU !== this.device.SKU && this.device.brand == 'HP') {
@@ -1303,8 +1436,8 @@
 				await this.simpleTest('Information')
 
 				/* if (this.intDev.video.length) {
-					await this.testGPU()
-				} */
+						await this.testGPU()
+					} */
 				await this.$cmd.executeScriptCode(`Start-Process "devmgmt.msc"`)
 				this.activate.drivers = true
 				await this.espera('actionDrivers')
@@ -1332,11 +1465,13 @@
 					] = `${this.si.graphics.displays[0].resolutionX}x${this.si.graphics.displays[0].resolutionY}`
 					await this.checkCameraAvailability()
 					this.activate.camera = true
+					this.componentes.Webcam = this.test.camera
 					await this.espera('actionCamera')
 					this.activate.camera = false
 				}
 
 				await this.testWindows()
+				await this.testDisk()
 
 				if (this.intDev.video.length) {
 					await this.testGPU()
@@ -1492,6 +1627,7 @@
 							', ',
 						)}`,
 						persistent: true,
+						color: 'red',
 						ok: {
 							label: 'Restart',
 							handler: () => {
@@ -1528,7 +1664,7 @@
 				this.battery = battery
 				await this.simpleTest('Battery')
 				/* await this.espera('actionBattery')
-				this.activate.battery = false */
+					this.activate.battery = false */
 				this.activate.mousepad = true
 				await this.espera('actionMousePad')
 				this.activate.mousepad = false
@@ -1663,6 +1799,25 @@
 				this.test['keyWindows'] = this.win.keyWindows
 				this.test['oldKeyWin'] = this.win.oldKeyWin
 			},
+			async testDisk() {
+				for (let disk of this.si.diskLayout) {
+					if (disk.interfaceType !== 'USB') {
+						let totalSpace = await this.bytesToStandard(disk.size)
+						let description = `${totalSpace} ${disk.type} ${disk.interfaceType}`
+						let specs = `Serial: ${disk.serialNum}, Model: ${disk.name}, Size: ${totalSpace}, Type: ${disk.type}, Interface: ${disk.interfaceType}`
+						this.disks.push({
+							name: disk.name,
+							total: disk.size,
+							totalSpace,
+							description,
+							specs,
+						})
+					}
+				}
+				this.activate.Storage = true
+				await this.espera('actionStorage')
+				this.activate.Storage = false
+			},
 
 			async testGPU() {
 				this.activate.gpu = true
@@ -1714,29 +1869,21 @@
 							  ),
 					GPUIntegrated: this.myDb.GPUIntegrated.replace(/\s+/g, ' ').trim(),
 					Memory: this.intDev.RAM.Total,
-					Storage: this.intDev.HDD.Disks.join(','),
+					Storage: this.disks.map((disk) => disk.description).join(','),
 					Serial: this.device.Serial,
 					Model: this.device.SKU,
 					Description: this.device.Description.replace(/\s+/g, ' ').trim(),
 					OSEdition: this.test.OS,
-					SmartCard:
-						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('SmartCard')
-							? this.bios.SmartCard
-							: Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('SmartCard')
-							? this.bios.SmartCard
-							: '',
-					NFC:
-						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('NFC')
-							? this.bios.NFC
-							: this.componentes.NFC,
-					Fingerprint:
-						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('Fingerprint')
-							? this.bios.Fingerprint
-							: this.componentes.Fingerprint,
-					WWAN:
-						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('WirelessNetwork')
-							? this.bios.WirelessNetwork
-							: this.componentes.WWAN,
+					SmartCard: this.test.hasOwnProperty('SmartCard')
+						? this.test.SmartCard
+						: Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('SmartCard')
+						? this.bios.SmartCard
+						: '',
+					NFC: this.test.hasOwnProperty('NFC') ? this.test.NFC : this.componentes.NFC,
+					Fingerprint: this.test.hasOwnProperty('Fingerprint')
+						? this.test.Fingerprint
+						: this.componentes.Fingerprint,
+					WWAN: this.test.hasOwnProperty('WWAN') ? this.test.WWAN : this.componentes.WWAN,
 					CPU: this.intDev.cpu.join(',').replace(/\s+/g, ' ').trim(),
 					Bluetooth:
 						Object.keys(this.bios).length !== 0 && this.bios.hasOwnProperty('Bluetooth')
@@ -2002,6 +2149,50 @@
 					cardActions.addEventListener('click', clickHandler)
 				})
 			},
+			async bytesToStandard(bytes) {
+				const units = [
+					{ value: 32 * 1024 * 1024, label: '32 MB' },
+					{ value: 64 * 1024 * 1024, label: '64 MB' },
+					{ value: 128 * 1024 * 1024, label: '128 MB' },
+					{ value: 256 * 1024 * 1024, label: '256 MB' },
+					{ value: 512 * 1024 * 1024, label: '512 MB' },
+					{ value: 1 * 1024 * 1024 * 1024, label: '1 GB' },
+					{ value: 2 * 1024 * 1024 * 1024, label: '2 GB' },
+					{ value: 3 * 1024 * 1024 * 1024, label: '3 GB' },
+					{ value: 4 * 1024 * 1024 * 1024, label: '4 GB' },
+					{ value: 6 * 1024 * 1024 * 1024, label: '6 GB' },
+					{ value: 8 * 1024 * 1024 * 1024, label: '8 GB' },
+					{ value: 12 * 1024 * 1024 * 1024, label: '12 GB' },
+					{ value: 16 * 1024 * 1024 * 1024, label: '16 GB' },
+					{ value: 24 * 1024 * 1024 * 1024, label: '24 GB' },
+					{ value: 32 * 1024 * 1024 * 1024, label: '32 GB' },
+					{ value: 64 * 1024 * 1024 * 1024, label: '64 GB' },
+					{ value: 128 * 1024 * 1024 * 1024, label: '128 GB' },
+					{ value: 256 * 1024 * 1024 * 1024, label: '256 GB' },
+					{ value: 512 * 1024 * 1024 * 1024, label: '512 GB' },
+					{ value: 1 * 1024 * 1024 * 1024 * 1024, label: '1 TB' },
+					{ value: 2 * 1024 * 1024 * 1024 * 1024, label: '2 TB' },
+					{ value: 3 * 1024 * 1024 * 1024 * 1024, label: '3 TB' },
+					{ value: 4 * 1024 * 1024 * 1024 * 1024, label: '4 TB' },
+					{ value: 6 * 1024 * 1024 * 1024 * 1024, label: '6 TB' },
+					{ value: 8 * 1024 * 1024 * 1024 * 1024, label: '8 TB' },
+					{ value: 10 * 1024 * 1024 * 1024 * 1024, label: '10 TB' },
+					{ value: 12 * 1024 * 1024 * 1024 * 1024, label: '12 TB' },
+				]
+
+				let closest = units[0]
+				let minDiff = Math.abs(bytes - units[0].value)
+
+				for (let i = 1; i < units.length; i++) {
+					const diff = Math.abs(bytes - units[i].value)
+					if (diff < minDiff) {
+						closest = units[i]
+						minDiff = diff
+					}
+				}
+
+				return closest.label
+			},
 
 			async espera2(a) {
 				return new Promise((resolve) => {
@@ -2096,21 +2287,38 @@
 			})
 			console.log('Begin System Information...')
 			this.win = this.$cmd.executeScriptCode(sWin)
-			let [is, it, id, cp, dt, dr] = await Promise.all([
-				this.$system(),
-				this.$cmd.executeScriptCode(imaging),
-				this.$cmd.executeScriptCode(intenalDevices),
-				this.$cmd.executeScriptCode(components),
-				this.DateTime(),
-				this.$cmd.executeScriptCode(drivers),
-			])
-			console.log('End System Information...')
-			this.infoSystem = is
-			this.iTest = it
-			this.intDev = id
-			this.componentes = cp
-			this.datetime = dt
-			this.driver = dr
+			console.log('infoSystem: ', localStorage.getItem('infoSystem'))
+			if (!localStorage.getItem('infoSystem')) {
+				let [is, it, id, cp, dt, dr] = await Promise.all([
+					this.$system(),
+					this.$cmd.executeScriptCode(imaging),
+					this.$cmd.executeScriptCode(intenalDevices),
+					this.$cmd.executeScriptCode(components),
+					this.DateTime(),
+					this.$cmd.executeScriptCode(drivers),
+				])
+				console.log('End System Information...')
+				this.infoSystem = is
+				this.iTest = it
+				this.intDev = id
+				this.componentes = cp
+				this.datetime = dt
+				this.driver = dr
+				localStorage.setItem('infoSystem', JSON.stringify(this.infoSystem))
+				localStorage.setItem('iTest', JSON.stringify(this.iTest))
+				localStorage.setItem('intDev', JSON.stringify(this.intDev))
+				localStorage.setItem('componentes', JSON.stringify(this.componentes))
+				localStorage.setItem('datetime', JSON.stringify(this.datetime))
+				localStorage.setItem('driver', JSON.stringify(this.driver))
+			} else {
+				this.infoSystem = JSON.parse(localStorage.getItem('infoSystem'))
+				this.iTest = JSON.parse(localStorage.getItem('iTest'))
+				this.intDev = JSON.parse(localStorage.getItem('intDev'))
+				this.componentes = JSON.parse(localStorage.getItem('componentes'))
+				this.datetime = JSON.parse(localStorage.getItem('datetime'))
+				this.driver = JSON.parse(localStorage.getItem('driver'))
+			}
+
 			console.log('components: ', this.componentes)
 			console.log(this.infoSystem)
 			if (
@@ -2148,6 +2356,13 @@
 		animation-duration: 0.5s;
 		animation-timing-function: ease-in-out;
 		animation-iteration-count: infinite;
+	}
+	.disk-list {
+		width: 400px;
+		margin: 0 auto;
+	}
+	.q-linear-progress {
+		margin-top: 10px;
 	}
 
 	@keyframes glowEffect {
