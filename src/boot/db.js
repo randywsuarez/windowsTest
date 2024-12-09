@@ -305,8 +305,6 @@ export default ({ Vue, router }) => {
 		returnData(data) {}
 
 		onSnapshot(fn) {
-			console.log('connecting')
-
 			var vm = this
 
 			function returnData(data) {
@@ -322,7 +320,7 @@ export default ({ Vue, router }) => {
 					this.d
 						? this.path
 						: this.c + '_' + (this.event_key || this.event_key === 0 ? this.event_key : ''),
-					returnData
+					returnData,
 				)
 				socket.on('reconnect', (attemp) => {
 					//console.log('reconnect', attemp)
@@ -340,7 +338,7 @@ export default ({ Vue, router }) => {
 				vm.disconnect = true
 				socket.removeListener(
 					vm.d ? vm.path : vm.c + '_' + (vm.event_key || vm.event_key === 0 ? vm.event_key : ''),
-					returnData
+					returnData,
 				)
 				// socket.removeAllListeners(vm.d ? vm.path : (vm.c + '_' + (vm.event_key || '')))
 			}
@@ -389,7 +387,6 @@ export default ({ Vue, router }) => {
 							}
 						})
 						.catch((e) => {
-							console.log(e.data.message)
 							if (e.data.error == 'token')
 								Dialog.create({
 									title: 'Error',
@@ -424,7 +421,6 @@ export default ({ Vue, router }) => {
 						.then((res) => {
 							if (res.result) resolve(res.data)
 							else {
-								console.log(res)
 								Dialog.create({
 									title: 'Error',
 									message: res.data,
@@ -437,7 +433,6 @@ export default ({ Vue, router }) => {
 							}
 						})
 						.catch((e) => {
-							console.log(e.data.message)
 							Loading.hide()
 							if (e.data.error == 'token')
 								Dialog.create({
@@ -450,21 +445,18 @@ export default ({ Vue, router }) => {
 									router.go('/login')
 								})
 							else {
-								console.log(e)
 								Notify.create(e.data)
 							}
 							/* reject(new Error(e))
 							router.go('/login') */
 						})
 				} catch (e) {
-					console.log(e)
 					reject(new Error(e))
 				}
 			})
 		},
 		auth(path, data) {
 			return new Promise((resolve, reject) => {
-				console.log(path, data)
 				axios({
 					method: 'post',
 					url: 'auth',

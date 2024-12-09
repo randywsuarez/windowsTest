@@ -88,7 +88,7 @@
 					})
 
 					this.wave.microphone.on('deviceReady', (stream) => {
-						console.log('Device ready!', stream)
+						//console.log('Device ready!', stream)
 					})
 
 					this.wave.microphone.on('deviceError', (code) => {

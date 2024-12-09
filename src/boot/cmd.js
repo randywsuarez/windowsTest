@@ -14,7 +14,7 @@ async function checkComponentsPresence(fileContent) {
 		{ name: 'Backlight', pattern: /Backlit keyboard|Keyboard Backlight/i },
 		{ name: 'TouchScreen', pattern: /Touch Screen|Touch Device/i },
 		{ name: 'WWAN', pattern: /WWAN|Mobile Network Device|GPS Combo Device/i },
-		{ name: 'Privacy', pattern: /Privacy|HP Sure View/i },
+		{ name: 'Privacy', pattern: /Privacy/i },
 		{ name: 'SmartCard', pattern: /Smart Card/i },
 		{ name: 'NFC', pattern: /NFC/i },
 		{ name: 'Webcam', pattern: /Camera/i },
@@ -29,7 +29,17 @@ async function checkComponentsPresence(fileContent) {
 
 	// Iteramos sobre cada componente y verificamos su presencia
 	components.forEach((component) => {
-		result[component.name] = component.pattern.test(fileContent) ? 'YES' : 'NO'
+		if (component.name === 'Privacy') {
+			// Verificar excepciones para "Camera Privacy"
+			const cameraPrivacyPattern = /Camera Privacy/i
+			result[component.name] = cameraPrivacyPattern.test(fileContent)
+				? String('NO')
+				: component.pattern.test(fileContent)
+				? String('YES')
+				: String('NO')
+		} else {
+			result[component.name] = component.pattern.test(fileContent) ? String('YES') : String('NO')
+		}
 	})
 
 	return result
@@ -155,7 +165,7 @@ const CmdHelper = {
 		return new Promise(async (resolve) => {
 			let ps = new PowerShell([[code]])
 			let outputData = ''
-			console.log(code)
+			//console.log(code)
 
 			ps.on('output', (data) => {
 				outputData += data
@@ -460,7 +470,6 @@ if (Test-Path $archivoDestino) {
     Write-Host "Error al copiar update.exe a $rutaDestino"
 }
 `
-			console.log(code)
 
 			let ps = new PowerShell([code])
 			let outputData = ''
@@ -504,7 +513,6 @@ if (Test-Path $archivoDestino) {
     Remove-Item -Path $rutaDestino -Recurse -Force
 }
 `
-			console.log(path.join(process.cwd().split(path.sep)[0], 'resources', 'data'), code)
 
 			let ps = new PowerShell([code])
 			let outputData = ''
@@ -563,22 +571,27 @@ if (Test-Path $archivoDestino) {
 			// Escuchar cuando el proceso termina
 			ps.on('end', async (code) => {
 				try {
-					fs.readFile(configFile, 'utf8', async (err, data) => {
-						if (err) {
-							console.error('Error al leer el archivo de configuración:', err)
-							reject(err)
+					// Esperar a que se cree el archivo antes de leerlo
+					let checkInterval = setInterval(() => {
+						if (fs.existsSync(configFile)) {
+							clearInterval(checkInterval)
+							fs.readFile(configFile, 'utf8', async (err, data) => {
+								if (err) {
+									console.error('Error al leer el archivo de configuración:', err)
+									reject(err)
+								}
+								let re = await checkItems(items, data)
+								let comp = await checkComponentsPresence(data)
+								re = { ...re, components: comp }
+								resolve(re)
+								//console.log('Contenido de config.txt:', data);
+							})
 						}
-						let re = await checkItems(items, data)
-						let comp = await checkComponentsPresence(data)
-						re = { ...re, components: comp }
-						resolve(re)
-						//console.log('Contenido de config.txt:', data)
-					})
+					}, 1000) // Revisa cada segundo si el archivo ya está disponible
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
 					resolve(false)
 				}
-				// Leer el archivo de configuración después de que el proceso ha terminado
 			})
 		})
 	},

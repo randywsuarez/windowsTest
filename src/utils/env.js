@@ -1,6 +1,6 @@
 export default {
 	database: {
-		server: 'sqlprodisp.database.windows.net',
+		server: 'ctlsqlprod.database.windows.net',
 		user: 'sfis_test',
 		password: 'Sf1s@R3ad_1st#2023prod',
 	},
@@ -11,26 +11,10 @@ export default {
 		table: 'npi_06_test_snresults',
 	},
 
-	project: [
-		/* {
-			db: 'SFisDB_DEV',
-			admin: 'SfisAdminDB_DEV',
-			id: 'HPRefurbish',
-			url: 'https://dev-sfis.ispt.app/api',
-		}, */
-		{
-			db: 'SFisDB',
-			admin: 'SfisAdminDB',
-			id: 'HPRefurbish',
-			url: 'https://sfis.ispt.app/api',
-		},
-		{
-			db: 'SFis_HP_RevenueDB',
-			admin: 'Sfis_HP_RevenueAdminDB',
-			id: 'ISP-PC',
-			url: 'https://shared-revenue.ispt.app/api',
-		},
-	],
+	project: {
+		db: 'CTLShopFloorDB_Testing',
+		url: 'https://ctlshopflooruat.azurewebsites.net/api',
+	},
 	mongodb: {
 		server: 'http://10.0.0.2:4500/api',
 		public: 'http://47.190.184.6:4900/api',

@@ -9,7 +9,6 @@ module.exports = ({ Vue }) => {
 		// Crea el directorio si no existe
 		if (!fs.existsSync(imagesDirectory)) {
 			fs.mkdirSync(imagesDirectory, { recursive: true })
-			console.log(`Directorio creado: ${imagesDirectory}`)
 		}
 
 		// Ruta completa para guardar la imagen
@@ -24,7 +23,6 @@ module.exports = ({ Vue }) => {
 		// Guarda el buffer como un archivo JPG dentro del directorio
 		try {
 			fs.writeFileSync(imagePath, buffer)
-			console.log(`Imagen guardada: ${imagePath}`)
 			sessionStorage.setItem('image', imagePath)
 		} catch (error) {
 			// Agrega más información al mensaje de error

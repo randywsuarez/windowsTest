@@ -72,6 +72,15 @@ export default async ({ Vue }) => {
 			return /* número de documentos eliminados */
 		}
 
+		async clearCollection() {
+			const jsonData = this.readDatabase()
+			jsonData.data = []
+			this.writeDatabase(jsonData)
+			return {
+				message: 'Collection cleared successfully',
+			}
+		}
+
 		removeFolder() {
 			// Elimina la carpeta y todos sus contenidos
 			if (fs.existsSync(this.dbFolderPath)) {

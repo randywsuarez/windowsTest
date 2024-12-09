@@ -156,7 +156,6 @@
 					}) */
 			let credencialesGuardadas = await this.$rsNeDB('credenciales').findOne({})
 			if (credencialesGuardadas == null) {
-				console.log('sin registro')
 				this.$q.loading.hide()
 				this.$router.push('/login')
 			} else {
@@ -187,7 +186,6 @@
 						persistent: true,
 					})
 					.onOk((data) => {
-						console.log('>>>> OK, received', data)
 						this.$q.localStorage.set('api', data)
 						location.reload()
 
@@ -230,8 +228,7 @@
 			},
 			async comprobarToken() {
 				let respuesta = await this.checkToken()
-				//console.log(respuesta[0])
-				if (respuesta.length && respuesta[0].estado === 'OK') {
+				if (respuesta && respuesta.status === 'OK') {
 					console.log('Usuario autenticado')
 				} else {
 					console.error('Token no válido, redirigiendo al LoginLayout')
@@ -240,12 +237,14 @@
 				}
 			},
 			async checkToken() {
-				const checkTokenPromises = this.$env.project.map(async (s) => {
-					try {
-						let info = await this.$rsNeDB('credenciales').findOne({
-							tenant: s.id,
-						})
-						const options = {
+				try {
+					let info = (await this.$rsNeDB('credenciales').find())[0]
+					let data = await this.$db.funcAdmin('modules/ispt/obtainTenants', {
+						token: info.authToken,
+					})
+					if (data.length) return { status: 'OK' }
+					else return { status: 'FAIL' }
+					/* const options = {
 							method: 'GET',
 							headers: {
 								Authorization: info.AuthToken,
@@ -260,12 +259,11 @@
 							return { estado: 'OK' }
 						} else {
 							//throw new Error('Invalid response')
-						}
-					} catch (err) {
-						//console.error(err)
-						throw err
-					}
-				})
+						} */
+				} catch (err) {
+					//console.error(err)
+					throw err
+				}
 				return Promise.all(checkTokenPromises)
 			},
 			cerrarVentana() {

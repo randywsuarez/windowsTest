@@ -12,9 +12,9 @@
 
 						<!-- Campos del formulario -->
 						<div class="row col">
-							<q-input v-model="usuario" label="User" class="col-12" />
+							<q-input v-model="user" label="User" class="col-12" />
 							<q-input
-								v-model="contrasena"
+								v-model="password"
 								label="Password"
 								:type="isPwd ? 'password' : 'text'"
 								@keyup.enter="iniciarSesion"
@@ -36,7 +36,7 @@
 							@click="iniciarSesion"
 							label="Sign On"
 							style="margin-top: 20px"
-							:disable="!contrasena || !usuario"
+							:disable="!password || !user"
 						/>
 					</div>
 				</q-card-section>
@@ -71,8 +71,8 @@
 		data() {
 			return {
 				//logoSrc: "@/assets/logo.png",
-				usuario: '',
-				contrasena: '',
+				user: '',
+				password: '',
 				recordarCredenciales: true,
 				colorIndex: 0,
 				hasInternet: navigator.onLine,
@@ -112,60 +112,31 @@
 				clearInterval(this.checkInterval)
 			},
 			async iniciarSesion() {
-				if (this.usuario || this.password) {
+				if (this.user || this.password) {
 					this.$q.loading.show()
-					// Hacer la solicitud de inicio de sesión (simulación)
-					let res = []
-					for (let s of this.$env.project) {
-						const options = {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json',
-								'User-Agent': 'insomnia/2023.5.8',
-							},
-							body: JSON.stringify({
-								userName: this.usuario,
-								password: this.contrasena,
-								RememberMe: 0,
-								projectSelector: s.id,
-							}),
-						}
-
-						// Realizar la solicitud fetch
-						await fetch(`${s.url}/APP/Login/Authenticate`, options)
-							.then((response) => response.json())
-							.then((response) => {
-								res.push(response)
-							}) // Resolver la promesa con la respuesta
-							.catch((err) => console.error(err)) // Rechazar la promesa con el error
-					}
-					console.log(res.length)
-					if (res.length) {
+					let auth = await this.$db.funcAdmin('modules/ispt/authenticate', {
+						userName: this.user,
+						password: this.password,
+					})
+					if (auth) {
 						// Inicio de sesión exitoso
 						if (this.recordarCredenciales) {
 							this.$q.loading.hide()
-							// Guardar credenciales en la colección 'credenciales'
-							console.log('entro')
-							for (let a of res) {
-								let aa = await this.$rsNeDB('credenciales').insert({
-									usuario: this.usuario,
-									authToken: a.AuthToken,
-									id: a.Id,
-									tenant: a.tenant,
-								})
-								console.log(aa)
-								await this.$rsNeDB('user').insert({
-									userName: this.usuario,
-									password: this.contrasena,
-									RememberMe: 0,
-									projectSelector: a.tenant,
-								})
-							}
-							const documentos = await this.$rsNeDB('user').findOne({
-								userName: this.usuario,
+							await this.$rsNeDB('credenciales').clearCollection()
+							await this.$rsNeDB('user').clearCollection()
+							let aa = await this.$rsNeDB('credenciales').insert({
+								user: this.user,
+								authToken: auth.authToken,
+								id: auth.id,
 							})
-
-							console.log('Documentos:', documentos)
+							await this.$rsNeDB('user').insert({
+								userName: this.user,
+								password: this.password,
+								RememberMe: 0,
+							})
+							/* const documentos = await this.$rsNeDB('user').findOne({
+								userName: this.user,
+							}) */
 						}
 
 						// Redirigir a la siguiente página (por ejemplo, el panel principal)
@@ -187,66 +158,9 @@
 								// console.log('I am triggered on both OK and Cancel')
 							})
 						// Inicio de sesión fallido
-						console.error('Inicio de sesión fallido. Verifica usuario y contraseña.')
+						console.error('Inicio de sesión fallido. Verifica user y contraseña.')
 					}
 				}
-			},
-
-			// Función de simulación de inicio de sesión (puedes reemplazarla con tu lógica de autenticación real)
-			async startSesion() {
-				let data = []
-				for (let s of this.$env.project) {
-					const options = {
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							'User-Agent': 'insomnia/2023.5.8',
-						},
-						body: JSON.stringify({
-							userName: this.usuario,
-							password: this.contrasena,
-							RememberMe: 0,
-							projectSelector: s.id,
-						}),
-					}
-
-					// Realizar la solicitud fetch
-					fetch(`${s.url}/APP/Login/Authenticate`, options)
-						.then((response) => response.json())
-						.then((response) => data.push(response)) // Resolver la promesa con la respuesta
-						.catch((err) => console.error(err)) // Rechazar la promesa con el error
-				}
-				console.log()
-				return data
-
-				/* return new Promise((resolve, reject) => {
-					// Construir el objeto de opciones para la solicitud fetch
-					//console.log(this.$env)
-					let data = []
-					for (let s of this.$env.project) {
-						const options = {
-							method: 'POST',
-							headers: {
-								'Content-Type': 'application/json',
-								'User-Agent': 'insomnia/2023.5.8',
-							},
-							body: JSON.stringify({
-								userName: this.usuario,
-								password: this.contrasena,
-								RememberMe: 0,
-								projectSelector: s.id,
-							}),
-						}
-
-						// Realizar la solicitud fetch
-						fetch(`${s.url}/Login/Authenticate`, options)
-							.then((response) => response.json())
-							.then((response) => data.push(response)) // Resolver la promesa con la respuesta
-							.catch((err) => reject(err)) // Rechazar la promesa con el error
-					}
-					console.log(data)
-					resolve(data)
-				}) */
 			},
 			cerrarVentana() {
 				// Cerrar la ventana en Electron
@@ -259,7 +173,6 @@
 			},
 		},
 		created() {
-			console.log(this.hasInternet)
 			this.startInternetCheckInterval()
 		},
 		beforeDestroy() {
