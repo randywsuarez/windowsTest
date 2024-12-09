@@ -53,7 +53,6 @@
 					this.ruta = currentAudio.audio
 					if (this.autoplay) {
 						for (let x = 0; x < 3; x++) {
-							console.log('paso')
 							this.reproducirAudio()
 						}
 					}
@@ -69,7 +68,10 @@
 				})
 			},
 			verificarFinReproduccion() {
-				if (this.isPlaying && this.$refs.audioElement.currentTime >= this.$refs.audioElement.duration) {
+				if (
+					this.isPlaying &&
+					this.$refs.audioElement.currentTime >= this.$refs.audioElement.duration
+				) {
 					this.$refs.audioElement.currentTime = 0
 					this.reproducirAudio()
 				}
@@ -78,7 +80,6 @@
 				this.isPlaying = false
 				this.$refs.audioElement.pause()
 				this.$refs.audioElement.currentTime = 0
-				console.log(a)
 				if (!a == 'stop') this.$emit('respuesta', a)
 			},
 		},

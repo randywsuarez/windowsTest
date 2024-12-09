@@ -520,6 +520,8 @@
 						false-value="NO"
 						label="Fingerprint"
 					/>
+					<pre>{{ test }}</pre>
+					<pre>{{ bios.components }}</pre>
 				</q-card-section>
 				<q-card-actions align="right" id="actionInformation">
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
@@ -767,15 +769,7 @@
 				allKeysPressed: false,
 				user: {},
 				device: { img: '', brand: '' },
-				test: {
-					touchScreen: 'NO',
-					hotKey: 'NO',
-					WWAN: 'NO',
-					Privacy: 'NO',
-					NFC: 'NO',
-					SmartCard: 'NO',
-					Fingerprint: 'NO',
-				},
+				test: {},
 				typeUnit: '#87cefa',
 				project: {},
 				sound: 'nada',
@@ -784,7 +778,22 @@
 				battery: {},
 				action: '',
 				camera: true,
-				bios: {},
+				bios: {
+					components: {
+						Fingerprint: 'NO',
+						Backlight: 'NO',
+						TouchScreen: 'NO',
+						WWAN: 'NO',
+						Privacy: 'NO',
+						SmartCard: 'NO',
+						NFC: 'NO',
+						Webcam: 'NO',
+						Bluetooth: 'NO',
+						Audio: 'NO',
+						Microphone: 'NO',
+						WLAN: 'NO',
+					},
+				},
 				check: {},
 				Authorization: '',
 				itDG: {},
@@ -980,9 +989,8 @@
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
 				}
-				console.log(this.project)
 				return this.$db
-					.funcAdmin('modules/test/moveStation', {
+					.funcAdmin('modules/ispt/moveStation', {
 						options,
 						Serial: this.test.Serial,
 						Project: this.project.id,
@@ -1119,13 +1127,13 @@
 				let lastdate = await this.DateTime()
 				this.myDb.DATE = lastdate.wipe
 				this.myDb.STATUS = res == 'PASS' ? 'true' : 'false'
-				this.myDb.OPERATOR = this.select.id
+				this.myDb.OPERATOR = this.select.operator
 				this.myDb.DateEnd = lastdate.end
 				this.myDb.DateStart = lastdate.start
 
 				return `
 		       CTL Windows Test - ${this.$env.version} - ${this.project.id}
-		       Operator ID: ${this.select.id}
+		       Operator ID: ${this.select.operator}
 		       Operator Name:${this.user.usuario}
 		       Start Date: ${this.test.Date}
 		       Start Time: ${this.test.startTime}
@@ -1207,19 +1215,20 @@
 			async rsSave() {
 				let sh = await this.$rsDB(this.select.db)
 					.select('Serial')
-					.from('test_SnResults')
+					.from('TestSnResults')
 					.where(`Serial = '${this.device.Serial}'`)
 					.execute()
 				if (sh.length) {
-					console.log('myDb: ', this.myDb)
 					await this.$rsDB(this.select.db)
-						.update('test_SnResults')
+						.update('TestSnResults')
 						.set(this.myDb)
 						.where(`Serial = '${this.device.Serial}'`)
 						.execute()
 				} else {
-					this.myDb['test_SnResultsID'] = 'NEWID()'
-					await this.$rsDB(this.select.db).insert('test_SnResults').fields(this.myDb).execute()
+					this.myDb['TestSnResultsID'] = 'NEWID()'
+					this.myDb['TenantId'] = this.select.TenantId
+					console.log('myDb: ', this.myDb)
+					await this.$rsDB(this.select.db).insert('TestSnResults').fields(this.myDb).execute()
 				}
 			},
 			cerrarVentana() {
@@ -1247,7 +1256,6 @@
 				this.componentes.Keyboard['RGB'] = data.BacklitRGB
 				this.componentes.Keyboard['Privacy'] =
 					this.bios && this.bios.components.Privacy ? this.bios.components.Privacy : data.Privacy
-				console.log('wwan: ', this.bios.WWAN)
 				this.test['WWAN'] =
 					this.bios && this.bios.components.WWAN ? this.bios.components.WWAN : 'NO'
 				this.test.NFC = this.bios && this.bios.components.NFC ? this.bios.components.NFC : 'NO'
@@ -1259,8 +1267,6 @@
 					this.bios && this.bios.components.Webcam ? this.bios.components.Webcam : 'NO'
 				this.test.SmartCard =
 					this.bios && this.bios.components.SmartCard ? this.bios.components.SmartCard : 'NO'
-
-				console.log('Test: ', this.test)
 			},
 			getGraphicsInfo(dxdiagContent) {
 				const cardNamePattern = /Card name: (.+)/g
@@ -1299,22 +1305,22 @@
 				const intDB = {
 					...this.myDb,
 					project: this.project.id,
-					OPERATOR: this.user.usuario,
+					OPERATOR: this.select.operator,
 					TYPE: this.type.toUpperCase(),
 					PROCESSED: this.iTest.Organization ? 'A' : 'M',
 					Authorization: this.Authorization,
 				}
 				const test = await this.$db
-					.collection('test_SnResults')
+					.collection('TestSnResults')
 					.conditions({ Serial: this.device.Serial, TYPE: this.type.toUpperCase() })
 					.limit(1)
 					.all_data()
 					.get()
 
 				if (test.length) {
-					await this.$db.doc(`test_SnResults/${test[0]._id}`).update(intDB)
+					await this.$db.doc(`TestSnResults/${test[0]._id}`).update(intDB)
 				} else {
-					await this.$db.doc('test_SnResults').add(intDB)
+					await this.$db.doc('TestSnResults').add(intDB)
 				}
 			},
 			async sdDevice() {
@@ -1339,7 +1345,6 @@
 			},
 			async initializeTest() {
 				this.$q.loading.show()
-				console.log(this.intDev)
 				const itDH = await this.hddInfo(this.intDev.HDD.Units)
 				this.myDb.Serial_HDD = itDH.group.Serial
 				this.myDb.Model_HDD = itDH.group.Description
@@ -1374,9 +1379,9 @@
 				await this.checkDevice()
 				this.setTypeUnit()
 				if (this.device.brand == 'HP') {
-					this.bios = await this.$cmd.biosData()
+					this.bios = JSON.parse(JSON.stringify(await this.$cmd.biosData()))
+					console.log('BIOS: ', this.bios.components)
 					await this.infoHP()
-					console.log('BIOS: ', this.bios)
 				}
 				//if (this.device.brand == 'HP')
 				if (projectInfo.ArrivedSKU !== this.device.SKU && this.device.brand == 'HP') {
@@ -1388,7 +1393,7 @@
 					return
 				}
 
-				if (!projectInfo.StationID == 15 || !projectInfo.StationID) {
+				if (!projectInfo.StationID == 13 || !projectInfo.StationID) {
 					this.$q.loading.hide()
 					this.showNotification('Error', 'The unit has not passed through any previous station.')
 					return
@@ -1437,7 +1442,6 @@
 				console.log('SI: ', this.si)
 				this.test.touchScreen =
 					this.device.brand == 'HP' ? this.partsurfer.Display.TouchScreen : 'NO'
-				console.log('TouchScreen: ', this.test, this.partsurfer)
 				await this.simpleTest('Information')
 
 				/* if (this.intDev.video.length) {
@@ -1524,7 +1528,6 @@
 				this.txt = await this.report()
 				this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
 				if (this.file) await this.saveFile(this.file)
-				console.log(this.image)
 				if (this.image && this.type != 'desktop') await this.saveFile(this.image)
 
 				this.info = { ...this.info, report: this.txt }
@@ -1572,20 +1575,55 @@
 					this.commercial = true
 				}
 			},
-			async getProjectInfo(serial) {
+			async getProjectInfo(Serial) {
+				let infoToken = (await this.$rsNeDB('credenciales').find())[0]
+				let infoUnit = await this.$db.funcAdmin('modules/ispt/validateUnit', { Serial })
+				this.project = {
+					Station: infoUnit[0].StationTypeID,
+					TenantId: infoUnit[0].TenantId,
+					id: infoUnit[0].ProjectName,
+					db: infoUnit[0].DB,
+					operator: infoToken.id,
+				}
+				this.select = { ...infoToken, ...infoUnit[0], ...this.project }
+				return infoUnit[0]
+			},
+			async getProjectInfoOld(serial) {
 				let res = ''
 				for (let x of this.$env.project) {
 					let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
+
+					const options = {
+						method: 'POST',
+						headers: {
+							tenant: `${this.project.id}`,
+							Authorization: `Bearer ${this.select.authToken}`,
+						},
+					}
+					let status = await this.$db
+						.funcAdmin('modules/ispt/statusStation', {
+							options,
+							Serial: this.test.Serial,
+							Project: this.project.id,
+							System: this.select.url,
+						})
+						.then((v) => {
+							return v
+						})
+						.catch((err) => {
+							console.error(err)
+							return err
+						})
 					res = await this.$rsDB(x.db)
-						.select('SerialNumber, ArrivedSKU, StationID, SKU')
-						.from('sfis_WorkTracking')
+						.select('SerialNumber, ArrivedSKU, StationID, SKU, TenantId')
+						.from('WorkTracking')
 						.where(`SerialNumber = '${serial}'`)
 						.execute()
-
 					if (res.length) {
 						this.project = {
 							...this.project,
 							Station: res[0].StationID,
+							TenantId: res[0].TenantId,
 							id: x.id,
 							db: x.db,
 							operator: u.id,
@@ -1732,7 +1770,6 @@
 				console.log(this.win, this.infoTest.ProductKeys)
 				if (this.infoTest.DPK) {
 					let nDPK = this.win.hasOwnProperty('fail') ? this.win.fail : await this.verifyDPK()
-					console.log('nDPK: ', nDPK)
 					if (nDPK.error) {
 						setTimeout(() => {
 							this.$q.notify({
@@ -1756,7 +1793,6 @@
 								'Activating <b>Windows</b><br/><span class="text-orange text-weight-bold">Hang on...</span>',
 						})
 						let iny = await this.$cmd.executeScriptCode(ndpk)
-						console.log('iny: ', iny)
 						this.$q.loading.hide()
 						if (iny.error) {
 							console.log(iny.message)
@@ -1862,7 +1898,6 @@
 				this.activate.gpu = false
 			},
 			async saveComponents() {
-				console.log(this.componentes, this.bios)
 				this.componentes = {
 					...this.componentes,
 					...this.bios,
@@ -2102,10 +2137,6 @@
 								return
 							}
 						}
-
-						// Si el botón no tiene 'disable', o si tiene y está habilitado, se sigue el proceso
-						console.log(event)
-
 						// Convertir el texto del target a mayúsculas para la comparación
 						let targetText = target.innerText.toUpperCase()
 
@@ -2138,9 +2169,6 @@
 							console.log('El valor de isValid es falso, no se puede continuar.')
 							return
 						}
-
-						console.log(event)
-
 						// Convertir el texto del target a mayúsculas para la comparación
 						let targetText = target.innerText.toUpperCase()
 
@@ -2292,7 +2320,6 @@
 			})
 			console.log('Begin System Information...')
 			this.win = this.$cmd.executeScriptCode(sWin)
-			console.log('infoSystem: ', localStorage.getItem('infoSystem'))
 			if (!localStorage.getItem('infoSystem')) {
 				let [is, it, id, cp, dt, dr] = await Promise.all([
 					this.$system(),
@@ -2323,9 +2350,6 @@
 				this.datetime = JSON.parse(localStorage.getItem('datetime'))
 				this.driver = JSON.parse(localStorage.getItem('driver'))
 			}
-
-			console.log('components: ', this.componentes)
-			console.log(this.infoSystem)
 			if (
 				this.intDev.video
 					.filter((v) => v.Type === 'Dedicated')

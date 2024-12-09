@@ -9,7 +9,6 @@ module.exports = ({ Vue }) => {
 		try {
 			if (!fs.existsSync(logsFolderPath)) {
 				fs.mkdirSync(logsFolderPath)
-				console.log(`Carpeta "Logs" creada en: ${logsFolderPath}`)
 			}
 		} catch (error) {
 			console.error('Error al crear la carpeta "Logs":', error)
@@ -20,7 +19,6 @@ module.exports = ({ Vue }) => {
 		const saveFile = (filePath, content) => {
 			try {
 				fs.writeFileSync(filePath, content)
-				console.log(`Archivo guardado: ${filePath}`)
 				return true
 			} catch (error) {
 				console.error(`Error al guardar el archivo: ${filePath}`, error)
@@ -59,7 +57,6 @@ module.exports = ({ Vue }) => {
 	Vue.prototype.$readTextFile = function (filePath) {
 		try {
 			const fileContent = fs.readFileSync(filePath, 'utf-8')
-			console.log(`Contenido del archivo ${filePath} leído con éxito`)
 			return fileContent
 		} catch (error) {
 			console.error(`Error al leer el archivo ${filePath}:`, error)

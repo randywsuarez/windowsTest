@@ -10,6 +10,7 @@
 		"build": "set NODE_OPTIONS=--max-old-space-size=8192 && npx quasar build -m electron"
 	},
 	"dependencies": {
+		"@quasar/cli": "^2.4.1",
 		"@quasar/extras": "^1.16.4",
 		"adm-zip": "^0.5.10",
 		"axios": "^1.6.2",
@@ -31,6 +32,8 @@
 		"wavesurfer.js": "^7.7.15"
 	},
 	"devDependencies": {
+		"@babel/plugin-proposal-nullish-coalescing-operator": "^7.18.6",
+		"@babel/plugin-proposal-optional-chaining": "^7.21.0",
 		"@quasar/app": "^2.0.0",
 		"devtron": "^1.4.0",
 		"electron": "^9.0.0",

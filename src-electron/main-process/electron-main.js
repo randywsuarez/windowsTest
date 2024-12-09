@@ -51,7 +51,6 @@ app.whenReady().then(() => {
 
 	// Allow camera access
 	session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-		console.log(webContents, permission)
 		if (permission === 'media') {
 			callback(true)
 			/* const response = dialog.showMessageBoxSync(mainWindow, {

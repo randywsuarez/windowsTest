@@ -19,7 +19,6 @@ class UpdateService {
 
 	async verificarActualizacion() {
 		try {
-			console.log('verificarActualizacion')
 			const options = {
 				method: 'GET',
 				headers: {
@@ -29,11 +28,9 @@ class UpdateService {
 			}
 			const response = await fetch(
 				`https://api.github.com/repos/${this.usuario}/${this.repositorio}/releases/latest`,
-				options
+				options,
 			)
 			const data = await response.json()
-			console.log(data)
-
 			const ultimaVersion = data.tag_name
 
 			if (this.compararVersiones(ultimaVersion, this.versionActual) > 0) {
@@ -55,7 +52,6 @@ class UpdateService {
 				await fsPromises.access(rutaArchivo)
 				// Si el archivo existe, lo eliminamos
 				await fsPromises.unlink(rutaArchivo)
-				console.log(`Archivo previo eliminado: ${this.archivoDescarga}`)
 			} catch (unlinkError) {
 				// Si no se pudo eliminar, puede ser porque el archivo no existe, no es un problema
 			}
@@ -63,7 +59,7 @@ class UpdateService {
 			// Descargar el archivo update.zip
 			const zipResponse = await fetch(
 				`https://github.com/${this.usuario}/${this.repositorio}/releases/download/${version}/${this.archivoDescarga}`,
-				{ follow: 5 } // Máximo número de redirecciones permitidas
+				{ follow: 5 }, // Máximo número de redirecciones permitidas
 			)
 
 			// Crear o verificar la existencia de la carpeta de destino
@@ -72,7 +68,6 @@ class UpdateService {
 			} catch (accessError) {
 				// Si la carpeta no existe, la creamos
 				await fsPromises.mkdir(this.carpetaDestino, { recursive: true })
-				console.log(`Directorio creado: ${this.carpetaDestino}`)
 			}
 
 			// Guardar el nuevo archivo update.zip en la carpeta de destino
