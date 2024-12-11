@@ -260,14 +260,14 @@
 					<q-card-section> <div class="text-h6">Windows Test</div> </q-card-section><q-separator />
 				</q-card-section>
 				<q-card-section class="center" v-if="win.os">
-					<div>{{ win.os }}</div>
+					<div>{{ win.edition }}</div>
 					<div>{{ win.keyWindows }}</div>
 					<div>{{ win.licenseDetails }}</div>
 				</q-card-section>
 				<q-card-section class="center" v-else>
 					<div>Wait...</div>
 				</q-card-section>
-				<q-card-actions align="right" id="actionWindows" v-show="win.os">
+				<q-card-actions align="right" id="actionWindows" v-show="win.actived">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
@@ -486,7 +486,7 @@
 					/>
 					<q-checkbox
 						size="xl"
-						v-model="test.Privacy"
+						v-model="componentes.Keyboard.Privacy"
 						true-value="YES"
 						false-value="NO"
 						label="Privacy"
@@ -520,8 +520,6 @@
 						false-value="NO"
 						label="Fingerprint"
 					/>
-					<pre>{{ test }}</pre>
-					<pre>{{ bios.components }}</pre>
 				</q-card-section>
 				<q-card-actions align="right" id="actionInformation">
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
@@ -531,7 +529,8 @@
 				<q-card-section>
 					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
 				</q-card-section>
-				<q-card-section class="center" v-if="myGpu.length || myDb.GPUIntegrated">
+				<pre>{{ myGpu }}</pre>
+				<q-card-section class="center" v-if="myGpu.length">
 					<q-checkbox
 						size="150px"
 						v-model="noGPU"
@@ -578,7 +577,7 @@
 				<q-card-section class="center" v-else>
 					<div>Wait...</div>
 				</q-card-section>
-				<q-card-actions align="right" id="actionGPU" v-show="myGpu.length || myDb.GPUIntegrated">
+				<q-card-actions align="right" id="actionGPU" v-show="myGpu.length">
 					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
 					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
@@ -737,6 +736,7 @@
 	} from '../scripts'
 	import moment from 'moment'
 	import JsBarcode from 'jsbarcode'
+	import { title } from 'process'
 	//import Modernizr from 'modernizr'
 
 	export default {
@@ -823,6 +823,7 @@
 					Storage: false,
 				},
 				showActions: false,
+				GPUIntegrated: '',
 				win: {},
 				intDev: {},
 				getDev: {},
@@ -859,7 +860,7 @@
 					DateStart: '',
 					DateEnd: '',
 					CODE: '',
-					GPUIntegrated: '',
+					//GPUIntegrated: '',
 				},
 				form: {
 					lightRAM: false,
@@ -985,7 +986,6 @@
 				const options = {
 					method: 'POST',
 					headers: {
-						tenant: `${this.project.id}`,
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
 				}
@@ -993,8 +993,9 @@
 					.funcAdmin('modules/ispt/moveStation', {
 						options,
 						Serial: this.test.Serial,
-						Project: this.project.id,
-						System: this.select.url,
+						Tenant: this.select.TenantName,
+						Project: this.select.ProjectID,
+						System: this.$env.project.url,
 					})
 					.then((v) => {
 						return v
@@ -1005,34 +1006,30 @@
 					})
 			},
 			async saveFile(r) {
-				r.EmployeeID = this.select.id
 				const options = {
 					method: 'POST',
 					headers: {
-						cookie:
-							'.AspNetCore.Identity.Application=CfDJ8Pv0WhnmHWxAjuPCJCw7jtyhZLq6S3nyRzfIHKZJOYQtEQ9hL9aX19OzrTjV8uk1xdI9dU-1YPI33AaECMgBFlaESDpOOX2FDk7S2tqsC0gJ1_7V7msodnLjsBAqAgSWnlUVvYl5ijgqNA4qsVC9W8wczbPIbCOuc-SodELJK0o-Mh6ua73Z9I3UleU85L4i0Rwzab_Dolm34AliuJHCwSX3KiisitNWY_sva5QYM8lRePNIy8c41JXlBkwluWhmN6xvOm9Qo3go5bVf2b8Qk3VCe96yOwSmNvyc3RddSBN-45SbH_VCx9ujjiRjqf3t6RmK7viqOz7IW9-pQw7ZBBefbtqSUGFmN8gzXkjD6sg-2fbWJODEvkyJOSQjFKy__-30bXqQ32Tmts8Bb7-yTcJmymXAOhMqRtV8q2X48q3pmZEnUDpTxPkLnsorXbmzMgoWVLC-QapXQBwGO9jr2YoL2Q2DRhPvNPzXo8Ly0wB-0gedagBVhj9CKr6ridtZQwv1jTu_wnf-J5T6XvtLOsUmyAN-7wW6fXi8hKk-z3gTeT0SHDhbQPViVMnB3sKZkewxHdX1Mb1QPot5nlytpkdNDfT4vybqpUrFTczco7aDTNU55ORyCjpF6quntw7-LF2rrTYT2UZZlWWlnRZOr5Bhz-Vn_0cNMl_b1_-Zy9_vrvxiYm4BWKKIjf8sVZzY-ayC5vWuRdsxaKS61SD6JFVIbf_sO6Vat2y6R3HTblNM9BHT0T7VLZ0yRwZF5vO_ty6kZxeTUZyhLA8jDAp-p5npa1D3f-gqirOhsa6m8TIjKxn5GH54HA4KaHqkg; ARRAffinity=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961; ARRAffinitySameSite=37af23c8e91607e6e2ecdfc91d68a568c2fae0bff40f0553670e843760cd1961',
-						tenant: `${this.project.id}`,
 						'Content-Type': 'application/json',
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
 					body: {
 						SerialNumber: r.SerialNumber,
-						EmployeeID: this.select.id,
+						EmployeeID: this.select.operator,
 						FileType: r.FileType,
 						fileExtension: r.fileExtension,
 						fileBase64Str: r.fileBase64Str,
 						systemInformationBlob: { ...this.infoSystem, ...this.si },
-						//systemInformationBlob: await JSON.stringify({ ...this.infoSystem, ...this.si }),
 					},
 				}
 				return this.$db
-					.funcAdmin('modules/test/UploadFile', {
+					.funcAdmin('modules/ispt/UploadFile', {
 						options,
-						Project: this.project.id,
-						System: this.select.url,
+						Project: this.select.TenantName,
+						System: this.$env.project.url,
 					})
 					.then((v) => {
-						return v._isSuccess
+						console.info(r.fileExtension, v.message)
+						return v.isSuccess
 					})
 					.catch((err) => {
 						console.error(err)
@@ -1043,7 +1040,7 @@
 				const options = {
 					method: 'POST',
 					headers: {
-						tenant: `${this.project.id}`,
+						tenant: `${this.select.TenantName}`,
 						'Content-Type': 'application/json',
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
@@ -1053,22 +1050,45 @@
 						ExistingProductEdition: this.win.edition,
 					},
 				}
-				return await this.$db.funcAdmin('modules/ispt/verifyDPK', {
+				let result = await this.$db.funcAdmin('modules/ispt/verifyDPK', {
 					options,
-					Project: this.project.id,
-					System: this.select.url,
+					Project: this.select.TenantId,
+					System: this.$env.project.url,
 					data: {
 						SerialNumber: this.device.Serial,
 						ExistingProductKey: this.win.keyWindows,
 						ExistingProductEdition: this.win.edition,
 					},
 				})
+				console.log('Result: ', result)
+				if (result.error && result.errorMessage == 'No available replacement keys') {
+					this.$db.funcAdmin('modules/ispt/issueReport', {
+						title: result.errorMessage,
+						message: `DPK for ${this.win.edition} is not available.`,
+					})
+					this.$q
+						.dialog({
+							title: 'Alert<em>!</em>',
+							message: `<em>Error: </em> <span class="text-red">${result.errorMessage}.</span> <strong> Talk to your supervisor.</strong>`,
+							html: true,
+						})
+						.onOk(async () => {
+							await this.verifyDPK()
+						})
+						.onCancel(() => {
+							// console.log('Cancel')
+						})
+						.onDismiss(() => {
+							// console.log('I am triggered on both OK and Cancel')
+						})
+				}
+				return result
 			},
 			async statusDPK(r) {
 				const options = {
 					method: 'POST',
 					headers: {
-						tenant: `${this.project.id}`,
+						tenant: `${this.select.TenantId}`,
 						'Content-Type': 'application/json',
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
@@ -1079,8 +1099,8 @@
 				}
 				return await this.$db.funcAdmin('modules/ispt/statusDPK', {
 					options,
-					Project: this.project.id,
-					System: this.select.url,
+					Project: this.select.TenantName,
+					System: this.$env.project.url,
 					data: {
 						SerialNumber: this.device.Serial,
 						NewProductKey: this.win.keyWindows,
@@ -1091,7 +1111,7 @@
 				const options = {
 					method: 'POST',
 					headers: {
-						tenant: `${this.project.id}`,
+						tenant: `${this.select.TenantName}`,
 						'Content-Type': 'application/json',
 						Authorization: `Bearer ${this.select.authToken}`,
 					},
@@ -1102,8 +1122,8 @@
 				}
 				return await this.$db.funcAdmin('modules/ispt/failDPK', {
 					options,
-					Project: this.project.id,
-					System: this.select.url,
+					Project: this.select.TenantName,
+					System: this.$env.project.url,
 					data: {
 						SerialNumber: this.device.Serial,
 						dpk: this.win.keyWindows,
@@ -1129,10 +1149,12 @@
 				this.myDb.STATUS = res == 'PASS' ? 'true' : 'false'
 				this.myDb.OPERATOR = this.select.operator
 				this.myDb.DateEnd = lastdate.end
+				this.myDb.CreatedAt = lastdate.end
+				this.myDb.LastModified = lastdate.end
 				this.myDb.DateStart = lastdate.start
 
 				return `
-		       CTL Windows Test - ${this.$env.version} - ${this.project.id}
+		       CTL Windows Test - ${this.$env.version} - ${this.select.TenantName}
 		       Operator ID: ${this.select.operator}
 		       Operator Name:${this.user.usuario}
 		       Start Date: ${this.test.Date}
@@ -1254,6 +1276,7 @@
 						? this.bios.components.Backlight
 						: data.Backlight
 				this.componentes.Keyboard['RGB'] = data.BacklitRGB
+
 				this.componentes.Keyboard['Privacy'] =
 					this.bios && this.bios.components.Privacy ? this.bios.components.Privacy : data.Privacy
 				this.test['WWAN'] =
@@ -1304,7 +1327,7 @@
 				}
 				const intDB = {
 					...this.myDb,
-					project: this.project.id,
+					project: this.select.TenantName,
 					OPERATOR: this.select.operator,
 					TYPE: this.type.toUpperCase(),
 					PROCESSED: this.iTest.Organization ? 'A' : 'M',
@@ -1399,7 +1422,7 @@
 					return
 				}
 				const datetime = this.datetime
-				this.test = {
+				let test = {
 					Date: datetime.date,
 					startTime: datetime.time,
 					Serial: `SN ID Check PASS, SNID: ${this.device.Serial}`,
@@ -1408,8 +1431,9 @@
 							? `Model (SKU ID) Check PASS, SKUID: ${this.device.SKU}`
 							: '',
 					Description: `Product Description: ${this.device.Description}`,
-					touchScreen: `NO`,
+					//touchScreen: `NO`,
 				}
+				this.test = { ...this.test, ...test }
 
 				this.$q.loading.hide()
 				this.activate.type = true
@@ -1586,6 +1610,7 @@
 					operator: infoToken.id,
 				}
 				this.select = { ...infoToken, ...infoUnit[0], ...this.project }
+				console.log('Select: ', this.select)
 				return infoUnit[0]
 			},
 			async getProjectInfoOld(serial) {
@@ -1596,7 +1621,7 @@
 					const options = {
 						method: 'POST',
 						headers: {
-							tenant: `${this.project.id}`,
+							tenant: `${this.select.TenantName}`,
 							Authorization: `Bearer ${this.select.authToken}`,
 						},
 					}
@@ -1604,8 +1629,8 @@
 						.funcAdmin('modules/ispt/statusStation', {
 							options,
 							Serial: this.test.Serial,
-							Project: this.project.id,
-							System: this.select.url,
+							Project: this.select.TenantName,
+							System: this.$env.project.url,
 						})
 						.then((v) => {
 							return v
@@ -1759,6 +1784,7 @@
 				}
 			},
 			async testWindows() {
+				this.win.actived = false
 				this.$q.loading.show({
 					message:
 						'Obtaining <b>DPK</b> status.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
@@ -1777,7 +1803,7 @@
 								message: nDPK.errorMessage,
 							})
 						}, 30000)
-					} else {
+					} else if (nDPK.needsNewProductKey) {
 						this.$q.loading.show({
 							message:
 								'Deactivating the active <b>DPK</b><br/><span class="text-orange text-weight-bold">Hang on...</span>',
@@ -1815,6 +1841,7 @@
 									// console.log('I am triggered on both OK and Cancel')
 								})
 						} else {
+							this.win.actived = true
 							this.$q.notify({
 								type: 'positive',
 								message: iny.message,
@@ -1827,7 +1854,7 @@
 							await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`)
 						}
 					}
-				}
+				} else this.win.actived = true
 				await this.espera('actionWindows')
 				this.info = { ...this.info, ...this.win }
 				this.activate.windows = false
@@ -1861,41 +1888,43 @@
 			},
 
 			async testGPU() {
-				this.activate.gpu = true
-				const dedicatedGPUs = this.intDev.video.filter((v) => v.Type === 'Dedicated')
-				const integratedGPUs = this.intDev.video.filter((v) => v.Type === 'Integrated')
+				if (this.myGpu.length) {
+					this.activate.gpu = true
+					const dedicatedGPUs = this.intDev.video.filter((v) => v.Type === 'Dedicated')
+					const integratedGPUs = this.intDev.video.filter((v) => v.Type === 'Integrated')
 
-				// Procesar GPUs dedicadas
-				if (dedicatedGPUs.some((obj) => obj.AdapterRAM.includes('4'))) {
-					this.myGpu = await this.myGpu
+					// Procesar GPUs dedicadas
+					if (dedicatedGPUs.some((obj) => obj.AdapterRAM.includes('4'))) {
+						this.myGpu = await this.myGpu
 
-					this.intDev.video = this.intDev.video.map((objA) => {
-						const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
-						return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
-					})
-				} else {
-					this.myGpu = dedicatedGPUs
+						this.intDev.video = this.intDev.video.map((objA) => {
+							const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
+							return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
+						})
+					} else {
+						this.myGpu = dedicatedGPUs
+					}
+
+					// Asignar valores para GPUs dedicadas
+					const dedicatedGPUInfoArray = await this.GPUInfo(this.myGpu)
+					if (dedicatedGPUInfoArray.GPU != null) {
+						this.myDb.GPU = dedicatedGPUInfoArray.GPU
+						this.myDb.GPU_RAM = dedicatedGPUInfoArray.RAM_GPU
+					} else {
+						this.myDb.GPU = ''
+						this.myDb.GPU_RAM = ''
+					}
+					// Procesar GPUs integradas
+					const integratedGPUInfo = await this.IntegratedGPUInfo(integratedGPUs)
+					this.GPUIntegrated = integratedGPUInfo || ''
+
+					await this.espera('actionGPU')
+					if (this.type == 'desktop' && this.noGPU) {
+						this.myDb.GPU = ''
+						this.myDb.GPU_RAM = ''
+					}
+					this.activate.gpu = false
 				}
-
-				// Asignar valores para GPUs dedicadas
-				const dedicatedGPUInfoArray = await this.GPUInfo(this.myGpu)
-				if (dedicatedGPUInfoArray.GPU != null) {
-					this.myDb.GPU = dedicatedGPUInfoArray.GPU
-					this.myDb.GPU_RAM = dedicatedGPUInfoArray.RAM_GPU
-				} else {
-					this.myDb.GPU = ''
-					this.myDb.GPU_RAM = ''
-				}
-				// Procesar GPUs integradas
-				const integratedGPUInfo = await this.IntegratedGPUInfo(integratedGPUs)
-				this.myDb.GPUIntegrated = integratedGPUInfo || ''
-
-				await this.espera('actionGPU')
-				if (this.type == 'desktop' && this.noGPU) {
-					this.myDb.GPU = ''
-					this.myDb.GPU_RAM = ''
-				}
-				this.activate.gpu = false
 			},
 			async saveComponents() {
 				this.componentes = {
@@ -1907,7 +1936,7 @@
 							: await this.IntegratedGPUInfo(
 									this.intDev.video.filter((v) => v.Type === 'Dedicated'),
 							  ),
-					GPUIntegrated: this.myDb.GPUIntegrated.replace(/\s+/g, ' ').trim(),
+					GPUIntegrated: this.GPUIntegrated.replace(/\s+/g, ' ').trim(),
 					Memory: this.intDev.RAM.Total,
 					Storage: this.disks.map((disk) => disk.description).join(','),
 					Serial: this.device.Serial,
