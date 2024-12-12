@@ -16,12 +16,12 @@ export default {
 		url: 'https://ctlshopflooruat.azurewebsites.net/api',
 	},
 	mongodb: {
-		server: 'http://10.0.0.2:4500/api',
-		public: 'http://47.190.184.6:4900/api',
+		server: 'http://10.0.0.2:4700/api',
+		public: 'http://47.190.184.6:5000/api',
 		dev: 'http://192.168.0.7:4400/api',
 		local: 'http://localhost:4400/api',
 	},
-	version: '1.1.8',
+	version: '1.1.9',
 	token: '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',
 	github: {
 		user: 'randywsuarez',
