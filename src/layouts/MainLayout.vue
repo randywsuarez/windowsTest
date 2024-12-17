@@ -177,7 +177,7 @@
 							// inline: true,
 							items: [
 								{ label: 'Server', value: 'server', color: 'primary' },
-								{ label: 'Public', value: 'public', color: 'secondary' },
+								{ label: 'Wireless', value: 'public', color: 'secondary' },
 								{ label: 'Dev', value: 'dev', color: 'red' },
 								{ label: 'Local', value: 'local', color: 'orange' },
 							],

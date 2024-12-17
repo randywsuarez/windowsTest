@@ -6,7 +6,7 @@
 	>
 		<user-info-grid
 			v-show="activate.select"
-			:username="user.usuario"
+			:username="select.user"
 			:project="`${project.id}${
 				infoTest.ProgramType != 'BatteryPercentage' ? ' - ' + infoTest.ProgramType : ''
 			}`"
@@ -145,8 +145,7 @@
 				</q-card-section>
 				<q-card-section class="center" style="min-height: 200px">
 					<virtual-keyboard @allKeysPressed="handleAllKeysPressed"></virtual-keyboard>
-					<p>All keys pressed: {{ allKeysPressed }}</p></q-card-section
-				>
+				</q-card-section>
 				<q-card-actions align="right" v-show="activate.keyboard" id="actionKeyboard">
 					<q-btn
 						flat
@@ -257,7 +256,14 @@
 			</q-card>
 			<q-card class="card" v-show="activate.windows">
 				<q-card-section>
-					<q-card-section> <div class="text-h6">Windows Test</div> </q-card-section><q-separator />
+					<div class="row items-center no-wrap">
+						<div class="col">
+							<div class="text-h6">Windows Test</div>
+						</div>
+						<div class="col-auto">
+							<q-btn round color="primary" icon="restart_alt" @click="testWindows" />
+						</div>
+					</div>
 				</q-card-section>
 				<q-card-section class="center" v-if="win.os">
 					<div>{{ win.edition }}</div>
@@ -586,7 +592,7 @@
 				<q-card-section>
 					<div class="row items-center no-wrap">
 						<div class="col">
-							<div class="text-h6">Done</div>
+							<div class="text-h6">Test completed</div>
 						</div>
 						<div class="col-auto">
 							<q-btn round color="primary" icon="info" @click="activate.txt = true" />
@@ -602,7 +608,7 @@
 						style="justify-content: center"
 					>
 						<div class="col-12 justify-center" v-if="activate.scan">
-							<h6>{{ activate.scan }}</h6>
+							<h6 v-html="activate.scan"></h6>
 						</div>
 						<div class="col-6 justify-center">
 							<svg width="75%" id="barcode"></svg>
@@ -1503,6 +1509,8 @@
 					this.activate.camera = false
 				}
 
+				this.win = await this.win
+				localStorage.setItem('dpk', this.win.keyWindows)
 				await this.testWindows()
 				await this.testDisk()
 
@@ -1652,6 +1660,7 @@
 							id: x.id,
 							db: x.db,
 							operator: u.id,
+							user: u.user,
 						}
 						this.select = { ...x, ...u }
 						//console.log('Select: ', this.select)
@@ -1663,7 +1672,7 @@
 			showNotification(title, message) {
 				this.msn = { title, message, active: true }
 			},
-			checkBiosItems() {
+			async checkBiosItems() {
 				const itemsToCheck = [
 					'ProgrammingMode',
 					'Microphone',
@@ -1689,6 +1698,8 @@
 					return false
 				})
 				if (itemsNotSet.length > 0) {
+					this.activate.components = true
+					await this.espera('actionComponents')
 					this.$q.dialog({
 						title: 'BIOS Settings',
 						message: `The following BIOS settings need to be adjusted:\n\n${itemsNotSet.join(
@@ -1703,6 +1714,8 @@
 							},
 						},
 					})
+				} else {
+					this.test['components'] = 'Components test PASS'
 				}
 			},
 			async testLaptopSpecifics() {
@@ -1737,9 +1750,7 @@
 				await this.espera('actionMousePad')
 				this.activate.mousepad = false
 				if (this.device.brand == 'HP') {
-					this.activate.components = true
 					await this.checkBiosItems()
-					await this.espera('actionComponents')
 					this.activate.components = false
 				}
 			},
@@ -1789,7 +1800,6 @@
 					message:
 						'Obtaining <b>DPK</b> status.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
 				})
-				this.win = await this.win
 				this.activate.windows = true
 				//await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`)
 				this.$q.loading.hide()
@@ -1829,16 +1839,22 @@
 									html: true,
 								})
 								.onOk(async () => {
+									this.$q.loading.show()
+									let ndpk = aWin
+										.replace(
+											'$dpk',
+											this.win.keyWindows != 'No license found'
+												? this.win.keyWindows
+												: localStorage.getItem('dpk'),
+										)
+										.replace('$mode', this.infoTest.DPKMode)
+									await this.$cmd.executeScriptCode(ndpk)
+									this.$q.loading.hide()
+									this.testWindows()
+
 									if (this.infoTest.DPKRetry) {
 										this.win.fail = await this.failDPK()
-										await this.testWindows()
 									}
-								})
-								.onCancel(() => {
-									// console.log('Cancel')
-								})
-								.onDismiss(() => {
-									// console.log('I am triggered on both OK and Cancel')
 								})
 						} else {
 							this.win.actived = true
