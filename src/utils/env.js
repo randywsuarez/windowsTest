@@ -16,8 +16,8 @@ export default {
 		url: 'https://ctlshopflooruat.azurewebsites.net/api',
 	},
 	mongodb: {
-		server: 'http://10.0.0.2:4700/api',
-		public: 'http://47.190.184.6:5000/api',
+		server: 'http://10.20.0.2:4700/api',
+		public: 'http://192.168.0.2:4700/api',
 		dev: 'http://192.168.0.7:4400/api',
 		local: 'http://localhost:4400/api',
 	},
