@@ -42,8 +42,15 @@
 					/>
 				</q-card-section>
 				<q-card-actions align="right" id="actionComparation">
-					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" :disable="!isValid" />
+					<q-btn flat color="negative" size="xl" label="Fail" @click="action = 'FAIL'" />
+					<q-btn
+						flat
+						color="positive"
+						size="xl"
+						label="Pass"
+						@click="action = 'PASS'"
+						:disable="!isValid"
+					/>
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.type">
@@ -83,6 +90,7 @@
 						id="audioFail"
 						ref="audioFail"
 						flat
+						size="xl"
 						color="red"
 						label="FAIL"
 						@click="detenerReproduccion('fail')"
@@ -91,6 +99,7 @@
 						id="audioPass"
 						ref="audioPass"
 						flat
+						size="xl"
 						color="green"
 						label="PASS"
 						@click="detenerReproduccion('pass')"
@@ -123,16 +132,24 @@
 					<div v-if="!camera">No Found</div>
 				</q-card-section>
 				<q-card-actions align="right" id="actionCamera">
-					<q-btn flat color="negative" label="Fail" @click="test['camera'] = 'Webcam test FAIL'" />
+					<q-btn
+						flat
+						color="negative"
+						size="xl"
+						label="Fail"
+						@click="test['camera'] = 'Webcam test FAIL'"
+					/>
 					<q-btn
 						flat
 						color="primary"
+						size="xl"
 						label="No Camera (PASS)"
 						@click=";(test['camera'] = 'No Webcam test PASS'), (componentes.Webcam = 'NO')"
 					/>
 					<q-btn
 						flat
 						color="positive"
+						size="xl"
 						label="Pass"
 						@click=";(test['camera'] = 'Webcam test PASS'), (componentes.Webcam = 'YES')"
 					/>
@@ -150,12 +167,14 @@
 					<q-btn
 						flat
 						color="negative"
+						size="xl"
 						label="Fail"
 						@click="test['keyboard'] = 'Keyboard test FAIL'"
 					/>
 					<q-btn
 						flat
 						color="positive"
+						size="xl"
 						label="Pass"
 						@click="test['keyboard'] = 'Keyboard test PASS'"
 					/>
@@ -171,8 +190,20 @@
 					<audio-recorder></audio-recorder>
 				</q-card-section>
 				<q-card-actions align="right" v-show="activate.mic" id="actionMic">
-					<q-btn flat color="negative" label="Fail" @click="test['mic'] = 'Mic test FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="test['mic'] = 'Mic test PASS'" />
+					<q-btn
+						flat
+						color="negative"
+						size="xl"
+						label="Fail"
+						@click="test['mic'] = 'Mic test FAIL'"
+					/>
+					<q-btn
+						flat
+						color="positive"
+						size="xl"
+						label="Pass"
+						@click="test['mic'] = 'Mic test PASS'"
+					/>
 				</q-card-actions>
 			</q-card>
 			<!-- Mic End -->
@@ -186,8 +217,20 @@
 					<Touch ref="touch" />
 				</q-card-section>
 				<q-card-actions align="right" v-show="activate.touch" id="actionTouch">
-					<q-btn flat color="negative" label="Fail" @click="test['touch'] = 'Touch test FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="test['touch'] = 'Touch test PASS'" />
+					<q-btn
+						flat
+						color="negative"
+						size="xl"
+						label="Fail"
+						@click="test['touch'] = 'Touch test FAIL'"
+					/>
+					<q-btn
+						flat
+						color="positive"
+						size="xl"
+						label="Pass"
+						@click="test['touch'] = 'Touch test PASS'"
+					/>
 				</q-card-actions>
 			</q-card>
 			<!-- Mic End -->
@@ -201,12 +244,14 @@
 					<q-btn
 						flat
 						color="negative"
+						size="xl"
 						label="Fail"
 						@click="test['brightness'] = 'Brightness test FAIL'"
 					/>
 					<q-btn
 						flat
 						color="positive"
+						size="xl"
 						label="Pass"
 						@click="test['brightness'] = 'Brightness test PASS'"
 					/>
@@ -243,12 +288,14 @@
 					<q-btn
 						flat
 						color="negative"
+						size="xl"
 						label="Fail"
 						@click="test['brightness'] = 'Brightness test FAIL'"
 					/>
 					<q-btn
 						flat
 						color="positive"
+						size="xl"
 						label="Pass"
 						@click="test['brightness'] = 'Brightness test PASS'"
 					/>
@@ -273,9 +320,10 @@
 				<q-card-section class="center" v-else>
 					<div>Wait...</div>
 				</q-card-section>
+				<pre v-show="false">{{ win }}</pre>
 				<q-card-actions align="right" id="actionWindows" v-show="win.actived">
-					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn flat color="negative" size="xl" label="Fail" @click="action = 'FAIL'" />
+					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.battery">
@@ -296,6 +344,7 @@
 					<q-btn
 						flat
 						color="negative"
+						size="xl"
 						label="Fail"
 						@click="action = 'FAIL'"
 						v-if="battery.Status != 'fail'"
@@ -303,6 +352,7 @@
 					<q-btn
 						flat
 						color="positive"
+						size="xl"
 						label="Pass"
 						@click="action = 'PASS'"
 						v-if="battery.Status != 'fail'"
@@ -321,12 +371,14 @@
 					<q-btn
 						flat
 						color="negative"
+						size="xl"
 						label="Fail"
 						@click="test['mousepad'] = 'Mouse pad test FAIL'"
 					/>
 					<q-btn
 						flat
 						color="positive"
+						size="xl"
 						label="Pass"
 						@click="test['mousepad'] = 'Mouse pad test PASS'"
 					/>
@@ -360,8 +412,20 @@
 					<!-- <q-checkbox left-label v-model="hotkey.speakers" label="Speackers" /> -->
 				</q-card-section>
 				<q-card-actions align="right" id="actionHotKey">
-					<q-btn flat color="negative" label="Fail" @click="test['hotKey'] = 'HotKeys test FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="test['hotKey'] = 'HotKeys test PASS'" />
+					<q-btn
+						flat
+						color="negative"
+						size="xl"
+						label="Fail"
+						@click="test['hotKey'] = 'HotKeys test FAIL'"
+					/>
+					<q-btn
+						flat
+						color="positive"
+						size="xl"
+						label="Pass"
+						@click="test['hotKey'] = 'HotKeys test PASS'"
+					/>
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.components">
@@ -447,7 +511,7 @@
 					<q-input v-model="form.adapter" type="number" label="Adapter/PowerSupply" />
 				</q-card-section>
 				<q-card-actions align="right" id="actionDesktop">
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.note">
@@ -458,7 +522,7 @@
 					<q-input v-model="form.note" label="Note" />
 				</q-card-section>
 				<q-card-actions align="right" id="actionNote">
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.information">
@@ -528,7 +592,7 @@
 					/>
 				</q-card-section>
 				<q-card-actions align="right" id="actionInformation">
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.gpu">
@@ -584,8 +648,8 @@
 					<div>Wait...</div>
 				</q-card-section>
 				<q-card-actions align="right" id="actionGPU" v-show="myGpu.length">
-					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn flat color="negative" size="xl" label="Fail" @click="action = 'FAIL'" />
+					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.done">
@@ -655,8 +719,8 @@
 					</div>
 				</q-card-section>
 				<q-card-actions align="right" id="actionStorage">
-					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn flat color="negative" size="xl" label="Fail" @click="action = 'FAIL'" />
+					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-dialog v-model="msn.active" persistent transition-show="scale" transition-hide="scale">
@@ -830,7 +894,9 @@
 				},
 				showActions: false,
 				GPUIntegrated: '',
-				win: {},
+				win: {
+					actived: false,
+				},
 				intDev: {},
 				getDev: {},
 				driver: {
@@ -1162,7 +1228,7 @@
 				return `
 		       CTL Windows Test - ${this.$env.version} - ${this.select.TenantName}
 		       Operator ID: ${this.select.operator}
-		       Operator Name:${this.user.usuario}
+		       Operator Name:${this.select.user}
 		       Start Date: ${this.test.Date}
 		       Start Time: ${this.test.startTime}
 		       End Date: ${lastdate.date}
@@ -1472,6 +1538,7 @@
 				console.log('SI: ', this.si)
 				this.test.touchScreen =
 					this.device.brand == 'HP' ? this.partsurfer.Display.TouchScreen : 'NO'
+				await this.$cmd.executeScriptCode(`Start-Process "devmgmt.msc"`)
 				await this.simpleTest('Information')
 
 				/* if (this.intDev.video.length) {
@@ -1509,7 +1576,7 @@
 					this.activate.camera = false
 				}
 
-				this.win = await this.win
+				this.win = { ...(await this.win), actived: false }
 				localStorage.setItem('dpk', this.win.keyWindows)
 				await this.testWindows()
 				await this.testDisk()
@@ -1795,7 +1862,7 @@
 				}
 			},
 			async testWindows() {
-				this.win.actived = false
+				//this.win.actived = false
 				this.$q.loading.show({
 					message:
 						'Obtaining <b>DPK</b> status.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
@@ -1851,6 +1918,7 @@
 									await this.$cmd.executeScriptCode(ndpk)
 									this.$q.loading.hide()
 									this.testWindows()
+									this.win.actived = true
 
 									if (this.infoTest.DPKRetry) {
 										this.win.fail = await this.failDPK()
@@ -1867,10 +1935,11 @@
 							this.win.licenseDetails = iny.message
 							let sDPK = await this.statusDPK()
 							console.log('sDPK: ', sDPK)
-							await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`)
 						}
 					}
-				} else this.win.actived = true
+				}
+				this.win.actived = true
+				await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`)
 				await this.espera('actionWindows')
 				this.info = { ...this.info, ...this.win }
 				this.activate.windows = false
@@ -2171,6 +2240,7 @@
 			async espera(a) {
 				return new Promise((resolve) => {
 					let cardActions = document.querySelector(`#${a}`)
+					console.log('cardActions: ', cardActions)
 					let clickHandler = (event) => {
 						let target = event.target
 
@@ -2186,6 +2256,7 @@
 						let targetText = target.innerText.toUpperCase()
 
 						// Comparar el texto en mayúsculas
+						console.log('targetText: ', targetText, target)
 						if (targetText.includes('PASS') || targetText === 'FAIL') {
 							cardActions.removeEventListener('click', clickHandler)
 							resolve()
