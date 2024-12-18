@@ -529,70 +529,139 @@
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Information</div> </q-card-section><q-separator />
 				</q-card-section>
-				<q-card-section class="center">
+				<q-card-section class="row col center">
 					<ColorSelect
+						class="col-6"
 						:partsurfer="partsurfer"
 						@color-selected="handleColorSelected"
 						@form-generated="resetForm"
 						:brand="device.brand"
 					/>
-				</q-card-section>
-				<q-separator />
-				<q-card-section class="center">
-					<div></div>
 					<q-checkbox
 						size="xl"
+						class="col-6"
 						v-model="test.touchScreen"
 						true-value="YES"
 						false-value="NO"
 						label="Touch Me"
 					/>
-					<q-checkbox
-						size="xl"
-						v-model="test.WWAN"
-						true-value="YES"
-						false-value="NO"
-						label="WWAN"
-					/>
-					<q-checkbox
-						size="xl"
-						v-model="componentes.Keyboard.Privacy"
-						true-value="YES"
-						false-value="NO"
-						label="Privacy"
-					/>
-					<q-checkbox size="xl" v-model="test.NFC" true-value="YES" false-value="NO" label="NFC" />
-					<q-checkbox
-						size="xl"
-						v-model="test.SmartCard"
-						true-value="YES"
-						false-value="NO"
-						label="Smart Card"
-					/>
-					<q-checkbox
-						size="xl"
-						v-model="componentes.Keyboard.Backlight"
-						true-value="YES"
-						false-value="NO"
-						label="Backlight"
-					/>
-					<q-checkbox
-						size="xl"
-						v-model="componentes.Keyboard.RGB"
-						true-value="YES"
-						false-value="NO"
-						label="RGB Keyboard"
-					/>
-					<q-checkbox
-						size="xl"
-						v-model="test.Fingerprint"
-						true-value="YES"
-						false-value="NO"
-						label="Fingerprint"
-					/>
 				</q-card-section>
-				<q-card-actions align="right" id="actionInformation">
-					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
+				<q-separator />
+				<q-card-section class="center">
+					<div v-show="this.myDb.TYPE != 'BTO'">
+						<q-checkbox
+							size="xl"
+							v-model="test.WWAN"
+							true-value="YES"
+							false-value="NO"
+							label="WWAN"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="test.WLAN"
+							true-value="YES"
+							false-value="NO"
+							label="WLAN"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="componentes.Keyboard.Privacy"
+							true-value="YES"
+							false-value="NO"
+							label="Privacy"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="test.NFC"
+							true-value="YES"
+							false-value="NO"
+							label="NFC"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="test.SmartCard"
+							true-value="YES"
+							false-value="NO"
+							label="Smart Card"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="componentes.Keyboard.Backlight"
+							true-value="YES"
+							false-value="NO"
+							label="Backlight"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="componentes.Keyboard.RGB"
+							true-value="YES"
+							false-value="NO"
+							label="RGB Keyboard"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="test.Fingerprint"
+							true-value="YES"
+							false-value="NO"
+							label="Fingerprint"
+						/>
+					</div>
+				</q-card-section>
+				<q-card-section>
+					<q-card-section> <div class="text-h6">HotKey</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center">
+					<b>You need to test the Hotkeys</b>
+					<div class="q-gutter-sm row col-6">
+						<q-checkbox size="xl" v-model="hotKey.mic" val="80px" label="Mic" />
+						<q-checkbox size="xl" v-model="hotKey.speakers" val="80x" label="Speakers" />
+						<q-checkbox size="xl" v-model="hotKey.brights" val="80px" label="Brightness" />
+						<q-checkbox
+							size="150px"
+							v-model="hotKey.privacy"
+							val="80px"
+							label="Privacy"
+							v-if="componentes.Keyboard.Privacy == 'YES'"
+						/>
+						<!-- <q-checkbox
+							size="150px"
+							v-model="componentes.Keyboard.Privacy"
+							val="80px"
+							label="Privacy"
+							v-if="componentes.Keyboard.Privacy == 'YES'"
+						/> -->
+					</div>
+					<!-- <q-checkbox left-label v-model="hotkey.speakers" label="Speackers" /> -->
+				</q-card-section>
+				<q-card-section>
+					<div class="row items-center no-wrap">
+						<div class="col">
+							<div class="text-h6">Drivers Test</div>
+						</div>
+						<div class="col-auto">
+							<q-btn
+								round
+								color="primary"
+								icon="restart_alt"
+								@click="$cmd.executeScriptCode(drivers)"
+							/>
+						</div>
+					</div>
+				</q-card-section>
+				<q-separator />
+				<q-card-section class="center">
+					Is the Drivers and Video working?
+					<div>Driver: {{ driver.status }}</div>
+					<div>Video: {{ driver.video ? 'PASS' : 'FAIL' }}</div>
+					<q-list bordered v-if="driver.missingDrivers.length">
+						<q-item v-for="(d, k) in driver.missingDrivers" :key="k">
+							<q-item-section>{{ d }}</q-item-section>
+						</q-item>
+					</q-list>
+				</q-card-section>
+
+				<q-card-actions align="left" id="actionInformation">
+					<q-btn flat color="positive" size="xl" label="Next" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.gpu">
@@ -1353,6 +1422,8 @@
 					this.bios && this.bios.components.Privacy ? this.bios.components.Privacy : data.Privacy
 				this.test['WWAN'] =
 					this.bios && this.bios.components.WWAN ? this.bios.components.WWAN : 'NO'
+				this.test['WLAN'] =
+					this.bios && this.bios.components.WLAN ? this.bios.components.WLAN : 'NO'
 				this.test.NFC = this.bios && this.bios.components.NFC ? this.bios.components.NFC : 'NO'
 				this.test.Fingerprint =
 					this.bios && this.bios.Fingerprint
@@ -1540,11 +1611,21 @@
 					this.device.brand == 'HP' ? this.partsurfer.Display.TouchScreen : 'NO'
 				await this.$cmd.executeScriptCode(`Start-Process "devmgmt.msc"`)
 				await this.simpleTest('Information')
-
+				this.test['hotKey'] = 'HotKeys test PASS'
+				this.test['drivers'] = 'Drivers test PASS'
+				this.test['drivers'] =
+					this.driver.status == 'PASS'
+						? 'Device Manager Drivers Test PASS'
+						: 'Device Manager Drivers Test FAIL'
+				this.test['display'] = this.driver.video
+					? 'Display Adapter Drivers Test PASS'
+					: 'Display Adapter Drivers Test FAIL'
+				this.activate.drivers = false
 				/* if (this.intDev.video.length) {
 						await this.testGPU()
 					} */
-				await this.$cmd.executeScriptCode(`Start-Process "devmgmt.msc"`)
+				//Drivers
+				/* await this.$cmd.executeScriptCode(`Start-Process "devmgmt.msc"`)
 				this.activate.drivers = true
 				await this.espera('actionDrivers')
 				this.test['drivers'] =
@@ -1554,7 +1635,7 @@
 				this.test['display'] = this.driver.video
 					? 'Display Adapter Drivers Test PASS'
 					: 'Display Adapter Drivers Test FAIL'
-				this.activate.drivers = false
+				this.activate.drivers = false */
 
 				if (this.type == 'laptop') {
 					await this.testLaptopSpecifics()
@@ -1835,9 +1916,10 @@
 				/*  */
 				if (this.type == 'laptop') {
 					await this.simpleTest('Mic')
-					this.activate.hotKey = true
+					//HotKey
+					/* this.activate.hotKey = true
 					await this.espera('actionHotKey')
-					this.activate.hotKey = false
+					this.activate.hotKey = false */
 					await this.simpleTest('Keyboard')
 				}
 				this.test['spotLights'] =
@@ -2241,28 +2323,29 @@
 				return new Promise((resolve) => {
 					let cardActions = document.querySelector(`#${a}`)
 					console.log('cardActions: ', cardActions)
+
 					let clickHandler = (event) => {
-						let target = event.target
+						// Asegúrate de capturar solo los clics en el botón
+						let target = event.target.closest('.q-btn') // Filtrar solo por clase 'q-btn'
+
+						if (!target) return // Si no es un botón, salimos
 
 						// Verificar si el botón tiene el atributo 'disable'
-						if (target.hasAttribute('disable')) {
-							// Si el botón tiene el atributo 'disable' pero está habilitado (disable es falso), hacer el proceso
-							if (target.disabled) {
-								// Si está deshabilitado, no hacemos nada
-								return
-							}
+						if (target.hasAttribute('disable') && target.disabled) {
+							return // No hacemos nada si el botón está deshabilitado
 						}
-						// Convertir el texto del target a mayúsculas para la comparación
+
+						// Convertir el texto del botón a mayúsculas para comparación
 						let targetText = target.innerText.toUpperCase()
 
 						// Comparar el texto en mayúsculas
-						console.log('targetText: ', targetText, target)
-						if (targetText.includes('PASS') || targetText === 'FAIL') {
+						if (targetText.includes('PASS') || targetText === 'NEXT' || targetText === 'FAIL') {
 							cardActions.removeEventListener('click', clickHandler)
 							resolve()
 						}
 					}
 
+					// Asignar el event listener
 					cardActions.addEventListener('click', clickHandler)
 				})
 			},
