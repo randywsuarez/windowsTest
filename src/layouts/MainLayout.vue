@@ -242,7 +242,7 @@
 					let data = await this.$db.funcAdmin('modules/ispt/obtainTenants', {
 						token: info.authToken,
 					})
-					if (data.length) return { status: 'OK' }
+					if (Array.isArray(data)) return { status: 'OK' }
 					else return { status: 'FAIL' }
 					/* const options = {
 							method: 'GET',
