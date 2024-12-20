@@ -12,9 +12,10 @@ export default {
 	},
 
 	project: {
-		db: 'CTLShopFloorDB_Testing',
+		db: 'CTLShopFloorDB_Prod',
 		url: 'https://ctlshopfloorprod.azurewebsites.net/api',
 	},
+
 	mongodb: {
 		server: 'http://10.20.0.2:4700/api',
 		public: 'http://192.168.0.2:4700/api',

@@ -257,50 +257,6 @@
 					/>
 				</q-card-actions>
 			</q-card>
-			<q-card class="card" v-show="activate.drivers">
-				<q-card-section>
-					<div class="row items-center no-wrap">
-						<div class="col">
-							<div class="text-h6">Drivers Test</div>
-						</div>
-						<div class="col-auto">
-							<q-btn
-								round
-								color="primary"
-								icon="restart_alt"
-								@click="$cmd.executeScriptCode(drivers)"
-							/>
-						</div>
-					</div>
-				</q-card-section>
-				<q-separator />
-				<q-card-section class="center">
-					Is the Drivers and Video working?
-					<div>Driver: {{ driver.status }}</div>
-					<div>Video: {{ driver.video ? 'PASS' : 'FAIL' }}</div>
-					<q-list bordered v-if="driver.missingDrivers.length">
-						<q-item v-for="(d, k) in driver.missingDrivers" :key="k">
-							<q-item-section>{{ d }}</q-item-section>
-						</q-item>
-					</q-list>
-				</q-card-section>
-				<q-card-actions align="right" id="actionDrivers">
-					<q-btn
-						flat
-						color="negative"
-						size="xl"
-						label="Fail"
-						@click="test['brightness'] = 'Brightness test FAIL'"
-					/>
-					<q-btn
-						flat
-						color="positive"
-						size="xl"
-						label="Pass"
-						@click="test['brightness'] = 'Brightness test PASS'"
-					/>
-				</q-card-actions>
-			</q-card>
 			<q-card class="card" v-show="activate.windows">
 				<q-card-section>
 					<div class="row items-center no-wrap">
@@ -381,50 +337,6 @@
 						size="xl"
 						label="Pass"
 						@click="test['mousepad'] = 'Mouse pad test PASS'"
-					/>
-				</q-card-actions>
-			</q-card>
-			<q-card class="card" v-show="activate.hotKey">
-				<q-card-section>
-					<q-card-section> <div class="text-h6">HotKey</div> </q-card-section><q-separator />
-				</q-card-section>
-				<q-card-section class="center">
-					<b>You need to test the Hotkeys</b>
-					<div class="q-gutter-sm row col-6">
-						<q-checkbox size="150px" v-model="hotKey.mic" val="80px" label="Mic" />
-						<q-checkbox size="150px" v-model="hotKey.speakers" val="80x" label="Speakers" />
-						<q-checkbox size="150px" v-model="hotKey.brights" val="80px" label="Brightness" />
-						<q-checkbox
-							size="150px"
-							v-model="hotKey.privacy"
-							val="80px"
-							label="Privacy"
-							v-if="componentes.Keyboard.Privacy == 'YES'"
-						/>
-						<!-- <q-checkbox
-							size="150px"
-							v-model="componentes.Keyboard.Privacy"
-							val="80px"
-							label="Privacy"
-							v-if="componentes.Keyboard.Privacy == 'YES'"
-						/> -->
-					</div>
-					<!-- <q-checkbox left-label v-model="hotkey.speakers" label="Speackers" /> -->
-				</q-card-section>
-				<q-card-actions align="right" id="actionHotKey">
-					<q-btn
-						flat
-						color="negative"
-						size="xl"
-						label="Fail"
-						@click="test['hotKey'] = 'HotKeys test FAIL'"
-					/>
-					<q-btn
-						flat
-						color="positive"
-						size="xl"
-						label="Pass"
-						@click="test['hotKey'] = 'HotKeys test PASS'"
 					/>
 				</q-card-actions>
 			</q-card>
@@ -538,6 +450,7 @@
 						:brand="device.brand"
 					/>
 					<q-checkbox
+						v-show="type == 'laptop' || type == 'all-in-one'"
 						size="xl"
 						class="col-6"
 						v-model="test.touchScreen"
@@ -548,7 +461,7 @@
 				</q-card-section>
 				<q-separator />
 				<q-card-section class="center">
-					<div v-show="this.myDb.TYPE != 'BTO'">
+					<div v-show="this.myDb.TYPE != 'BTO' && type == 'laptop'">
 						<q-checkbox
 							size="xl"
 							v-model="test.WWAN"
@@ -610,7 +523,7 @@
 				<q-card-section>
 					<q-card-section> <div class="text-h6">HotKey</div> </q-card-section><q-separator />
 				</q-card-section>
-				<q-card-section class="center">
+				<q-card-section class="center" v-show="type == 'laptop'">
 					<b>You need to test the Hotkeys</b>
 					<div class="q-gutter-sm row col-6">
 						<q-checkbox size="xl" v-model="hotKey.mic" val="80px" label="Mic" />
@@ -623,15 +536,7 @@
 							label="Privacy"
 							v-if="componentes.Keyboard.Privacy == 'YES'"
 						/>
-						<!-- <q-checkbox
-							size="150px"
-							v-model="componentes.Keyboard.Privacy"
-							val="80px"
-							label="Privacy"
-							v-if="componentes.Keyboard.Privacy == 'YES'"
-						/> -->
 					</div>
-					<!-- <q-checkbox left-label v-model="hotkey.speakers" label="Speackers" /> -->
 				</q-card-section>
 				<q-card-section>
 					<div class="row items-center no-wrap">
@@ -668,7 +573,6 @@
 				<q-card-section>
 					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
 				</q-card-section>
-				<pre>{{ myGpu }}</pre>
 				<q-card-section class="center" v-if="myGpu.length">
 					<q-checkbox
 						size="150px"
@@ -768,21 +672,8 @@
 
 								<q-item-section>
 									<q-item-label>{{ disk.name }}</q-item-label>
-									<!-- <q-item-label caption>{{ disk.totalSpace }}</q-item-label> -->
 									<q-item-label caption>{{ disk.description }}</q-item-label>
 								</q-item-section>
-
-								<!--
-        <q-item-section>
-          <q-item-label>{{ disk.name }}</q-item-label>
-          <q-item-label caption>{{ disk.freeSpace }} free of {{ disk.totalSpace }}</q-item-label>
-          <q-linear-progress :value="calculatePercentage(disk.free, disk.total)" color="primary" rounded />
-        </q-item-section>
-        -->
-
-								<!-- <q-item-section side>
-									<q-btn flat icon="delete" color="negative" @click="formatDisk(disk.device)" />
-								</q-item-section> -->
 							</q-item>
 						</q-list>
 					</div>
@@ -833,21 +724,6 @@
 					</q-card-actions>
 				</q-card>
 			</q-dialog>
-			<!--
-			<q-dialog v-model="winChange" class="login-card" persistent>
-				<q-card class="bg-white text-dark q-pa-md" style="max-width: 400px">
-					<q-card-section class="text-center">
-						<q-icon name="error" color="negative" size="40px" />
-						<div class="text-h6 q-mt-md">Failed to change the DPK</div>
-						<p>Please click retry or call your supervisor</p>
-					</q-card-section>
-
-					<q-card-actions align="center">
-						<q-btn color="negative" label="Retry" @click="retryAction" />
-					</q-card-actions>
-				</q-card>
-			</q-dialog>
-      -->
 		</div>
 	</q-page>
 </template>
@@ -1212,15 +1088,10 @@
 							title: 'Alert<em>!</em>',
 							message: `<em>Error: </em> <span class="text-red">${result.errorMessage}.</span> <strong> Talk to your supervisor.</strong>`,
 							html: true,
+							persistent: true,
 						})
 						.onOk(async () => {
 							await this.verifyDPK()
-						})
-						.onCancel(() => {
-							// console.log('Cancel')
-						})
-						.onDismiss(() => {
-							// console.log('I am triggered on both OK and Cancel')
 						})
 				}
 				return result
@@ -1621,22 +1492,6 @@
 					? 'Display Adapter Drivers Test PASS'
 					: 'Display Adapter Drivers Test FAIL'
 				this.activate.drivers = false
-				/* if (this.intDev.video.length) {
-						await this.testGPU()
-					} */
-				//Drivers
-				/* await this.$cmd.executeScriptCode(`Start-Process "devmgmt.msc"`)
-				this.activate.drivers = true
-				await this.espera('actionDrivers')
-				this.test['drivers'] =
-					this.driver.status == 'PASS'
-						? 'Device Manager Drivers Test PASS'
-						: 'Device Manager Drivers Test FAIL'
-				this.test['display'] = this.driver.video
-					? 'Display Adapter Drivers Test PASS'
-					: 'Display Adapter Drivers Test FAIL'
-				this.activate.drivers = false */
-
 				if (this.type == 'laptop') {
 					await this.testLaptopSpecifics()
 				}
@@ -1769,54 +1624,6 @@
 				console.log('Select: ', this.select)
 				return infoUnit[0]
 			},
-			async getProjectInfoOld(serial) {
-				let res = ''
-				for (let x of this.$env.project) {
-					let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
-
-					const options = {
-						method: 'POST',
-						headers: {
-							tenant: `${this.select.TenantName}`,
-							Authorization: `Bearer ${this.select.authToken}`,
-						},
-					}
-					let status = await this.$db
-						.funcAdmin('modules/ispt/statusStation', {
-							options,
-							Serial: this.test.Serial,
-							Project: this.select.TenantName,
-							System: this.$env.project.url,
-						})
-						.then((v) => {
-							return v
-						})
-						.catch((err) => {
-							console.error(err)
-							return err
-						})
-					res = await this.$rsDB(x.db)
-						.select('SerialNumber, ArrivedSKU, StationID, SKU, TenantId')
-						.from('WorkTracking')
-						.where(`SerialNumber = '${serial}'`)
-						.execute()
-					if (res.length) {
-						this.project = {
-							...this.project,
-							Station: res[0].StationID,
-							TenantId: res[0].TenantId,
-							id: x.id,
-							db: x.db,
-							operator: u.id,
-							user: u.user,
-						}
-						this.select = { ...x, ...u }
-						//console.log('Select: ', this.select)
-						return res[0]
-					}
-				}
-				return null
-			},
 			showNotification(title, message) {
 				this.msn = { title, message, active: true }
 			},
@@ -1848,26 +1655,28 @@
 				if (itemsNotSet.length > 0) {
 					this.activate.components = true
 					await this.espera('actionComponents')
-					this.$q.dialog({
-						title: 'BIOS Settings',
-						message: `The following BIOS settings need to be adjusted:\n\n${itemsNotSet.join(
-							', ',
-						)}`,
-						persistent: true,
-						color: 'red',
-						ok: {
-							label: 'Restart',
-							handler: () => {
-								this.$cmd.executeScriptCode(`shutdown -s -t 2`)
+					let vm = this
+					this.$q
+						.dialog({
+							title: 'BIOS Settings',
+							message: `The following BIOS settings need to be adjusted:\n\n${itemsNotSet.join(
+								', ',
+							)}`,
+							persistent: true,
+							color: 'red',
+							ok: {
+								label: 'Restart',
 							},
-						},
-					})
+						})
+						.onOk(async () => {
+							console.info(`shutdown /s /t 2`)
+							await vm.$cmd.executeScriptCode(`shutdown -s -t 2`)
+						})
 				} else {
 					this.test['components'] = 'Components test PASS'
 				}
 			},
 			async testLaptopSpecifics() {
-				//this.activate.battery = true
 				let battery = await this.si.battery
 				battery['Status'] =
 					battery.maxCapacity == 0
@@ -1892,13 +1701,12 @@
 				this.info = { ...this.info, battery }
 				this.battery = battery
 				await this.simpleTest('Battery')
-				/* await this.espera('actionBattery')
-					this.activate.battery = false */
 				this.activate.mousepad = true
 				await this.espera('actionMousePad')
 				this.activate.mousepad = false
 				if (this.device.brand == 'HP') {
 					await this.checkBiosItems()
+					await this.espera('actionComponents')
 					this.activate.components = false
 				}
 			},
@@ -1916,17 +1724,12 @@
 				/*  */
 				if (this.type == 'laptop') {
 					await this.simpleTest('Mic')
-					//HotKey
-					/* this.activate.hotKey = true
-					await this.espera('actionHotKey')
-					this.activate.hotKey = false */
 					await this.simpleTest('Keyboard')
 				}
 				this.test['spotLights'] =
 					(await this.$cmd.executeScriptCode(spotLights)).result == 'PASS'
 						? 'Spot Lights Test PASS'
 						: 'Spot Lights Test FAIL'
-				//this.test['touchScreen'] = (await this.$cmd.executeScriptCode(touchScreen)).result
 			},
 			async checkCameraAvailability() {
 				if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -1960,6 +1763,22 @@
 					})
 
 					this.$q.loading.hide()
+					if (!this.win.hasOwnProperty('keyWindows')) {
+						this.$db.funcAdmin('modules/ispt/issueReport', {
+							title: 'No DPK',
+							message: `DPK for ${this.device.Serial} is not available.`,
+						})
+						this.$q
+							.dialog({
+								title: 'Alert<em>!</em>',
+								message: `<em>Error: </em> <span class="text-red">the device needs DPK.</span> <strong> Talk to your supervisor.</strong>`,
+								html: true,
+								persistent: true,
+							})
+							.onOk(async () => {
+								await this.testWindows()
+							})
+					}
 
 					// Verificar si hay DPK
 					if (this.infoTest.DPK) {
@@ -2106,43 +1925,60 @@
 			},
 
 			async testGPU() {
-				if (this.myGpu.length) {
-					this.activate.gpu = true
-					const dedicatedGPUs = this.intDev.video.filter((v) => v.Type === 'Dedicated')
-					const integratedGPUs = this.intDev.video.filter((v) => v.Type === 'Integrated')
+				this.myGpu = await this.myGpu
+				console.log('Initial state:', { myGpu: this.myGpu, intDevVideo: this.intDev.video })
 
-					// Procesar GPUs dedicadas
-					if (dedicatedGPUs.some((obj) => obj.AdapterRAM.includes('4'))) {
-						this.myGpu = await this.myGpu
-
-						this.intDev.video = this.intDev.video.map((objA) => {
-							const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
-							return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
-						})
-					} else {
-						this.myGpu = dedicatedGPUs
-					}
-
-					// Asignar valores para GPUs dedicadas
-					const dedicatedGPUInfoArray = await this.GPUInfo(this.myGpu)
-					if (dedicatedGPUInfoArray.GPU != null) {
-						this.myDb.GPU = dedicatedGPUInfoArray.GPU
-						this.myDb.GPU_RAM = dedicatedGPUInfoArray.RAM_GPU
-					} else {
-						this.myDb.GPU = ''
-						this.myDb.GPU_RAM = ''
-					}
-					// Procesar GPUs integradas
-					const integratedGPUInfo = await this.IntegratedGPUInfo(integratedGPUs)
-					this.GPUIntegrated = integratedGPUInfo || ''
-
-					await this.espera('actionGPU')
-					if (this.type == 'desktop' && this.noGPU) {
-						this.myDb.GPU = ''
-						this.myDb.GPU_RAM = ''
-					}
-					this.activate.gpu = false
+				if (!this.myGpu || !this.myGpu.length) {
+					console.error('myGpu is empty or not defined:', this.myGpu)
+					return
 				}
+
+				this.activate.gpu = true
+
+				const dedicatedGPUs = this.intDev.video.filter((v) => v.Type === 'Dedicated')
+				const integratedGPUs = this.intDev.video.filter((v) => v.Type === 'Integrated')
+				console.log('Dedicated GPUs:', dedicatedGPUs)
+				console.log('Integrated GPUs:', integratedGPUs)
+
+				if (dedicatedGPUs.some((obj) => obj.AdapterRAM && obj.AdapterRAM.includes('4'))) {
+					console.log('Resolving myGpu as a Promise:', this.myGpu)
+					this.myGpu = await this.myGpu
+					console.log('Resolved myGpu:', this.myGpu)
+
+					this.intDev.video = this.intDev.video.map((objA) => {
+						const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
+						console.log('Matching object:', { objA, matchB })
+						return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
+					})
+				} else {
+					this.myGpu = dedicatedGPUs
+				}
+
+				const dGPUInfoArray = await this.GPUInfo(this.myGpu)
+				console.log('GPUInfo result:', dGPUInfoArray)
+
+				this.myDb.GPU = dGPUInfoArray.GPU || ''
+				this.myDb.GPU_RAM = dGPUInfoArray.RAM_GPU || ''
+
+				const iGPUInfo = await this.IntegratedGPUInfo(integratedGPUs)
+				this.GPUIntegrated = iGPUInfo || ''
+				console.log('IntegratedGPUInfo result:', iGPUInfo)
+
+				await this.espera('actionGPU')
+				console.log('Finished espera("actionGPU")')
+
+				if (this.type === 'desktop' && this.noGPU) {
+					console.log('Setting GPU and GPU_RAM to empty for desktop with no GPU')
+					this.myDb.GPU = ''
+					this.myDb.GPU_RAM = ''
+				}
+
+				this.activate.gpu = false
+				console.log('Final state:', {
+					myGpu: this.myGpu,
+					intDevVideo: this.intDev.video,
+					myDb: this.myDb,
+				})
 			},
 			async saveComponents() {
 				this.componentes = {
@@ -2373,7 +2209,6 @@
 			async espera(a) {
 				return new Promise((resolve) => {
 					let cardActions = document.querySelector(`#${a}`)
-					console.log('cardActions: ', cardActions)
 
 					let clickHandler = (event) => {
 						// Asegúrate de capturar solo los clics en el botón
@@ -2563,52 +2398,101 @@
 				console.error('Error during beforeCreate:', error)
 			}
 		},
+		clearLocalStorage() {
+			localStorage.removeItem('infoSystem')
+			localStorage.removeItem('iTest')
+			localStorage.removeItem('intDev')
+			localStorage.removeItem('componentes')
+			localStorage.removeItem('datetime')
+			localStorage.removeItem('driver')
+		},
 		async mounted() {
-			this.$q.loading.show({
-				message:
-					'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
-			})
-			console.log('Begin System Information...')
-			this.win = this.$cmd.executeScriptCode(sWin)
-			if (!localStorage.getItem('infoSystem')) {
-				let [is, it, id, cp, dt, dr] = await Promise.all([
-					this.$system(),
-					this.$cmd.executeScriptCode(imaging),
-					this.$cmd.executeScriptCode(intenalDevices),
-					this.$cmd.executeScriptCode(components),
-					this.DateTime(),
-					this.$cmd.executeScriptCode(drivers),
-				])
-				console.log('End System Information...')
-				this.infoSystem = is
-				this.iTest = it
-				this.intDev = id
-				this.componentes = cp
-				this.datetime = dt
-				this.driver = dr
-				localStorage.setItem('infoSystem', JSON.stringify(this.infoSystem))
-				localStorage.setItem('iTest', JSON.stringify(this.iTest))
-				localStorage.setItem('intDev', JSON.stringify(this.intDev))
-				localStorage.setItem('componentes', JSON.stringify(this.componentes))
-				localStorage.setItem('datetime', JSON.stringify(this.datetime))
-				localStorage.setItem('driver', JSON.stringify(this.driver))
-			} else {
-				this.infoSystem = JSON.parse(localStorage.getItem('infoSystem'))
-				this.iTest = JSON.parse(localStorage.getItem('iTest'))
-				this.intDev = JSON.parse(localStorage.getItem('intDev'))
-				this.componentes = JSON.parse(localStorage.getItem('componentes'))
-				this.datetime = JSON.parse(localStorage.getItem('datetime'))
-				this.driver = JSON.parse(localStorage.getItem('driver'))
+			try {
+				this.$q.loading.show({
+					message:
+						'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
+				})
+
+				console.log('Begin System Information...')
+
+				// Initialize the win variable
+				this.win = this.$cmd.executeScriptCode(sWin)
+
+				if (!localStorage.getItem('infoSystem')) {
+					try {
+						// Execute all promises concurrently
+						let [is, it, id, cp, dt, dr] = await Promise.all([
+							this.$system(),
+							this.$cmd.executeScriptCode(imaging),
+							this.$cmd.executeScriptCode(intenalDevices),
+							this.$cmd.executeScriptCode(components),
+							this.DateTime(),
+							this.$cmd.executeScriptCode(drivers),
+						])
+
+						console.log('End System Information...')
+
+						// Assign results to variables
+						this.infoSystem = is
+						this.iTest = it
+						this.intDev = id
+						this.componentes = cp
+						this.datetime = dt
+						this.driver = dr
+
+						// Save results to localStorage
+						localStorage.setItem('infoSystem', JSON.stringify(this.infoSystem))
+						localStorage.setItem('iTest', JSON.stringify(this.iTest))
+						localStorage.setItem('intDev', JSON.stringify(this.intDev))
+						localStorage.setItem('componentes', JSON.stringify(this.componentes))
+						localStorage.setItem('datetime', JSON.stringify(this.datetime))
+						localStorage.setItem('driver', JSON.stringify(this.driver))
+					} catch (error) {
+						console.error('Error during system information retrieval:', error)
+						this.clearLocalStorage()
+						throw error // Re-throw the error to handle it in the catch block below
+					}
+				} else {
+					// Load data from localStorage
+					this.infoSystem = JSON.parse(localStorage.getItem('infoSystem'))
+					this.iTest = JSON.parse(localStorage.getItem('iTest'))
+					this.intDev = JSON.parse(localStorage.getItem('intDev'))
+					this.componentes = JSON.parse(localStorage.getItem('componentes'))
+					this.datetime = JSON.parse(localStorage.getItem('datetime'))
+					this.driver = JSON.parse(localStorage.getItem('driver'))
+				}
+
+				// Perform GPU check if conditions are met
+				if (
+					this.intDev.video
+						.filter((v) => v.Type === 'Dedicated')
+						.some((obj) => obj.AdapterRAM.includes('4'))
+				) {
+					this.myGpu = this.$cmd.getDx({ Serial: this.infoSystem.system.serial })
+				}
+
+				console.log('Drivers: ', this.driver)
+
+				// Final validation
+				this.validation()
+			} catch (error) {
+				// Display error dialog using Quasar
+				this.$q.dialog({
+					title: 'Error',
+					message: `An error occurred during initialization: ${error.message}`,
+					persistent: true,
+					color: 'red',
+					ok: {
+						label: 'Retry',
+						handler: () => {
+							window.location.reload() // Reload the page to retry
+						},
+					},
+				})
+			} finally {
+				// Hide the loading spinner
+				this.$q.loading.hide()
 			}
-			if (
-				this.intDev.video
-					.filter((v) => v.Type === 'Dedicated')
-					.some((obj) => obj.AdapterRAM.includes('4'))
-			)
-				this.myGpu = this.$cmd.getDx({ Serial: this.infoSystem.system.serial })
-			console.log('Drivers: ', this.driver)
-			this.$q.loading.hide()
-			this.validation()
 		},
 	}
 </script>
