@@ -2,6 +2,9 @@
 	<div id="kb_box" style="min-height: 200px">
 		<div v-if="showStartModal" class="start-modal">
 			<button class="start-button" @click="startCapture">Start</button>
+			<div v-if="allKeysPressedMessage" class="success-message">
+				{{ allKeysPressedMessage }}
+			</div>
 		</div>
 		<div v-else>
 			<div id="kb_box_l">
@@ -10,6 +13,7 @@
 						v-for="key in row.keys"
 						:key="key.id"
 						:class="['kb_btn', key.size, key.class]"
+						:id="key.id"
 						:style="{ backgroundColor: key.color }"
 						@click="pressKey(key.id)"
 					>
@@ -27,6 +31,12 @@
 
 <script>
 	export default {
+		props: {
+			value: {
+				type: Boolean,
+				default: null, // Inicialmente no completado
+			},
+		},
 		data() {
 			return {
 				keyRows: [
@@ -628,6 +638,7 @@
 				],
 				showStartModal: true,
 				keydownSet: {},
+				allKeysPressedMessage: '',
 			}
 		},
 		methods: {
@@ -644,29 +655,43 @@
 						key.pressed = true
 						this.checkAllKeysPressed()
 					}
-					this.toggleKeyColor(key) // Call toggleKeyColor here
+					this.toggleKeyColor(key)
 				}
 			},
+
 			resetKeyboard() {
 				this.keyRows.forEach((row) => {
 					row.keys.forEach((key) => {
-						key.color = 'rgba(255, 255, 255, 0.1)'
+						this.$set(key, 'color', 'rgba(255, 255, 255, 0.1)')
+						key.pressed = false
 					})
 				})
-				this.keyRows.forEach((row) => row.keys.forEach((key) => (key.pressed = false)))
+				this.allKeysPressedMessage = ''
 				this.$emit('allKeysPressed', false)
 			},
+
 			checkAllKeysPressed() {
 				const allPressed = this.keyRows.every((row) => row.keys.every((key) => key.pressed))
-				this.$emit('allKeysPressed', allPressed)
+				if (allPressed) {
+					this.stopCapture()
+					this.allKeysPressedMessage = 'All keys pressed successfully!'
+					this.$emit('input', true) // Emit success
+				}
 			},
+
 			handleKeydown(event) {
-				console.log(`Keydown detected: ${event.code}`)
+				if (event.ctrlKey && event.code === 'Escape') {
+					this.stopCapture()
+					this.allKeysPressedMessage = 'Capture stopped manually!'
+					this.$emit('testCompleted', false) // Emit failure
+					return
+				}
 				event = event || window.event
 				const key = event.keyCode
 				if (this.keydownSet[key]) return
 				this.keydownSet[key] = true
 				event.preventDefault()
+
 				let keyId = `kb_btn_${event.code}`
 				if (event.code === 'Fn') {
 					keyId = event.location === 1 ? 'kb_btn_FnLeft' : 'kb_btn_FnRight'
@@ -675,6 +700,7 @@
 				}
 				this.pressKey(keyId)
 			},
+
 			handleKeyup(event) {
 				event = event || window.event
 				const key = event.keyCode
@@ -682,36 +708,52 @@
 					delete this.keydownSet[key]
 				}
 			},
+
 			addKeyboardListeners() {
 				window.addEventListener('keydown', this.handleKeydownBound, { capture: true })
 				window.addEventListener('keyup', this.handleKeyupBound, { capture: true })
 			},
+
 			removeKeyboardListeners() {
 				window.removeEventListener('keydown', this.handleKeydownBound, { capture: true })
 				window.removeEventListener('keyup', this.handleKeyupBound, { capture: true })
 			},
+
 			disableDefaultKeys(event) {
+				// Permitir Ctrl + Escape para detener la captura
+				if (event.ctrlKey && event.code === 'Escape') {
+					return
+				}
+				// Prevenir comportamiento predeterminado para otras teclas
 				event.preventDefault()
 			},
+
 			enableDefaultKeys() {
 				document.removeEventListener('keydown', this.disableDefaultKeys, { capture: true })
 			},
+
 			startCapture() {
-				console.log('Capture started')
 				this.showStartModal = false
 				document.addEventListener('keydown', this.disableDefaultKeys, { capture: true })
 				this.addKeyboardListeners()
+				this.allKeysPressedMessage = ''
 			},
+
 			stopCapture() {
 				this.showStartModal = true
 				this.removeKeyboardListeners()
-				this.enableDefaultKeys()
+				document.removeEventListener('keydown', this.disableDefaultKeys, { capture: true })
+				if (!this.allKeysPressedMessage) {
+					this.$emit('input', false) // Emit failure if not completed
+				}
 			},
 		},
+
 		created() {
 			this.handleKeydownBound = this.handleKeydown.bind(this)
 			this.handleKeyupBound = this.handleKeyup.bind(this)
 		},
+
 		beforeDestroy() {
 			this.removeKeyboardListeners()
 			this.enableDefaultKeys()

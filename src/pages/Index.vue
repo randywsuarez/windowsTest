@@ -1,11 +1,11 @@
 <template>
 	<div class="q-pa-md">
-		<q-btn label="Reset" push color="white" text-color="primary" @click="reset" class="q-mb-md" />
+		<q-btn label="Reset" push color="white" text-color="primary" @click="reset" class="q-mb-md" v />
 		<title>Components Test</title>
 
 		<q-stepper v-model="step" header-nav ref="stepper" color="green" animated>
 			<q-step :name="1" title="Keyboard Test" icon="keyboard" :done="stepTest.Keyboard">
-				<virtual-keyboard @allKeysPressed="handleAllKeysPressed"></virtual-keyboard>
+				<virtual-keyboard v-model="test.keyboard" />
 
 				<q-stepper-navigation>
 					<q-btn
@@ -70,6 +70,9 @@
 				step: 1,
 				stepTest: {
 					Keyboard: false,
+				},
+				test: {
+					keyboard: false,
 				},
 				done1: false,
 				done2: false,
