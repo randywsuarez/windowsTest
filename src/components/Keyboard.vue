@@ -1,8 +1,8 @@
 <template>
 	<div id="kb_box" style="min-height: 200px">
-		<div v-if="showStartModal" class="start-modal">
+		<div v-if="showStartModal" class="start-modal column justify-center items-center">
 			<button class="start-button" @click="startCapture">Start</button>
-			<div v-if="allKeysPressedMessage" class="success-message">
+			<div v-if="allKeysPressedMessage" class="success-message q-mt-md text-center">
 				{{ allKeysPressedMessage }}
 			</div>
 		</div>
@@ -21,15 +21,17 @@
 					</div>
 				</div>
 			</div>
-			<div id="kb_box_b">
-				<input type="button" @click="resetKeyboard" value="Reset" class="reset_kb_btn" />
-				<input type="button" @click="stopCapture" value="Stop" class="stop_kb_btn" />
+			<div id="kb_box_b" class="row justify-between q-pt-md">
+				<q-btn color="red" icon="close" label="Fail" @click="captureKeyboard('fail')" />
+				<q-btn color="primary" label="Reset" @click="resetKeyboard" />
+				<q-btn color="green" icon="check" label="Pass" @click="captureKeyboard('pass')" />
 			</div>
 		</div>
 	</div>
 </template>
 
 <script>
+	import html2canvas from 'html2canvas'
 	export default {
 		props: {
 			value: {
@@ -645,8 +647,8 @@
 			toggleKeyColor(key) {
 				const newColor = key.color === '#00FF00' ? '#FF0000' : '#00FF00'
 				this.$set(key, 'color', newColor)
+				this.saveStateToLocalStorage() // Save state after color change
 			},
-
 			pressKey(keyId) {
 				const row = this.keyRows.find((row) => row.keys.some((key) => key.id === keyId))
 				const key = row ? row.keys.find((k) => k.id === keyId) : null
@@ -658,7 +660,6 @@
 					this.toggleKeyColor(key)
 				}
 			},
-
 			resetKeyboard() {
 				this.keyRows.forEach((row) => {
 					row.keys.forEach((key) => {
@@ -667,23 +668,50 @@
 					})
 				})
 				this.allKeysPressedMessage = ''
-				this.$emit('allKeysPressed', false)
+				this.showStartModal = true
+				localStorage.removeItem('keyboardTestState')
+				this.saveStateToLocalStorage()
 			},
-
 			checkAllKeysPressed() {
 				const allPressed = this.keyRows.every((row) => row.keys.every((key) => key.pressed))
 				if (allPressed) {
-					this.stopCapture()
-					this.allKeysPressedMessage = 'All keys pressed successfully!'
-					this.$emit('input', true) // Emit success
+					this.captureKeyboard('pass')
+				}
+			},
+
+			captureKeyboard(status) {
+				const element = document.getElementById('kb_box')
+				if (element) {
+					html2canvas(element).then((canvas) => {
+						const base64Image = canvas.toDataURL('image/png')
+						const imageData = {
+							ext: 'png',
+							type: 'keyboard',
+							base64: base64Image,
+						}
+						const message = status === 'pass' ? 'Keyboard test PASS' : 'Keyboard test FAIL'
+						const result = {
+							status: status === 'pass',
+							image: imageData,
+							message: message,
+						}
+
+						// Guardar en localStorage
+						localStorage.setItem('keyboardTestState', JSON.stringify(result))
+
+						// Emitir al componente padre
+						this.$emit('input', result)
+
+						this.resetKeyboard()
+						this.showStartModal = true
+						this.allKeysPressedMessage = result.message
+					})
 				}
 			},
 
 			handleKeydown(event) {
 				if (event.ctrlKey && event.code === 'Escape') {
-					this.stopCapture()
-					this.allKeysPressedMessage = 'Capture stopped manually!'
-					this.$emit('testCompleted', false) // Emit failure
+					this.captureKeyboard('fail')
 					return
 				}
 				event = event || window.event
@@ -720,12 +748,9 @@
 			},
 
 			disableDefaultKeys(event) {
-				// Permitir Ctrl + Escape para detener la captura
 				if (event.ctrlKey && event.code === 'Escape') {
 					return
 				}
-				// Prevenir comportamiento predeterminado para otras teclas
-				event.preventDefault()
 			},
 
 			enableDefaultKeys() {
@@ -738,20 +763,32 @@
 				this.addKeyboardListeners()
 				this.allKeysPressedMessage = ''
 			},
-
-			stopCapture() {
-				this.showStartModal = true
-				this.removeKeyboardListeners()
-				document.removeEventListener('keydown', this.disableDefaultKeys, { capture: true })
-				if (!this.allKeysPressedMessage) {
-					this.$emit('input', false) // Emit failure if not completed
+			saveStateToLocalStorage() {
+				const state = {
+					keyRows: this.keyRows,
+					allKeysPressedMessage: this.allKeysPressedMessage,
+					showStartModal: this.showStartModal,
 				}
+
+				// Comparar con el estado actual en localStorage
+				const savedState = localStorage.getItem('keyboardTestState')
+				if (savedState) {
+					const currentState = JSON.stringify(state)
+					if (currentState === savedState) {
+						// No guardar si el estado ya es igual
+						return
+					}
+				}
+
+				// Guardar nuevo estado
+				localStorage.setItem('keyboardTestState', JSON.stringify(state))
 			},
 		},
 
 		created() {
 			this.handleKeydownBound = this.handleKeydown.bind(this)
 			this.handleKeyupBound = this.handleKeyup.bind(this)
+			this.loadStateFromLocalStorage() // Carga el estado al iniciar el componente
 		},
 
 		beforeDestroy() {
@@ -776,18 +813,13 @@
 		border: 1px solid rgba(0, 0, 0, 0.3);
 		user-select: none; /* Prevent text selection */
 	}
-	#kb_box_l {
-		display: flex;
-		flex-direction: column;
-		width: 100%;
-		max-height: 70vh; /* Ensure keyboard fits within the viewport */
-		overflow-y: auto;
-	}
+
 	.kb_row {
 		display: flex;
 		justify-content: center;
 		width: 100%;
 	}
+
 	.kb_btn {
 		display: flex;
 		justify-content: center;
@@ -802,35 +834,15 @@
 		border-radius: 5px;
 		transition: background-color 0.3s ease;
 	}
+
 	.kb_btn_small {
 		flex: 1 1 5%;
 	}
-	.kb_btn_medium {
-		flex: 1 1 8%;
-	}
-	.kb_btn_large {
-		flex: 1 1 10%;
-	}
-	.kb_btn_xlarge {
-		flex: 1 1 12%;
-	}
-	.kb_btn_space {
-		flex: 1 1 30%;
-	}
-	.reset_kb_btn,
-	.stop_kb_btn {
-		margin-top: 20px;
-		padding: 10px 20px;
-		background-color: rgba(0, 0, 0, 0.5);
-		border: 1px solid rgba(0, 0, 0, 0.3);
-		color: white;
-		border-radius: 5px;
-		cursor: pointer;
-		transition: background-color 0.3s ease;
-	}
-	.reset_kb_btn:hover,
-	.stop_kb_btn:hover {
-		background-color: rgba(0, 0, 0, 0.7);
+	.success-message {
+		margin-top: 10px;
+		font-size: 1.2rem;
+		color: #00ff00;
+		text-align: center;
 	}
 	.start-modal {
 		display: flex;
@@ -844,6 +856,19 @@
 		backdrop-filter: blur(10px);
 		background: rgba(0, 0, 0, 0.5);
 	}
+	.start-modal {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		height: 100%;
+		width: 100%;
+		position: absolute;
+		top: 0;
+		left: 0;
+		backdrop-filter: blur(10px);
+		background: rgba(0, 0, 0, 0.5);
+	}
+
 	.start-button {
 		background-color: #00ff00;
 		border: none;
@@ -857,5 +882,16 @@
 		justify-content: center;
 		align-items: center;
 		margin: auto; /* Center button */
+		transition: border 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+		outline: none; /* Eliminar borde cuadrado */
+	}
+
+	.start-button:hover {
+		border: 2px solid red; /* Borde rojo al pasar el mouse */
+	}
+
+	.start-button:active {
+		box-shadow: inset 0px 0px 10px rgba(0, 0, 0, 0.5); /* Efecto de empuje */
+		transform: scale(0.95); /* Escala más pequeña */
 	}
 </style>

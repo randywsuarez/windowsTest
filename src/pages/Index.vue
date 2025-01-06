@@ -9,6 +9,7 @@
 
 				<q-stepper-navigation>
 					<q-btn
+						:disable="!(test.keyboard == true)"
 						@click="
 							() => {
 								done1 = true
@@ -56,6 +57,8 @@
 				</q-stepper-navigation>
 			</q-step>
 		</q-stepper>
+
+		<pre>{{ test }}</pre>
 	</div>
 </template>
 
@@ -69,7 +72,7 @@
 			return {
 				step: 1,
 				stepTest: {
-					Keyboard: false,
+					Keyboard: null,
 				},
 				test: {
 					keyboard: false,
