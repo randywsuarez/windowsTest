@@ -72,6 +72,21 @@
 					<!-- <q-btn color="positive" :label="audit ? 'Shut Down' : 'SysPrep'" @click="sdDevice" /> -->
 				</q-card-section>
 			</q-card>
+			<q-card class="card" v-show="activate.logo">
+				<q-card-section
+					class="row justify-center"
+					id="actionType"
+					style="padding: 0; height: 40vh; width: 100%"
+				>
+					<q-img
+						src="Logo.png"
+						spinner-color="primary"
+						spinner-size="120px"
+						style="height: auto; width: 50%; max-height: 100%; max-width: 100%; object-fit: contain"
+					/>
+				</q-card-section>
+			</q-card>
+
 			<q-card class="card" v-show="activate.audio">
 				<q-card-section> <div class="text-h6">Audio Test</div> </q-card-section><q-separator />
 				<q-card-section class="reproductor-content">
@@ -813,7 +828,8 @@
 				Authorization: '',
 				itDG: {},
 				activate: {
-					type: true,
+					logo: true,
+					type: false,
 					select: false,
 					audio: false,
 					camera: false,
@@ -1415,17 +1431,18 @@
 				}
 				await this.checkDevice()
 				this.setTypeUnit()
+				this.$q.loading.show()
 				if (this.device.brand == 'HP') {
 					this.bios = JSON.parse(JSON.stringify(await this.$cmd.biosData()))
 					console.log('BIOS: ', this.bios.components)
 					await this.infoHP()
 				}
 				//if (this.device.brand == 'HP')
-				if (projectInfo.ArrivedSKU !== this.device.SKU && this.device.brand == 'HP') {
+				if (!this.select.validateSKU && this.device.brand == 'HP') {
 					this.$q.loading.hide()
 					this.showNotification(
 						'No Math',
-						`SKUs are not the same, Device: ${this.device.SKU} <> System: ${projectInfo.ArrivedSKU}`,
+						`SKUs are not the same, Device: ${this.device.SKU} <> System: ${this.select.useSKU}`,
 					)
 					return
 				}
@@ -1450,6 +1467,8 @@
 				this.test = { ...this.test, ...test }
 
 				this.$q.loading.hide()
+
+				this.activate.logo = false
 				this.activate.type = true
 				await this.espera2('actionType')
 				this.activate.type = false
@@ -1495,7 +1514,7 @@
 				if (this.type == 'laptop') {
 					await this.testLaptopSpecifics()
 				}
-
+				console.log(this.type)
 				if (this.type != 'desktop') {
 					await this.testNonDesktopSpecifics()
 				}
@@ -1612,7 +1631,10 @@
 			},
 			async getProjectInfo(Serial) {
 				let infoToken = (await this.$rsNeDB('credenciales').find())[0]
-				let infoUnit = await this.$db.funcAdmin('modules/ispt/validateUnit', { Serial })
+				let infoUnit = await this.$db.funcAdmin('modules/ispt/validateUnit', {
+					Serial,
+					sku: this.device.SKU,
+				})
 				this.project = {
 					Station: infoUnit[0].StationTypeID,
 					TenantId: infoUnit[0].TenantId,
@@ -1641,21 +1663,21 @@
 					'LockBIOS',
 					'ProgrammingMode',
 				]
-
+				console.log(this.bios)
 				const itemsNotSet = itemsToCheck.filter((item) => {
 					if (this.bios[item] !== null) {
 						if (['LockWireless', 'LockBIOS'].includes(item)) {
 							return this.bios[item] === 'YES'
 						} else {
+							console.log(this.bios[item] === 'NO')
 							return this.bios[item] === 'NO'
 						}
 					}
 					return false
 				})
+				console.log('itemsNotSet', itemsNotSet)
 				if (itemsNotSet.length > 0) {
 					this.activate.components = true
-					await this.espera('actionComponents')
-					let vm = this
 					this.$q
 						.dialog({
 							title: 'BIOS Settings',
@@ -1669,11 +1691,16 @@
 							},
 						})
 						.onOk(async () => {
-							console.info(`shutdown /s /t 2`)
-							await vm.$cmd.executeScriptCode(`shutdown -s -t 2`)
+							await this.$cmd.executeScriptCode(`shutdown -s -t 2`)
 						})
+					await this.espera('actionComponents')
 				} else {
+					console.log('Components')
 					this.test['components'] = 'Components test PASS'
+
+					this.activate.components = false
+
+					return true
 				}
 			},
 			async testLaptopSpecifics() {
@@ -1706,8 +1733,6 @@
 				this.activate.mousepad = false
 				if (this.device.brand == 'HP') {
 					await this.checkBiosItems()
-					await this.espera('actionComponents')
-					this.activate.components = false
 				}
 			},
 			async testNonDesktopSpecifics() {
@@ -1763,7 +1788,7 @@
 					})
 
 					this.$q.loading.hide()
-					if (!this.win.hasOwnProperty('keyWindows')) {
+					if (!this.win.hasOwnProperty('keyWindows') || this.win.keyWindows == 'Key not found') {
 						this.$db.funcAdmin('modules/ispt/issueReport', {
 							title: 'No DPK',
 							message: `DPK for ${this.device.Serial} is not available.`,

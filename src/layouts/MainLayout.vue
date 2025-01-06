@@ -370,12 +370,25 @@
 					this.updt = actualizacionDisponible.result
 				}
 			},
+			async compareVersions(currentVersion, availableVersion) {
+				const current = currentVersion.split('.').map(Number)
+				const available = availableVersion.split('.').map(Number)
+
+				for (let i = 0; i < Math.max(current.length, available.length); i++) {
+					const numCurrent = current[i] || 0 // Si no hay más partes, usa 0.
+					const numAvailable = available[i] || 0
+
+					if (numAvailable > numCurrent) return true // La versión disponible es mayor.
+					if (numAvailable < numCurrent) return false // La versión disponible es menor.
+				}
+				return false // Son iguales.
+			},
 		},
 		async mounted() {
 			if (!this.$q.localStorage.getItem('api')) this.$q.localStorage.set('api', 'server')
 			document.addEventListener('keydown', this.handleKeyDown)
 			let d = await this.$db.collection('updateSystem').all_data().get()
-			if (d[0].activated && env.version < d[0].Version) await this.updSystem()
+			if (d[0].activated && compareVersions(env.version, d[0].Version)) await this.updSystem()
 		},
 		beforeDestroy() {
 			document.removeEventListener('keydown', this.handleKeyDown)
