@@ -2,8 +2,11 @@ export default `
 $shouldActivate = $true
 
 function Get-WindowsLicenses {
-    $licenses = Get-WmiObject -Query "SELECT * FROM SoftwareLicensingProduct WHERE PartialProductKey IS NOT NULL AND Name LIKE '%Windows%'"
-    return $licenses
+    try {
+        return Get-WmiObject -Query "SELECT * FROM SoftwareLicensingProduct WHERE PartialProductKey IS NOT NULL AND Name LIKE '%Windows%'"
+    } catch {
+        return @()
+    }
 }
 
 function Get-WindowsKeyFromRegistry {
@@ -33,16 +36,41 @@ function Get-WindowsKeyFromSystem {
     }
 }
 
-function Get-WindowsActivationInfo {
-    param ([string]$productKey = $null)
+function Activate-Windows {
+    param ([string]$productKey)
 
+    try {
+        # Intenta activar Windows con la clave proporcionada
+        $activateCommand = "slmgr.vbs /ato"
+        cmd /c $activateCommand | Out-Null
+
+        # Verifica el estado de la activación
+        $licenseStatus = (Get-WmiObject -Query "SELECT LicenseStatus FROM SoftwareLicensingProduct WHERE PartialProductKey IS NOT NULL AND Name LIKE '%Windows%'").LicenseStatus
+
+        if ($licenseStatus -eq 1) {
+            return @{
+                status  = "Success"
+                message = "Windows activated successfully."
+            }
+        } else {
+            throw "Activation failed. Status: $licenseStatus"
+        }
+    } catch {
+        return @{
+            status  = "Error"
+            message = "An error occurred during activation: $_"
+        }
+    }
+}
+
+function Get-WindowsActivationInfo {
     $licenses = Get-WindowsLicenses
     $windowsKey = Get-WindowsKeyFromRegistry
     if ($windowsKey -eq $null) {
         $windowsKey = Get-WindowsKeyFromSystem
     }
 
-    $osDescription = (Get-WmiObject Win32_OperatingSystem).Caption
+    $osDescription = try { (Get-WmiObject Win32_OperatingSystem).Caption } catch { "Unknown" }
     $licensesArray = @()
     $activationRequired = $false
 
@@ -95,7 +123,9 @@ function Get-WindowsActivationInfo {
     return @($licensesArray) | ConvertTo-Json
 }
 
+# Ejecutar la función principal
 $activationOrLicenseInfo = Get-WindowsActivationInfo
 $activationOrLicenseInfo
+
 
 `
