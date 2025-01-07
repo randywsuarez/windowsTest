@@ -9,7 +9,7 @@
 
 				<q-stepper-navigation>
 					<q-btn
-						:disable="!(test.keyboard == true)"
+						:disable="!(test.keyboard.status == true)"
 						@click="
 							() => {
 								done1 = true
@@ -59,6 +59,7 @@
 		</q-stepper>
 
 		<pre>{{ test }}</pre>
+		<!-- <q-img :src="test.keyboard.image.base64" spinner-color="primary" spinner-size="82px" /> -->
 	</div>
 </template>
 
@@ -93,3 +94,13 @@
 		},
 	}
 </script>
+<style scoped>
+	pre {
+		white-space: pre-wrap; /* Permite el salto de línea dentro de la etiqueta <pre> */
+		word-wrap: break-word; /* Asegura que las palabras largas se dividan para ajustarse */
+		max-width: 400px; /* Limita el ancho del bloque de texto */
+		border: 1px solid #ccc;
+		padding: 10px;
+		background-color: #f9f9f9;
+	}
+</style>

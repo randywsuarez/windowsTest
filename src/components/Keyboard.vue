@@ -35,8 +35,8 @@
 	export default {
 		props: {
 			value: {
-				type: Boolean,
-				default: null, // Inicialmente no completado
+				type: Object,
+				default: {}, // Inicialmente no completado
 			},
 		},
 		data() {
@@ -782,6 +782,15 @@
 
 				// Guardar nuevo estado
 				localStorage.setItem('keyboardTestState', JSON.stringify(state))
+			},
+			loadStateFromLocalStorage() {
+				const savedState = localStorage.getItem('keyboardTestState')
+				if (savedState) {
+					const { keyRows, allKeysPressedMessage, showStartModal } = JSON.parse(savedState)
+					this.keyRows = keyRows
+					this.allKeysPressedMessage = allKeysPressedMessage
+					this.showStartModal = showStartModal
+				}
 			},
 		},
 
