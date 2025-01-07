@@ -753,6 +753,7 @@
 				deep: true,
 				handler(newValue) {
 					this.$emit('input', newValue)
+					localStorage.setItem('mouseTestStatus', JSON.stringify(newValue)) // Guardar estado en localStorage
 				},
 			},
 		},
@@ -826,6 +827,7 @@
 					status: false,
 					image: null,
 				}
+				localStorage.removeItem('mouseTestStatus') // Eliminar estado guardado
 				this.$emit('input', this.buttonStatus)
 			},
 			addEventListeners() {
@@ -932,7 +934,13 @@
 		},
 		mounted() {
 			console.log('Component mounted')
-			this.buttonStatus = { ...this.value }
+			const savedStatus = localStorage.getItem('mouseTestStatus')
+			if (savedStatus) {
+				this.buttonStatus = JSON.parse(savedStatus) // Restaurar estado desde localStorage
+				console.log('Restored buttonStatus:', this.buttonStatus)
+			} else {
+				this.buttonStatus = { ...this.value } // Usar estado inicial si no hay datos guardados
+			}
 		},
 		beforeDestroy() {
 			console.log('Component beforeDestroy')
