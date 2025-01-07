@@ -4,15 +4,15 @@
 		<title>Components Test</title>
 
 		<q-stepper v-model="step" header-nav ref="stepper" color="green" animated>
-			<q-step :name="1" title="Keyboard Test" icon="keyboard" :done="stepTest.Keyboard">
-				<virtual-keyboard v-model="test.keyboard" />
+			<q-step :name="1" title="Keyboard" icon="keyboard" :done="stepTest.Keyboard">
+				<keyboard v-model="test.keyboard" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
 					<q-btn
 						:disable="!(test.keyboard.status == true)"
 						@click="
 							() => {
-								done1 = true
+								stepTest.Keyboard = true
 								step = 2
 							}
 						"
@@ -22,15 +22,16 @@
 				</q-stepper-navigation>
 			</q-step>
 
-			<q-step :name="2" title="Mouse / MousePad" icon="mouse" :done="done2">
+			<q-step :name="2" title="Mouse / MousePad" icon="mouse" :done="stepTest.mouse">
 				<mouse v-model="test.mouse" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
 					<q-btn flat @click="step = 1" color="primary" label="Back" class="q-ml-sm" />
 					<q-btn
+						:disable="!(test.mouse.status == true)"
 						@click="
 							() => {
-								done2 = true
+								stepTest.mouse = true
 								step = 3
 							}
 						"
@@ -39,9 +40,27 @@
 					/>
 				</q-stepper-navigation>
 			</q-step>
+			<q-step :name="3" title="Mic" icon="mouse" :done="stepTest.mic">
+				<mic v-model="test.mic" />
 
-			<q-step :name="3" title="Create an ad" icon="add_comment" :done="done3">
-				Try out different
+				<q-stepper-navigation class="row justify-between q-pt-md">
+					<q-btn flat @click="step = 2" color="primary" label="Back" class="q-ml-sm" />
+					<q-btn
+						:disable="!(test.mic.status == true)"
+						@click="
+							() => {
+								stepTest.mic = true
+								step = 4
+							}
+						"
+						color="primary"
+						label="Continue"
+					/>
+				</q-stepper-navigation>
+			</q-step>
+
+			<q-step :name="20" title="Create an ad" icon="add_comment" :done="stepTest.mic">
+				<mic v-model="test.mic" />
 
 				<q-stepper-navigation>
 					<q-btn color="primary" @click="done3 = true" label="Finish" />
@@ -56,12 +75,14 @@
 </template>
 
 <script>
-	import VirtualKeyboard from '../components/Keyboard.vue'
+	import Keyboard from '../components/Keyboard.vue'
 	import Mouse from '../components/Mouse.vue'
+	import Mic from '../components/Mic.vue'
 	export default {
 		components: {
-			VirtualKeyboard,
+			Keyboard,
 			Mouse,
+			Mic,
 		},
 		data() {
 			return {
@@ -69,10 +90,12 @@
 				stepTest: {
 					Keyboard: null,
 					mouse: null,
+					mic: null,
 				},
 				test: {
 					keyboard: {},
 					mouse: {},
+					mic: {},
 				},
 				done1: false,
 				done2: false,
