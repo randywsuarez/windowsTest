@@ -23,7 +23,7 @@
 			</q-step>
 
 			<q-step :name="2" title="Mouse / MousePad" icon="mouse" :done="done2">
-				<mouse-pad />
+				<mouse v-model="test.mouse" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
 					<q-btn flat @click="step = 1" color="primary" label="Back" class="q-ml-sm" />
@@ -57,20 +57,22 @@
 
 <script>
 	import VirtualKeyboard from '../components/Keyboard.vue'
-	import MousePad from '../components/MousePad.vue'
+	import Mouse from '../components/Mouse.vue'
 	export default {
 		components: {
 			VirtualKeyboard,
-			MousePad,
+			Mouse,
 		},
 		data() {
 			return {
 				step: 1,
 				stepTest: {
 					Keyboard: null,
+					mouse: null,
 				},
 				test: {
 					keyboard: {},
+					mouse: {},
 				},
 				done1: false,
 				done2: false,

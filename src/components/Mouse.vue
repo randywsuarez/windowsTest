@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<button class="start-button" @click="toggleCapture">
+		<button v-show="!capturing" class="start-button" @click="toggleCapture">
 			{{ capturing ? 'Stop' : 'Start' }}
 		</button>
 		<div class="mouse-section" v-show="capturing">
@@ -704,7 +704,12 @@
 					class="visited"
 				></path>
 			</svg>
-			<div class="interaction-info" v-if="message">
+			<div id="kb_box_b" class="row justify-between q-pt-md">
+				<q-btn color="red" icon="close" label="Fail" @click="handleFail" />
+				<q-btn color="primary" label="Reset" @click="handleReset" />
+				<q-btn color="green" icon="check" label="Pass" @click="handlePass" />
+			</div>
+			<div class="interaction-info" v-show="!capturing" v-if="message">
 				{{ message }}
 			</div>
 		</div>
@@ -713,6 +718,12 @@
 
 <script>
 	export default {
+		props: {
+			value: {
+				type: Object,
+				required: true,
+			},
+		},
 		data() {
 			return {
 				message: '',
@@ -721,7 +732,26 @@
 					downId: null,
 				},
 				capturing: false, // Estado para activar/desactivar captura
+				buttonStatus: {
+					btnLeft: 'not tested',
+					btnRight: 'not tested',
+					btnMiddle: 'not tested',
+					btnSide1: 'not tested',
+					btnSide2: 'not tested',
+					wheelUp: 'not tested',
+					wheelDown: 'not tested',
+					status: false,
+				},
+				buttons: '',
 			}
+		},
+		watch: {
+			buttonStatus: {
+				deep: true,
+				handler(newValue) {
+					this.$emit('input', newValue)
+				},
+			},
 		},
 		methods: {
 			toggleCapture() {
@@ -733,6 +763,35 @@
 					this.removeEventListeners()
 					console.log('Event capturing stopped')
 				}
+			},
+			handleFail() {
+				this.message = 'Mouse test FAIL'
+				this.buttonStatus.status = false
+				this.$emit('input', { ...this.buttonStatus, message: this.message })
+				this.capturing = false
+				this.removeEventListeners()
+			},
+			handlePass() {
+				this.message = 'Mouse test PASS'
+				this.buttonStatus.status = true
+				this.$emit('input', { ...this.buttonStatus, message: this.message })
+				this.capturing = false
+				this.removeEventListeners()
+			},
+			handleReset() {
+				this.message = ''
+				this.capturing = false
+				this.buttonStatus = {
+					btnLeft: 'not tested',
+					btnRight: 'not tested',
+					btnMiddle: 'not tested',
+					btnSide1: 'not tested',
+					btnSide2: 'not tested',
+					wheelUp: 'not tested',
+					wheelDown: 'not tested',
+					status: false,
+				}
+				this.$emit('input', this.buttonStatus)
 			},
 			addEventListeners() {
 				const mouseSection = this.$el.querySelector('.mouse-section')
@@ -755,28 +814,36 @@
 			handleMouseDown(e) {
 				console.log('Mouse down event detected:', e)
 				const buttons = e.buttons
-				if ((buttons & 1) === 1) {
+				if (buttons === 1) {
+					this.buttons = 'mouse-1'
 					console.log('Left button clicked')
-					this.activateArea('mouse-1') // Botón izquierdo
-				}
-				if ((buttons & 2) === 2) {
+					this.buttonStatus.btnLeft = 'pass'
+				} else if (buttons === 2) {
+					this.buttons = 'mouse-2'
 					console.log('Right button clicked')
-					this.activateArea('mouse-2') // Botón derecho
-				}
-				if ((buttons & 4) === 4) {
+					this.buttonStatus.btnRight = 'pass'
+				} else if (buttons === 4) {
+					this.buttons = 'mouse-3'
 					console.log('Middle button clicked')
-					this.activateArea('mouse-3') // Botón central (rueda)
+					this.buttonStatus.btnMiddle = 'pass'
+				} else if (buttons === 8) {
+					this.buttons = 'mouse-4'
+					console.log('Side button 1 clicked')
+					this.buttonStatus.btnSide1 = 'pass'
+				} else if (buttons === 16) {
+					this.buttons = 'mouse-5'
+					console.log('Side button 2 clicked')
+					this.buttonStatus.btnSide2 = 'pass'
 				}
-				if ((buttons & 8) === 8) {
-					console.log('Button 4 clicked')
-					this.activateArea('mouse-4') // Botón lateral 1
-				}
-				if ((buttons & 16) === 16) {
-					console.log('Button 5 clicked')
-					this.activateArea('mouse-5') // Botón lateral 2
-				}
+
+				this.activateArea(this.buttons)
 			},
-			handleMouseUp() {
+			handleMouseUp(e) {
+				console.log('Mouse up event detected:', this.buttons)
+
+				this.deactivateArea(this.buttons)
+			},
+			handleMouseUpOld() {
 				console.log('Mouse up event detected')
 				;['mouse-1', 'mouse-2', 'mouse-3', 'mouse-4', 'mouse-5'].forEach((id) => {
 					this.deactivateArea(id)
@@ -784,10 +851,19 @@
 			},
 			handleWheel(e) {
 				console.log('Wheel event detected:', e.deltaY)
-				const targetId = e.deltaY < 0 ? 'wheel-down' : 'wheel-up'
-				this.activateArea(targetId)
+				let targetId
+				if (e.deltaY < 0) {
+					targetId = 'wheel-up'
+					console.log('Wheel scrolled up')
+					this.buttonStatus.wheelUp = 'pass'
+					this.activateArea(targetId)
+				} else {
+					targetId = 'wheel-down'
+					console.log('Wheel scrolled down')
+					this.activateArea(targetId)
+					this.buttonStatus.wheelDown = 'pass'
+				}
 				const timerKey = e.deltaY < 0 ? 'downId' : 'upId'
-
 				clearTimeout(this.timers[timerKey])
 				this.timers[timerKey] = setTimeout(() => {
 					this.deactivateArea(targetId)
@@ -797,6 +873,8 @@
 				console.log(`Activating area: ${id}`)
 				const element = document.getElementById(id)
 				if (element) {
+					//console.log(element.classList)
+					element.classList.remove('active2')
 					element.classList.add('visited', 'active')
 				} else {
 					console.warn(`Element with id ${id} not found`)
@@ -807,6 +885,7 @@
 				const element = document.getElementById(id)
 				if (element) {
 					element.classList.remove('active')
+					element.classList.add('active2')
 				} else {
 					console.warn(`Element with id ${id} not found`)
 				}
@@ -818,6 +897,7 @@
 		},
 		mounted() {
 			console.log('Component mounted')
+			this.buttonStatus = { ...this.value }
 		},
 		beforeDestroy() {
 			console.log('Component beforeDestroy')
@@ -864,6 +944,9 @@
 	}
 	#mouse .active {
 		fill: #73a9ef !important;
+	}
+	#mouse .active2 {
+		fill: #73ef9c !important;
 	}
 	.area {
 		fill: #fff;
