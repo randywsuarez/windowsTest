@@ -7,7 +7,7 @@
 			<q-step :name="1" title="Keyboard Test" icon="keyboard" :done="stepTest.Keyboard">
 				<virtual-keyboard v-model="test.keyboard" />
 
-				<q-stepper-navigation>
+				<q-stepper-navigation class="row justify-between q-pt-md">
 					<q-btn
 						:disable="!(test.keyboard.status == true)"
 						@click="
@@ -22,16 +22,11 @@
 				</q-stepper-navigation>
 			</q-step>
 
-			<q-step
-				:name="2"
-				title="Create an ad group"
-				caption="Optional"
-				icon="create_new_folder"
-				:done="done2"
-			>
-				An ad group contains one or more ads which target a shared set of keywords.
+			<q-step :name="2" title="Mouse / MousePad" icon="mouse" :done="done2">
+				<mouse-pad />
 
-				<q-stepper-navigation>
+				<q-stepper-navigation class="row justify-between q-pt-md">
+					<q-btn flat @click="step = 1" color="primary" label="Back" class="q-ml-sm" />
 					<q-btn
 						@click="
 							() => {
@@ -42,14 +37,11 @@
 						color="primary"
 						label="Continue"
 					/>
-					<q-btn flat @click="step = 1" color="primary" label="Back" class="q-ml-sm" />
 				</q-stepper-navigation>
 			</q-step>
 
 			<q-step :name="3" title="Create an ad" icon="add_comment" :done="done3">
-				Try out different ad text to see what brings in the most customers, and learn how to enhance
-				your ads using features like ad extensions. If you run into any problems with your ads, find
-				out how to tell if they're running and how to resolve approval issues.
+				Try out different
 
 				<q-stepper-navigation>
 					<q-btn color="primary" @click="done3 = true" label="Finish" />
@@ -65,9 +57,11 @@
 
 <script>
 	import VirtualKeyboard from '../components/Keyboard.vue'
+	import MousePad from '../components/MousePad.vue'
 	export default {
 		components: {
 			VirtualKeyboard,
+			MousePad,
 		},
 		data() {
 			return {
@@ -76,7 +70,7 @@
 					Keyboard: null,
 				},
 				test: {
-					keyboard: false,
+					keyboard: {},
 				},
 				done1: false,
 				done2: false,
@@ -89,7 +83,7 @@
 				this.done1 = false
 				this.done2 = false
 				this.done3 = false
-				this.step = 1
+				this.step = 2
 			},
 		},
 	}
