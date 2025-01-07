@@ -705,9 +705,9 @@
 				></path>
 			</svg>
 			<div id="kb_box_b" class="row justify-between q-pt-md">
-				<q-btn color="red" icon="close" label="Fail" @click="handleFail" />
+				<q-btn color="red" icon="close" label="Fail" @click="captureImage('fail')" />
 				<q-btn color="primary" label="Reset" @click="handleReset" />
-				<q-btn color="green" icon="check" label="Pass" @click="handlePass" />
+				<q-btn color="green" icon="check" label="Pass" @click="captureImage('pass')" />
 			</div>
 			<div class="interaction-info" v-show="!capturing" v-if="message">
 				{{ message }}
@@ -717,6 +717,8 @@
 </template>
 
 <script>
+	import html2canvas from 'html2canvas'
+
 	export default {
 		props: {
 			value: {
@@ -741,6 +743,7 @@
 					wheelUp: 'not tested',
 					wheelDown: 'not tested',
 					status: false,
+					image: null, // Propiedad para almacenar la captura
 				},
 				buttons: '',
 			}
@@ -764,20 +767,51 @@
 					console.log('Event capturing stopped')
 				}
 			},
-			handleFail() {
+			async captureImage(type) {
+				const svgElement = this.$el.querySelector('.mouse-section')
+				console.log(svgElement)
+				if (svgElement) {
+					console.log('SVG Element Found:', svgElement)
+					try {
+						const canvas = await html2canvas(svgElement)
+						const base64Image = canvas.toDataURL('image/png')
+						this.buttonStatus.image = {
+							type: 'mouse',
+							ext: 'png',
+							base64: base64Image,
+						}
+						console.log('Image captured:', this.buttonStatus.image)
+						if (type == 'pass') this.handlePass()
+						else this.handleFail()
+					} catch (error) {
+						console.error('Error capturing image:', error)
+					}
+				} else {
+					console.error('SVG element not found for capturing.')
+				}
+			},
+			async handleFail() {
 				this.message = 'Mouse test FAIL'
 				this.buttonStatus.status = false
 				this.$emit('input', { ...this.buttonStatus, message: this.message })
-				this.capturing = false
-				this.removeEventListeners()
+
+				setTimeout(() => {
+					this.capturing = false
+					this.removeEventListeners()
+				}, 100) // Agrega un pequeño retraso
 			},
-			handlePass() {
+
+			async handlePass() {
 				this.message = 'Mouse test PASS'
 				this.buttonStatus.status = true
 				this.$emit('input', { ...this.buttonStatus, message: this.message })
-				this.capturing = false
-				this.removeEventListeners()
+
+				setTimeout(() => {
+					this.capturing = false
+					this.removeEventListeners()
+				}, 100) // Agrega un pequeño retraso
 			},
+
 			handleReset() {
 				this.message = ''
 				this.capturing = false
@@ -790,6 +824,7 @@
 					wheelUp: 'not tested',
 					wheelDown: 'not tested',
 					status: false,
+					image: null,
 				}
 				this.$emit('input', this.buttonStatus)
 			},
