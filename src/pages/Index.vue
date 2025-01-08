@@ -41,7 +41,7 @@
 				</q-stepper-navigation>
 			</q-step>
 			<q-step :name="3" title="Mic" icon="mic" :done="stepTest.mic">
-				<mic v-model="test.mic" />
+				<mic v-model="test.mic" :recordDuration="2" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
 					<q-btn flat @click="step = 2" color="primary" label="Back" class="q-ml-sm" />
@@ -58,7 +58,7 @@
 					/>
 				</q-stepper-navigation>
 			</q-step>
-			<q-step :name="4" title="Touch Screen" icon="display" :done="stepTest.touchScreen">
+			<q-step :name="4" title="Touch Screen" icon="touch_app" :done="stepTest.touchScreen">
 				<touch-screen v-model="test.touchScreen" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
@@ -67,8 +67,26 @@
 						:disable="!(test.touchScreen.status == true)"
 						@click="
 							() => {
-								stepTest.touchScreen = true
-								step = 4
+								stepTest.spotlight = true
+								step = 5
+							}
+						"
+						color="primary"
+						label="Continue"
+					/>
+				</q-stepper-navigation>
+			</q-step>
+			<q-step :name="5" title="Spot lights" icon="backlight_high_off" :done="stepTest.spotlight">
+				<dead-pixel v-model="test.spotlight" />
+
+				<q-stepper-navigation class="row justify-between q-pt-md">
+					<q-btn flat @click="step = 3" color="primary" label="Back" class="q-ml-sm" />
+					<q-btn
+						:disable="!(test.spotlight.status == true)"
+						@click="
+							() => {
+								stepTest.spotlight = true
+								step = 6
 							}
 						"
 						color="primary"
@@ -97,12 +115,14 @@
 	import Mouse from '../components/Mouse.vue'
 	import Mic from '../components/Mic.vue'
 	import touchScreen from '../components/touchScreen.vue'
+	import deadPixel from '../components/deadPixel.vue'
 	export default {
 		components: {
 			Keyboard,
 			Mouse,
 			Mic,
 			touchScreen,
+			deadPixel,
 		},
 		data() {
 			return {
@@ -112,12 +132,14 @@
 					mouse: null,
 					mic: null,
 					touchScreen: null,
+					spotlight: null,
 				},
 				test: {
 					keyboard: {},
 					mouse: {},
 					mic: {},
 					touchScreen: {},
+					spotlight: {},
 				},
 				done1: false,
 				done2: false,

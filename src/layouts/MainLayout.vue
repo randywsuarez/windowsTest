@@ -1,6 +1,6 @@
 <template>
 	<q-layout view="lHh Lpr lFf" class="main-layout">
-		<q-header class="main-header">
+		<q-header class="main-header" v-show="myHeader">
 			<q-toolbar @mousedown="startDrag">
 				<q-btn flat dense round icon="logout" @click="cerrarSesion" style="color: black" />
 
@@ -112,12 +112,19 @@
 	]
 
 	export default {
+		props: {
+			myHeader: {
+				type: Boolean,
+				default: true,
+			},
+		},
 		name: 'MainLayout',
 		components: {
 			EssentialLink,
 		},
 		data() {
 			return {
+				//myHeader: true,
 				leftDrawerOpen: false,
 				essentialLinks: linksData,
 				test: { result: false },
