@@ -58,6 +58,24 @@
 					/>
 				</q-stepper-navigation>
 			</q-step>
+			<q-step :name="4" title="Touch Screen" icon="display" :done="stepTest.touchScreen">
+				<touch-screen v-model="test.mic" />
+
+				<q-stepper-navigation class="row justify-between q-pt-md">
+					<q-btn flat @click="step = 3" color="primary" label="Back" class="q-ml-sm" />
+					<q-btn
+						:disable="!(test.touchScreen.status == true)"
+						@click="
+							() => {
+								stepTest.touchScreen = true
+								step = 4
+							}
+						"
+						color="primary"
+						label="Continue"
+					/>
+				</q-stepper-navigation>
+			</q-step>
 
 			<q-step :name="20" title="Create an ad" icon="add_comment" :done="stepTest.mic">
 				<mic v-model="test.mic" />
@@ -78,11 +96,13 @@
 	import Keyboard from '../components/Keyboard.vue'
 	import Mouse from '../components/Mouse.vue'
 	import Mic from '../components/Mic.vue'
+	import touchScreen from '../components/touchScreen.vue'
 	export default {
 		components: {
 			Keyboard,
 			Mouse,
 			Mic,
+			touchScreen,
 		},
 		data() {
 			return {
@@ -91,15 +111,18 @@
 					Keyboard: null,
 					mouse: null,
 					mic: null,
+					touchScreen: null,
 				},
 				test: {
 					keyboard: {},
 					mouse: {},
 					mic: {},
+					touchScreen: {},
 				},
 				done1: false,
 				done2: false,
 				done3: false,
+				done4: false,
 			}
 		},
 

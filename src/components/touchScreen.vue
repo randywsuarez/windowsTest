@@ -1,187 +1,224 @@
-<!-- <template>
-	<q-dialog v-model="dialog" persistent full-width full-height @keyup.esc="closeDialog">
-		<q-card>
-			<q-card-section class="text-center">
-				<div class="grid-container">
-					<div v-for="group in gridGroups" :key="group.id" class="grid-group">
-						<div v-for="cell in group.cells" :key="cell.id" class="grid-cell">
-							<q-btn
-								v-if="cell.hasButton"
-								:class="[cell.buttonClass, { blinking: cell.blinking }]"
-								@click="toggleButton(cell)"
-							/>
-						</div>
-					</div>
-				</div>
-			</q-card-section>
-		</q-card>
-	</q-dialog>
+<template>
+	<div class="app-container">
+		<div v-if="!testStarted" class="row justify-center q-pt-md">
+			<button v-show="!testStarted" class="start-button" @click="startTest">
+				{{ testStarted ? 'Stop' : 'Start' }}
+			</button>
+		</div>
+		<div class="fullscreen-test" :class="{ 'active-test': testStarted }" v-else>
+			<q-page class="test-grid">
+				<div
+					v-for="(cell, index) in grid"
+					:key="index"
+					:class="[
+						'grid-cell',
+						cell.disabled ? 'disabled-cell' : '',
+						cell.active ? 'active-cell' : '',
+						cell.highlighted ? 'highlighted-cell' : '',
+					]"
+					@click="handleCellClick(index)"
+				/>
+			</q-page>
+		</div>
+	</div>
 </template>
 
 <script>
+	import html2canvas from 'html2canvas'
+
 	export default {
 		props: {
-			showDialog: {
-				type: Boolean,
-				required: true,
+			highlightCount: {
+				type: Number,
+				default: 5,
 			},
 		},
 		data() {
 			return {
-				dialog: false,
-				gridGroups: this.generateGridGroups(),
+				grid: [],
+				rows: 20,
+				cols: 20,
+				testStarted: false,
 			}
 		},
-		watch: {
-			showDialog(newVal) {
-				this.dialog = newVal
-				if (newVal) {
-					this.enterFullScreen()
-				} else {
+		mounted() {
+			this.restoreState()
+			document.addEventListener('keydown', this.handleEscapeKey)
+		},
+		beforeDestroy() {
+			document.removeEventListener('keydown', this.handleEscapeKey)
+		},
+		methods: {
+			initializeGrid() {
+				this.grid = Array.from({ length: this.rows * this.cols }, () => ({
+					active: false,
+					highlighted: false,
+					disabled: true,
+				}))
+				this.randomlyHighlightCells()
+			},
+			randomlyHighlightCells() {
+				const totalCells = this.rows * this.cols
+				const indices = Array.from({ length: totalCells }, (_, i) => i)
+				const selectedIndices = this.shuffleArray(indices).slice(0, this.highlightCount)
+				selectedIndices.forEach((index) => {
+					this.grid[index].highlighted = true
+					this.grid[index].disabled = false
+				})
+			},
+			shuffleArray(array) {
+				for (let i = array.length - 1; i > 0; i--) {
+					const j = Math.floor(Math.random() * (i + 1))
+					;[array[i], array[j]] = [array[j], array[i]]
+				}
+				return array
+			},
+			handleCellClick(index) {
+				if (this.grid[index].highlighted) {
+					this.grid[index].highlighted = false
+					this.grid[index].active = true
+					const allClicked = this.grid.every((cell) => !cell.highlighted || cell.active)
+					if (allClicked) {
+						this.captureScreen()
+					}
+				}
+			},
+			startTest() {
+				this.testStarted = true
+				this.toggleFullScreen()
+				this.initializeGrid()
+			},
+			toggleFullScreen() {
+				if (!document.fullscreenElement) {
+					document.documentElement.requestFullscreen()
+				} else if (document.exitFullscreen) {
+					document.exitFullscreen()
+				}
+			},
+			captureScreen() {
+				html2canvas(document.body).then((canvas) => {
+					const dataUrl = canvas.toDataURL()
+					const jsonResult = {
+						ext: 'png',
+						base64: dataUrl.split(',')[1],
+						type: 'touchscreen',
+					}
+					localStorage.setItem(
+						'touchscreenState',
+						JSON.stringify({ grid: this.grid, screenshot: jsonResult }),
+					)
+					this.exitFullScreen()
+				})
+			},
+			exitFullScreen() {
+				if (document.fullscreenElement) {
+					document.exitFullscreen()
+				}
+				this.testStarted = false
+			},
+			handleEscapeKey(event) {
+				if (event.key === 'Escape' && this.testStarted) {
 					this.exitFullScreen()
 				}
 			},
-			dialog(newVal) {
-				if (!newVal) {
-					this.$emit('close', false)
+			restoreState() {
+				const savedState = localStorage.getItem('touchscreenState')
+				if (savedState) {
+					const { grid } = JSON.parse(savedState)
+					this.grid = grid
+				} else {
+					this.initializeGrid()
 				}
-			},
-		},
-		methods: {
-			enterFullScreen() {
-				const docEl = document.documentElement
-				if (docEl.requestFullscreen) {
-					docEl.requestFullscreen()
-				} else if (docEl.mozRequestFullScreen) {
-					docEl.mozRequestFullScreen()
-				} else if (docEl.webkitRequestFullscreen) {
-					docEl.webkitRequestFullscreen()
-				} else if (docEl.msRequestFullscreen) {
-					docEl.msRequestFullscreen()
-				}
-			},
-			exitFullScreen() {
-				if (document.exitFullscreen) {
-					document.exitFullscreen()
-				} else if (document.mozCancelFullScreen) {
-					document.mozCancelFullScreen()
-				} else if (document.webkitExitFullscreen) {
-					document.webkitExitFullscreen()
-				} else if (document.msExitFullscreen) {
-					document.msExitFullscreen()
-				}
-			},
-			closeDialog() {
-				this.dialog = false
-			},
-			generateGridGroups() {
-				const groups = []
-				for (let i = 0; i < 3; i++) {
-					for (let j = 0; j < 3; j++) {
-						const cells = []
-						for (let k = 0; k < 3; k++) {
-							for (let l = 0; l < 3; l++) {
-								cells.push({
-									id: `${i}-${j}-${k}-${l}`,
-									hasButton: false,
-									buttonClass: 'gray-button',
-									blinking: false,
-								})
-							}
-						}
-						const randomCell = Math.floor(Math.random() * 9)
-						cells[randomCell].hasButton = true
-						groups.push({ id: `${i}-${j}`, cells })
-					}
-				}
-				return groups
-			},
-			toggleButton(cell) {
-				cell.buttonClass = 'green-button'
-				cell.blinking = true
-				setTimeout(() => {
-					cell.blinking = false
-				}, 1000)
-			},
-		},
-		created() {
-			document.addEventListener('keyup', this.handleKeyUp)
-		},
-		beforeDestroy() {
-			document.removeEventListener('keyup', this.handleKeyUp)
-		},
-		methods: {
-			handleKeyUp(event) {
-				if (event.key === 'Escape') {
-					this.closeDialog()
-				}
-			},
-			toggleButton(cell) {
-				cell.buttonClass = 'green-button'
-				cell.blinking = true
-				setTimeout(() => {
-					cell.blinking = false
-				}, 1000)
-			},
-			closeDialog() {
-				this.dialog = false
 			},
 		},
 	}
 </script>
 
-<style>
-	.grid-container {
-		display: flex;
-		flex-wrap: wrap;
+<style scoped>
+	.app-container {
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+
+	.fullscreen-test {
+		position: fixed;
+		top: 0;
+		left: 0;
 		width: 100vw;
 		height: 100vh;
-		background-color: white;
-	}
-
-	.grid-group {
-		display: flex;
-		flex-wrap: wrap;
-		width: 33.33%;
-		height: 33.33%;
-		border: 1px solid transparent;
-	}
-
-	.grid-cell {
-		width: 33.33%;
-		height: 33.33%;
+		background-color: #2c3e50;
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		z-index: 9999;
+		transition: background-color 0.3s;
 	}
 
-	.q-btn {
-		width: 20px;
-		height: 20px;
+	.fullscreen-test.active-test {
+		background-color: #2c3e50;
 	}
 
-	.green-button {
-		background-color: green !important;
+	.start-screen {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		width: 100%;
+		height: 100vh; /* Ensure it spans the full viewport height */
+		background-color: white;
+		z-index: 10; /* Ensure it appears above other elements */
+		position: relative;
 	}
 
-	.gray-button {
-		background-color: gray !important;
+	.start-button {
+		transform: translateX(-50%);
+		background-color: #4caf50;
+		color: white;
+		border: none;
+		border-radius: 50%;
+		width: 60px;
+		height: 60px;
+		font-size: 16px;
+		cursor: pointer;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+		transition: background-color 0.3s ease;
 	}
 
-	.blinking {
-		animation: blinking-animation 1s infinite;
+	.start-button:hover {
+		background-color: #45a049;
 	}
 
-	@keyframes blinking-animation {
-		0% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.5;
-		}
-		100% {
-			opacity: 1;
-		}
+	.start-button:active {
+		background-color: #3e8e41;
+	}
+
+	.test-grid {
+		display: grid;
+		grid-template-columns: repeat(20, 1fr);
+		gap: 2px;
+		width: 100%;
+		height: 100%;
+	}
+
+	.grid-cell {
+		width: 100%;
+		aspect-ratio: 1 / 1;
+		background-color: white;
+		border: 1px solid black;
+		cursor: pointer;
+	}
+
+	.active-cell {
+		background-color: green;
+	}
+
+	.highlighted-cell {
+		background-color: red;
+	}
+
+	.disabled-cell {
+		background-color: #ccc;
+		cursor: not-allowed;
 	}
 </style>
- -->
