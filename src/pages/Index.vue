@@ -59,7 +59,7 @@
 				</q-stepper-navigation>
 			</q-step>
 			<q-step :name="4" title="Touch Screen" icon="display" :done="stepTest.touchScreen">
-				<touch-screen v-model="test.mic" />
+				<touch-screen v-model="test.touchScreen" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
 					<q-btn flat @click="step = 3" color="primary" label="Back" class="q-ml-sm" />

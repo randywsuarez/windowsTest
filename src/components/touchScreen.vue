@@ -1,12 +1,15 @@
 <template>
 	<div class="app-container">
-		<div v-if="!testStarted" class="row justify-center q-pt-md">
-			<button v-show="!testStarted" class="start-button" @click="startTest">
-				{{ testStarted ? 'Stop' : 'Start' }}
-			</button>
+		<div v-show="!testStarted" class="row justify-center q-pt-md">
+			<button v-show="!testStarted" class="start-button" @click="startTest">Start</button>
+			<button v-show="testStarted" class="reset-button" @click="resetTest">Reset</button>
 		</div>
-		<div class="fullscreen-test" :class="{ 'active-test': testStarted }" v-else>
-			<q-page class="test-grid">
+		<div
+			class="fullscreen-test no-scroll"
+			:class="{ 'active-test': testStarted }"
+			v-show="testStarted"
+		>
+			<q-page ref="testGrid" class="test-grid" id="test">
 				<div
 					v-for="(cell, index) in grid"
 					:key="index"
@@ -42,7 +45,6 @@
 			}
 		},
 		mounted() {
-			this.restoreState()
 			document.addEventListener('keydown', this.handleEscapeKey)
 		},
 		beforeDestroy() {
@@ -79,7 +81,7 @@
 					this.grid[index].active = true
 					const allClicked = this.grid.every((cell) => !cell.highlighted || cell.active)
 					if (allClicked) {
-						this.captureScreen()
+						this.captureScreen(true)
 					}
 				}
 			},
@@ -88,46 +90,58 @@
 				this.toggleFullScreen()
 				this.initializeGrid()
 			},
+			resetTest() {
+				this.testStarted = false
+				this.grid = []
+				document.exitFullscreen()
+			},
 			toggleFullScreen() {
 				if (!document.fullscreenElement) {
 					document.documentElement.requestFullscreen()
-				} else if (document.exitFullscreen) {
+					document.body.style.overflow = 'hidden'
+				} else {
 					document.exitFullscreen()
+					document.body.style.overflow = ''
 				}
 			},
-			captureScreen() {
-				html2canvas(document.body).then((canvas) => {
-					const dataUrl = canvas.toDataURL()
-					const jsonResult = {
-						ext: 'png',
-						base64: dataUrl.split(',')[1],
-						type: 'touchscreen',
+			async captureScreen(status) {
+				let test = this.$el.querySelector('#test')
+				console.log(test)
+				if (test) {
+					try {
+						const canvas = await html2canvas(test)
+						const base64Image = canvas.toDataURL('image/png')
+						const jsonResult = {
+							ext: 'png',
+							base64: base64Image,
+							type: 'touchscreen',
+							status: status,
+							message: status ? 'Touch screen test PASS' : 'Touch screen test FAIL',
+						}
+						localStorage.setItem(
+							'touchscreenState',
+							JSON.stringify({ grid: this.grid, screenshot: jsonResult }),
+						)
+						this.$emit('input', jsonResult)
+						this.exitFullScreen()
+					} catch (error) {
+						console.error('Error capturing image:', error)
 					}
-					localStorage.setItem(
-						'touchscreenState',
-						JSON.stringify({ grid: this.grid, screenshot: jsonResult }),
-					)
-					this.exitFullScreen()
-				})
+				} else {
+					console.error('SVG element not found for capturing.')
+				}
 			},
 			exitFullScreen() {
 				if (document.fullscreenElement) {
 					document.exitFullscreen()
 				}
+				document.body.style.overflow = ''
 				this.testStarted = false
 			},
 			handleEscapeKey(event) {
 				if (event.key === 'Escape' && this.testStarted) {
+					this.captureScreen(false)
 					this.exitFullScreen()
-				}
-			},
-			restoreState() {
-				const savedState = localStorage.getItem('touchscreenState')
-				if (savedState) {
-					const { grid } = JSON.parse(savedState)
-					this.grid = grid
-				} else {
-					this.initializeGrid()
 				}
 			},
 		},
@@ -153,6 +167,10 @@
 		align-items: center;
 		z-index: 9999;
 		transition: background-color 0.3s;
+	}
+
+	.no-scroll {
+		overflow: hidden;
 	}
 
 	.fullscreen-test.active-test {
@@ -191,6 +209,29 @@
 
 	.start-button:active {
 		background-color: #3e8e41;
+	}
+
+	.reset-button {
+		transform: translateX(-50%);
+		background-color: #f44336;
+		color: white;
+		border: none;
+		border-radius: 50%;
+		width: 60px;
+		height: 60px;
+		font-size: 16px;
+		cursor: pointer;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+		transition: background-color 0.3s ease;
+		margin-left: 10px;
+	}
+
+	.reset-button:hover {
+		background-color: #e53935;
+	}
+
+	.reset-button:active {
+		background-color: #d32f2f;
 	}
 
 	.test-grid {
