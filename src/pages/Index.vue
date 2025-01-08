@@ -40,7 +40,7 @@
 					/>
 				</q-stepper-navigation>
 			</q-step>
-			<q-step :name="3" title="Mic" icon="mouse" :done="stepTest.mic">
+			<q-step :name="3" title="Mic" icon="mic" :done="stepTest.mic">
 				<mic v-model="test.mic" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">

@@ -28,9 +28,9 @@
 		"quasar": "^1.0.0",
 		"socket.io-client": "^4.7.2",
 		"systeminformation": "^5.23.5",
+		"tone": "^15.0.4",
 		"uuid": "^9.0.1",
-		"vue-i18n": "8",
-		"wavesurfer.js": "^7.7.15"
+		"vue-i18n": "8"
 	},
 	"devDependencies": {
 		"@babel/plugin-proposal-nullish-coalescing-operator": "^7.18.6",
