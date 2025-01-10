@@ -1,16 +1,13 @@
 <template>
-	<div>
-		<div
-			style="max-width: 50%; margin: 0 auto; transform: scale(0.8); transform-origin: center center"
-		>
-			<div class="grid-container" :style="getGridTemplateStyle">
-				<div v-for="(camera, index) in cameras" :key="camera.deviceId" class="grid-item">
-					<div class="camera-wrapper">
-						<video ref="video" :id="`video-${index}`" playsinline autoplay></video>
-						<canvas ref="canvas" :id="`canvas-${index}`" style="display: none"></canvas>
-						<div class="camera-caption">
-							{{ camera.label || `Camera ${index + 1}` }}
-						</div>
+	<div
+		style="max-width: 50%; margin: 0 auto; transform: scale(0.8); transform-origin: center center"
+	>
+		<div class="grid-container" ref="gridContainer" :style="getGridTemplateStyle">
+			<div v-for="(camera, index) in cameras" :key="camera.deviceId" class="grid-item">
+				<div class="camera-wrapper">
+					<video ref="video" :id="`video-${index}`" playsinline autoplay></video>
+					<div class="camera-caption">
+						{{ camera.label || `Camera ${index + 1}` }}
 					</div>
 				</div>
 			</div>
@@ -30,14 +27,13 @@
 		name: 'MultiCameraCapture',
 		props: {
 			value: {
-				type: Array,
+				type: Object, // Only accept objects
 				required: true,
 			},
 		},
 		data() {
 			return {
 				cameras: [],
-				capturedImages: [],
 				results: [],
 			}
 		},
@@ -70,87 +66,50 @@
 					videoElement.srcObject = stream
 					videoElement.onloadedmetadata = () => {
 						videoElement.play()
-						this.waitForFocus(videoElement, index)
 					}
-					this.results.push({
-						status: null,
-						message: '',
-						base64: '',
-						ext: 'png',
-						type: 'webcam',
-					})
 				})
 			},
-			waitForFocus(videoElement, index) {
-				setTimeout(() => {
-					if (this.isVideoReady(videoElement)) {
-						this.captureImage(index)
-					} else {
-						this.waitForFocus(videoElement, index)
-					}
-				}, 500)
+			async handlePass() {
+				await this.captureGrid(true, 'Webcam test PASS')
 			},
-			isVideoReady(videoElement) {
-				const canvas = document.createElement('canvas')
-				const context = canvas.getContext('2d')
-				canvas.width = videoElement.videoWidth
-				canvas.height = videoElement.videoHeight
-				context.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
+			async handleFail() {
+				await this.captureGrid(false, 'Webcam test FAIL')
+			},
+			async handleReset() {
+				this.results = []
+				await this.startAllCameras()
+				this.emitResults()
+			},
+			async captureGrid(status, message) {
+				const gridElement = this.$refs.gridContainer
+				const canvas = await html2canvas(gridElement)
+				const base64Image = canvas.toDataURL('image/png')
 
-				const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
-				const pixels = imageData.data
-				let totalBrightness = 0
-				for (let i = 0; i < pixels.length; i += 4) {
-					totalBrightness += (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3
+				this.results = {
+					status,
+					message,
+					base64: base64Image,
+					ext: 'png',
+					type: 'webcam',
 				}
-				const avgBrightness = totalBrightness / (pixels.length / 4)
-				return avgBrightness > 50 && avgBrightness < 200
-			},
-			captureImage(index) {
-				const videoElement = this.$refs.video[index]
-				const canvasElement = this.$refs.canvas[index]
-				const context = canvasElement.getContext('2d')
-				canvasElement.width = videoElement.videoWidth
-				canvasElement.height = videoElement.videoHeight
-				context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height)
-				this.capturedImages[index] = canvasElement.toDataURL('image/png')
-			},
-			handlePass(index) {
-				this.results[index].status = true
-				this.results[index].message = 'Webcam test PASS'
-				this.captureRow(index)
-			},
-			handleFail(index) {
-				this.results[index].status = false
-				this.results[index].message = 'Webcam test FAIL'
-				this.captureRow(index)
-			},
-			handleReset(index) {
-				this.results[index].status = null
-				this.results[index].message = ''
-				this.results[index].base64 = ''
+				await this.stopAllCameras()
 				this.emitResults()
 			},
-			async handlePassAll() {
-				for (let index = 0; index < this.results.length; index++) {
-					this.handlePass(index)
+			async stopAllCameras() {
+				for (const [index, camera] of this.cameras.entries()) {
+					const videoElement = this.$refs.video[index]
+					if (videoElement) {
+						const stream = videoElement.srcObject
+						if (stream) {
+							const tracks = stream.getTracks()
+							tracks.forEach((track) => track.stop())
+							videoElement.srcObject = null
+						}
+					}
 				}
 			},
-			async handleFailAll() {
-				for (let index = 0; index < this.results.length; index++) {
-					this.handleFail(index)
-				}
-			},
-			async handleResetAll() {
-				for (let index = 0; index < this.results.length; index++) {
-					this.handleReset(index)
-				}
-			},
-			async captureRow(index) {
-				const element = this.$refs[`video-${index}`][0].parentNode
-				const canvas = await html2canvas(element)
-				this.results[index].base64 = canvas.toDataURL('image/png')
-				this.emitResults()
+			async startAllCameras() {
+				await this.initializeCameras()
 			},
 			emitResults() {
 				this.$emit('input', this.results)
