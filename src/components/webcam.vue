@@ -1,172 +1,224 @@
 <template>
-		<div class="camera-container">
-		<div v-if="showVideo" class="camera">
-			<video ref="video" playsinline autoplay></video>
+	<div>
+		<div
+			style="max-width: 50%; margin: 0 auto; transform: scale(0.8); transform-origin: center center"
+		>
+			<div class="grid-container" :style="getGridTemplateStyle">
+				<div v-for="(camera, index) in cameras" :key="camera.deviceId" class="grid-item">
+					<div class="camera-wrapper">
+						<video ref="video" :id="`video-${index}`" playsinline autoplay></video>
+						<canvas ref="canvas" :id="`canvas-${index}`" style="display: none"></canvas>
+						<div class="camera-caption">
+							{{ camera.label || `Camera ${index + 1}` }}
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
-		<canvas ref="canvas" style="display: none"></canvas>
-    <div class="flex flex-center"><img v-if="showCapturedImage" :src="capturedImage" alt="Captured Image" class="captured-image" center /></div>
-		<input type="hidden" ref="txtPhoto" />
+		<div id="kb_box_b" class="row justify-between q-pt-md">
+			<q-btn color="red" icon="close" label="Fail" @click="handleFail" />
+			<q-btn color="primary" label="Reset" @click="handleReset" />
+			<q-btn color="green" icon="check" label="Pass" @click="handlePass" />
+		</div>
 	</div>
 </template>
 
 <script>
+	import html2canvas from 'html2canvas'
+
 	export default {
-		name: 'CamaraCapture', // Nombre del componente
+		name: 'MultiCameraCapture',
 		props: {
-			imageName: {
-				type: String,
-				default: '',
+			value: {
+				type: Array,
+				required: true,
 			},
 		},
 		data() {
 			return {
-				width: 0,
-				height: 0,
-				streaming: false,
-				showVideo: true,
-				capturedImage: '',
-				showCapturedImage: false,
-				videoStream: null,
-				selectedCamera: null,
 				cameras: [],
-				countdown: 5, // Inicia el contador regresivo en 5 segundos
+				capturedImages: [],
+				results: [],
 			}
 		},
-		mounted() {
-			navigator.mediaDevices
-				.enumerateDevices()
-				.then(function (devices) {
-					let videoDevices = devices.filter((device) => device.kind === 'videoinput')
-
-					if (videoDevices.length > 0) {
-						videoDevices.forEach((device, index) => {
-							console.log(`Camera ${index + 1}: ${device.label} (ID: ${device.deviceId})`)
-						})
-					} else {
-						console.log('No cameras found.')
-					}
-				})
-				.catch(function (err) {
-					console.error('Error enumerating devices: ', err)
-				})
-
-			this.startup()
-			window.addEventListener('resize', this.setVideoDimensions)
-		},
-		beforeDestroy() {
-			this.stopCapture()
-			window.removeEventListener('resize', this.setVideoDimensions)
+		computed: {
+			getGridTemplateStyle() {
+				const numCameras = this.cameras.length
+				if (numCameras === 1) {
+					return 'grid-template-columns: repeat(1, 1fr);'
+				} else if (numCameras === 2) {
+					return 'grid-template-columns: repeat(2, 1fr);'
+				} else {
+					const columns = Math.ceil(Math.sqrt(numCameras))
+					return `grid-template-columns: repeat(${columns}, 1fr);`
+				}
+			},
 		},
 		methods: {
-			startup() {
-				this.video = this.$refs.video
-				this.canvas = this.$refs.canvas
-				this.photo = this.$refs.photo
-				this.txtPhoto = this.$refs.txtPhoto
-				navigator.mediaDevices
-					.getUserMedia({ video: true, audio: false })
-					.then((stream) => {
-						this.video.srcObject = stream
-						this.video.play()
+			async initializeCameras() {
+				const devices = await navigator.mediaDevices.enumerateDevices()
+				this.cameras = devices.filter(
+					(device) =>
+						device.kind === 'videoinput' && !device.label.toLowerCase().includes('infrared'),
+				)
+
+				this.cameras.forEach(async (camera, index) => {
+					const stream = await navigator.mediaDevices.getUserMedia({
+						video: { deviceId: { exact: camera.deviceId } },
 					})
-					.catch((err) => {
-						console.error('An error occurred: ' + err)
-						alert('An error occurred while accessing the camera: ' + err.message)
+					const videoElement = this.$refs.video[index]
+					videoElement.srcObject = stream
+					videoElement.onloadedmetadata = () => {
+						videoElement.play()
+						this.waitForFocus(videoElement, index)
+					}
+					this.results.push({
+						status: null,
+						message: '',
+						base64: '',
+						ext: 'png',
+						type: 'webcam',
 					})
-
-				this.video.addEventListener('canplay', this.onCanPlay, false)
+				})
 			},
-			onCanPlay() {
-				if (!this.streaming) {
-					this.setVideoDimensions()
-					this.streaming = true
-					this.takePicture()
-					this.stopCapture()
-				}
-			},
-			setVideoDimensions() {
-				this.width = this.video.clientWidth
-				this.height = this.width * (9 / 16) // Aspecto 16:9
-
-				if (isNaN(this.height)) {
-					this.height = this.width / (4 / 3)
-				}
-
-				this.video.setAttribute('width', this.width)
-				this.video.setAttribute('height', this.height)
-				this.canvas.setAttribute('width', this.width)
-				this.canvas.setAttribute('height', this.height)
-			},
-			stopCapture() {
-				if (this.video.srcObject) {
-					this.video.srcObject.getTracks().forEach((track) => track.stop())
-				}
-				this.showVideo = false
-			},
-			clearPhoto() {
-				if (this.photo) {
-					this.photo.setAttribute('src', '')
-				}
-			},
-			takePicture() {
-				const context = this.canvas.getContext('2d')
-				if (this.width && this.height) {
-					this.canvas.width = this.width
-					this.canvas.height = this.height
-					context.drawImage(this.video, 0, 0, this.width, this.height)
-
-					const imageDataURL = this.canvas.toDataURL('image/jpeg')
-					if (this.photo) {
-						this.photo.setAttribute('src', imageDataURL)
+			waitForFocus(videoElement, index) {
+				setTimeout(() => {
+					if (this.isVideoReady(videoElement)) {
+						this.captureImage(index)
+					} else {
+						this.waitForFocus(videoElement, index)
 					}
-					if (this.txtPhoto) {
-						this.txtPhoto.setAttribute('value', imageDataURL)
-					}
-					this.capturedImage = imageDataURL
-					this.showCapturedImage = true
-					this.showVideo = false
+				}, 500)
+			},
+			isVideoReady(videoElement) {
+				const canvas = document.createElement('canvas')
+				const context = canvas.getContext('2d')
+				canvas.width = videoElement.videoWidth
+				canvas.height = videoElement.videoHeight
+				context.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
 
-					if (this.imageName) {
-						let res = {
-							SerialNumber: this.imageName,
-							EmployeeID: '',
-							FileType: '2',
-							fileExtension: '.jpg',
-							fileBase64Str: imageDataURL.replace(/^data:image\/jpeg;base64,/, ''),
-						}
-						this.$emit('input', res)
-					}
-				} else {
-					this.clearPhoto()
+				const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+				const pixels = imageData.data
+				let totalBrightness = 0
+				for (let i = 0; i < pixels.length; i += 4) {
+					totalBrightness += (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3
+				}
+				const avgBrightness = totalBrightness / (pixels.length / 4)
+				return avgBrightness > 50 && avgBrightness < 200
+			},
+			captureImage(index) {
+				const videoElement = this.$refs.video[index]
+				const canvasElement = this.$refs.canvas[index]
+				const context = canvasElement.getContext('2d')
+				canvasElement.width = videoElement.videoWidth
+				canvasElement.height = videoElement.videoHeight
+				context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height)
+				this.capturedImages[index] = canvasElement.toDataURL('image/png')
+			},
+			handlePass(index) {
+				this.results[index].status = true
+				this.results[index].message = 'Webcam test PASS'
+				this.captureRow(index)
+			},
+			handleFail(index) {
+				this.results[index].status = false
+				this.results[index].message = 'Webcam test FAIL'
+				this.captureRow(index)
+			},
+			handleReset(index) {
+				this.results[index].status = null
+				this.results[index].message = ''
+				this.results[index].base64 = ''
+				this.emitResults()
+			},
+			async handlePassAll() {
+				for (let index = 0; index < this.results.length; index++) {
+					this.handlePass(index)
 				}
 			},
+			async handleFailAll() {
+				for (let index = 0; index < this.results.length; index++) {
+					this.handleFail(index)
+				}
+			},
+			async handleResetAll() {
+				for (let index = 0; index < this.results.length; index++) {
+					this.handleReset(index)
+				}
+			},
+			async captureRow(index) {
+				const element = this.$refs[`video-${index}`][0].parentNode
+				const canvas = await html2canvas(element)
+				this.results[index].base64 = canvas.toDataURL('image/png')
+				this.emitResults()
+			},
+			emitResults() {
+				this.$emit('input', this.results)
+			},
+		},
+		mounted() {
+			this.initializeCameras()
 		},
 	}
 </script>
 
-<style scoped>
-	.camera-container {
+<style>
+	.grid-container {
+		display: grid;
+		gap: 10px;
+		background-color: black;
+		padding: 10px;
+		max-height: 720px; /* Restrict max height */
+		overflow: auto; /* Enable internal scrolling if necessary */
+	}
+	.grid-item {
+		border: 2px solid white;
+		border-radius: 8px;
+		position: relative;
+		overflow: hidden; /* Prevent content from overflowing outside the parent */
+	}
+	.camera-wrapper {
 		text-align: center;
 	}
-
-	.camera {
-		position: relative;
-		display: inline-block;
-		width: 100%;
-	}
-
 	video {
 		width: 100%;
-		height: auto;
+		height: 100%;
+		object-fit: cover; /* Ensure the video fits within the grid item */
+		border-radius: 8px 8px 0 0;
 	}
-
-	canvas {
-		display: none;
+	.camera-caption {
+		position: absolute;
+		bottom: 0;
+		width: 100%;
+		background: rgba(0, 0, 0, 0.6);
+		color: white;
+		text-align: center;
+		padding: 5px 0;
+		font-size: 14px;
+		border-radius: 0 0 8px 8px;
 	}
-
-	.captured-image {
-		max-height: 200px; /* Establece la altura máxima en 200px */
-            overflow-y: auto; /* Añade una barra de desplazamiento vertical si el contenido excede la altura máxima */
-            background-color: lightblue;
-            padding: 10px;
-  }
+	.button-container {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 20px;
+	}
+	.btn {
+		padding: 10px 20px;
+		border: none;
+		border-radius: 5px;
+		cursor: pointer;
+	}
+	.btn-fail {
+		background-color: red;
+		color: white;
+	}
+	.btn-reset {
+		background-color: blue;
+		color: white;
+	}
+	.btn-pass {
+		background-color: green;
+		color: white;
+	}
+</style>

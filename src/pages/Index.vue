@@ -79,7 +79,7 @@
 				<dead-pixel v-model="test.spotlight" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
-					<q-btn flat @click="step = 3" color="primary" label="Back" class="q-ml-sm" />
+					<q-btn flat @click="step = 4" color="primary" label="Back" class="q-ml-sm" />
 					<q-btn
 						:disable="!(test.spotlight.status == true)"
 						@click="
@@ -97,7 +97,7 @@
 				<speaker v-model="test.speaker" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
-					<q-btn flat @click="step = 4" color="primary" label="Back" class="q-ml-sm" />
+					<q-btn flat @click="step = 5" color="primary" label="Back" class="q-ml-sm" />
 					<q-btn
 						:disable="!(test.speaker.status == true)"
 						@click="
@@ -115,13 +115,31 @@
 				<brightness v-model="test.brightness" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
-					<q-btn flat @click="step = 4" color="primary" label="Back" class="q-ml-sm" />
+					<q-btn flat @click="step = 6" color="primary" label="Back" class="q-ml-sm" />
 					<q-btn
 						:disable="!(test.brightness.status == true)"
 						@click="
 							() => {
 								stepTest.brightness = true
 								step = 8
+							}
+						"
+						color="primary"
+						label="Continue"
+					/>
+				</q-stepper-navigation>
+			</q-step>
+			<q-step :name="8" title="Webcam" icon="webcam" :done="stepTest.webcam">
+				<webcam v-model="test.webcam" />
+
+				<q-stepper-navigation class="row justify-between q-pt-md">
+					<q-btn flat @click="step = 7" color="primary" label="Back" class="q-ml-sm" />
+					<q-btn
+						:disable="!(test.webcam.status == true)"
+						@click="
+							() => {
+								stepTest.webcam = true
+								step = 9
 							}
 						"
 						color="primary"
@@ -153,6 +171,7 @@
 	import deadPixel from '../components/deadPixel.vue'
 	import speaker from '../components/soundTest.vue'
 	import brightness from '../components/Brightness.vue'
+	import webcam from '../components/webcam.vue'
 	export default {
 		components: {
 			Keyboard,
@@ -162,6 +181,7 @@
 			deadPixel,
 			speaker,
 			brightness,
+			webcam,
 		},
 		data() {
 			return {
@@ -174,6 +194,7 @@
 					spotlight: null,
 					speaker: null,
 					brightness: null,
+					webcam: null,
 				},
 				test: {
 					keyboard: {},
@@ -183,6 +204,7 @@
 					spotlight: {},
 					speaker: {},
 					brightness: {},
+					webcam: {},
 				},
 			}
 		},
