@@ -1,6 +1,5 @@
 <template>
 	<div class="q-pa-md">
-		<q-btn label="Reset" push color="white" text-color="primary" @click="reset" class="q-mb-md" v />
 		<title>Components Test</title>
 
 		<q-stepper v-model="step" header-nav ref="stepper" color="green" animated>
@@ -67,7 +66,7 @@
 						:disable="!(test.touchScreen.status == true)"
 						@click="
 							() => {
-								stepTest.spotlight = true
+								stepTest.touchScreen = true
 								step = 5
 							}
 						"
@@ -87,6 +86,42 @@
 							() => {
 								stepTest.spotlight = true
 								step = 6
+							}
+						"
+						color="primary"
+						label="Continue"
+					/>
+				</q-stepper-navigation>
+			</q-step>
+			<q-step :name="6" title="Speaker" icon="speaker" :done="stepTest.speaker">
+				<speaker v-model="test.speaker" />
+
+				<q-stepper-navigation class="row justify-between q-pt-md">
+					<q-btn flat @click="step = 4" color="primary" label="Back" class="q-ml-sm" />
+					<q-btn
+						:disable="!(test.speaker.status == true)"
+						@click="
+							() => {
+								stepTest.speaker = true
+								step = 7
+							}
+						"
+						color="primary"
+						label="Continue"
+					/>
+				</q-stepper-navigation>
+			</q-step>
+			<q-step :name="7" title="Brightness" icon="brightness" :done="stepTest.brightness">
+				<brightness v-model="test.brightness" />
+
+				<q-stepper-navigation class="row justify-between q-pt-md">
+					<q-btn flat @click="step = 4" color="primary" label="Back" class="q-ml-sm" />
+					<q-btn
+						:disable="!(test.brightness.status == true)"
+						@click="
+							() => {
+								stepTest.brightness = true
+								step = 8
 							}
 						"
 						color="primary"
@@ -116,6 +151,8 @@
 	import Mic from '../components/Mic.vue'
 	import touchScreen from '../components/touchScreen.vue'
 	import deadPixel from '../components/deadPixel.vue'
+	import speaker from '../components/soundTest.vue'
+	import brightness from '../components/Brightness.vue'
 	export default {
 		components: {
 			Keyboard,
@@ -123,6 +160,8 @@
 			Mic,
 			touchScreen,
 			deadPixel,
+			speaker,
+			brightness,
 		},
 		data() {
 			return {
@@ -133,6 +172,8 @@
 					mic: null,
 					touchScreen: null,
 					spotlight: null,
+					speaker: null,
+					brightness: null,
 				},
 				test: {
 					keyboard: {},
@@ -140,22 +181,13 @@
 					mic: {},
 					touchScreen: {},
 					spotlight: {},
+					speaker: {},
+					brightness: {},
 				},
-				done1: false,
-				done2: false,
-				done3: false,
-				done4: false,
 			}
 		},
 
-		methods: {
-			reset() {
-				this.done1 = false
-				this.done2 = false
-				this.done3 = false
-				this.step = 2
-			},
-		},
+		methods: {},
 	}
 </script>
 <style scoped>
