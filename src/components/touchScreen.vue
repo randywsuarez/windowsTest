@@ -1,8 +1,23 @@
 <template>
 	<div class="app-container">
-		<div v-show="!testStarted" class="row justify-center q-pt-md">
-			<button v-show="!testStarted" class="start-button" @click="startTest">Start</button>
-			<button v-show="testStarted" class="reset-button" @click="resetTest">Reset</button>
+		<div
+			:style="{ fontWeight: 'bold', fontSize: '1.5rem', textAlign: 'center' }"
+			class="row justify-center q-pt-md"
+			v-if="!testDecided"
+		>
+			Is the unit touch screen?
+		</div>
+
+		<div v-show="!testStarted && !testDecided" class="row justify-center q-pt-md">
+			<q-btn label="Yes" color="primary" class="start-button" @click="confirmTouchScreen(true)" />
+			<q-btn label="No" color="negative" class="reset-button" @click="confirmTouchScreen(false)" />
+		</div>
+		<div
+			:style="{ color: test.status ? 'green' : 'red' }"
+			class="row justify-center q-pt-md"
+			v-if="!testDecided"
+		>
+			{{ test.message || 'Please select an option to proceed' }}
 		</div>
 		<div
 			class="fullscreen-test no-scroll"
@@ -22,6 +37,7 @@
 					@click="handleCellClick(index)"
 				/>
 			</q-page>
+			<div class="exit-message">Press Esc to exit full screen</div>
 		</div>
 	</div>
 </template>
@@ -42,6 +58,8 @@
 				rows: 20,
 				cols: 20,
 				testStarted: false,
+				testDecided: false,
+				test: {},
 			}
 		},
 		mounted() {
@@ -51,6 +69,18 @@
 			document.removeEventListener('keydown', this.handleEscapeKey)
 		},
 		methods: {
+			confirmTouchScreen(isTouchScreen) {
+				this.testDecided = true
+				if (isTouchScreen) {
+					this.startTest()
+				} else {
+					this.test = {
+						status: true,
+					}
+					localStorage.setItem('touchscreenState', JSON.stringify(this.test))
+					this.$emit('input', this.test)
+				}
+			},
 			initializeGrid() {
 				this.grid = Array.from({ length: this.rows * this.cols }, () => ({
 					active: false,
@@ -105,13 +135,18 @@
 				}
 			},
 			async captureScreen(status) {
-				let test = this.$el.querySelector('#test')
-				console.log(test)
-				if (test) {
+				// Obtener el elemento por su ID
+				const test = document.getElementById('test')
+
+				// Verificar que el elemento exista y esté en el documento
+				if (test && document.body.contains(test)) {
+					// Esperar a que el DOM se actualice completamente (opcional, pero recomendado)
+					await this.$nextTick()
+
 					try {
 						const canvas = await html2canvas(test)
 						const base64Image = canvas.toDataURL('image/png')
-						const jsonResult = {
+						this.test = {
 							ext: 'png',
 							base64: base64Image,
 							type: 'touchscreen',
@@ -120,15 +155,18 @@
 						}
 						localStorage.setItem(
 							'touchscreenState',
-							JSON.stringify({ grid: this.grid, screenshot: jsonResult }),
+							JSON.stringify({ grid: this.grid, screenshot: this.test }),
 						)
-						this.$emit('input', jsonResult)
+
+						this.$emit('input', this.test)
+						this.testStarted = false
+						this.testDecided = false // Permite volver a la pantalla inicial
 						this.exitFullScreen()
 					} catch (error) {
 						console.error('Error capturing image:', error)
 					}
 				} else {
-					console.error('SVG element not found for capturing.')
+					console.error('El elemento con id "test" no está adjunto al DOM.')
 				}
 			},
 			exitFullScreen() {
@@ -165,6 +203,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		overflow: hidden;
 		z-index: 9999;
 		transition: background-color 0.3s;
 	}
@@ -175,6 +214,23 @@
 
 	.fullscreen-test.active-test {
 		background-color: #2c3e50;
+		justify-content: stretch;
+		align-items: stretch;
+	}
+
+	.exit-message {
+		position: fixed;
+		bottom: 20px;
+		left: 50%;
+		transform: translateX(-50%);
+		background-color: rgba(0, 0, 0, 0.8);
+		color: white;
+		padding: 10px 20px;
+		border-radius: 8px;
+		font-size: 14px;
+		text-align: center;
+		z-index: 1001; /* Ensure it is above other elements */
+		pointer-events: none; /* Prevent interaction */
 	}
 
 	.start-screen {
@@ -190,18 +246,16 @@
 	}
 
 	.start-button {
-		transform: translateX(-50%);
 		background-color: #4caf50;
 		color: white;
 		border: none;
-		border-radius: 50%;
-		width: 60px;
-		height: 60px;
+		border-radius: 8px;
+		padding: 10px 20px;
 		font-size: 16px;
 		cursor: pointer;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 		transition: background-color 0.3s ease;
-		outline: none;
+		margin: 5px;
 	}
 
 	.start-button:hover {
@@ -213,18 +267,16 @@
 	}
 
 	.reset-button {
-		transform: translateX(-50%);
 		background-color: #f44336;
 		color: white;
 		border: none;
-		border-radius: 50%;
-		width: 60px;
-		height: 60px;
+		border-radius: 8px;
+		padding: 10px 20px;
 		font-size: 16px;
 		cursor: pointer;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 		transition: background-color 0.3s ease;
-		margin-left: 10px;
+		margin: 5px;
 	}
 
 	.reset-button:hover {
@@ -238,14 +290,17 @@
 	.test-grid {
 		display: grid;
 		grid-template-columns: repeat(20, 1fr);
+		grid-template-rows: repeat(20, 1fr);
 		gap: 2px;
 		width: 100%;
 		height: 100%;
+		justify-items: stretch;
+		align-items: stretch;
 	}
 
 	.grid-cell {
 		width: 100%;
-		aspect-ratio: 1 / 1;
+		height: 100%;
 		background-color: white;
 		border: 1px solid black;
 		cursor: pointer;

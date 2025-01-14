@@ -21,7 +21,7 @@
 				</q-stepper-navigation>
 			</q-step>
 
-			<q-step :name="2" title="Mouse / MousePad" icon="mouse" :done="stepTest.mouse">
+			<q-step :name="2" title="Mouse" icon="mouse" :done="stepTest.mouse">
 				<mouse v-model="test.mouse" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
@@ -75,7 +75,7 @@
 					/>
 				</q-stepper-navigation>
 			</q-step>
-			<q-step :name="5" title="Spot lights" icon="backlight_high_off" :done="stepTest.spotlight">
+			<q-step :name="5" title="Spot lights" icon="monitor" :done="stepTest.spotlight">
 				<dead-pixel v-model="test.spotlight" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
@@ -111,7 +111,7 @@
 					/>
 				</q-stepper-navigation>
 			</q-step>
-			<q-step :name="7" title="Brightness" icon="brightness" :done="stepTest.brightness">
+			<q-step :name="7" title="Brightness" icon="fluorescent" :done="stepTest.brightness">
 				<brightness v-model="test.brightness" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
@@ -127,9 +127,9 @@
 						color="primary"
 						label="Continue"
 					/>
-				</q-stepper-navigation>
-			</q-step>
-			<q-step :name="8" title="Webcam" icon="webcam" :done="stepTest.webcam">
+				</q-stepper-navigation> </q-step
+			>e
+			<q-step :name="8" title="Webcam" icon="camera" :done="stepTest.webcam">
 				<webcam v-model="test.webcam" />
 
 				<q-stepper-navigation class="row justify-between q-pt-md">
