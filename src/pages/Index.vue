@@ -1,168 +1,115 @@
 <template>
-	<div class="q-pa-md">
-		<title>Components Test</title>
-
-		<q-stepper
-			v-model="step"
-			header-nav
-			ref="stepper"
-			color="green"
-			animated
-			class="full-width-stepper"
-			alternative-labels
-		>
-			<q-step
-				v-for="(stepComponent, index) in filteredSteps"
-				:key="index"
-				:name="index + 1"
-				:title="stepComponent.title"
-				:icon="stepComponent.icon"
-				:done="(test[stepComponent.title] && test[stepComponent.title].status) || false"
-				:header-nav="(test[stepComponent.title] && test[stepComponent.title].status) || false"
-			>
-				<component :is="stepComponent.component" v-model="test[stepComponent.title]" />
-
-				<q-stepper-navigation class="row justify-between align-center q-pt-md">
-					<q-btn
-						flat
-						v-if="index > 0"
-						@click="step = index"
-						color="primary"
-						label="Back"
-						class="q-ml-sm"
-					/>
-					<q-btn
-						v-if="index < filteredSteps.length - 1"
-						:disable="!isStepValid(stepComponent.title)"
-						@click="nextStep(index)"
-						color="primary"
-						label="Continue"
-						class="q-mr-sm"
-					/>
-					<q-btn
-						v-else
-						:disable="!isStepValid(stepComponent.title)"
-						@click="lastStep"
-						color="primary"
-						label="Continue"
-						class="q-mr-sm"
-					/>
-				</q-stepper-navigation>
-			</q-step>
-		</q-stepper>
-	</div>
+	<q-page>
+		<q-card class="q-card-container">
+			<div v-for="category in data" :key="category._id" class="category-container">
+				<h2>{{ category.Category }}</h2>
+				<div class="details-container">
+					<q-card
+						v-for="detail in category.Details"
+						:key="detail.Type"
+						class="q-ma-sm detail-card"
+						@click="navigateTo(detail.Route, detail.Type)"
+					>
+						<q-item>
+							<q-item-section class="image-section">
+								<img :src="detail.Image" alt="detail.Type" class="detail-image" />
+							</q-item-section>
+						</q-item>
+						<q-item-section>
+							<q-item-label style="font-size: 10px">{{ detail.Type }}</q-item-label>
+						</q-item-section>
+					</q-card>
+				</div>
+			</div>
+		</q-card>
+	</q-page>
 </template>
 
 <script>
-	import Keyboard from '../components/Keyboard.vue'
-	import Mouse from '../components/Mouse.vue'
-	import Mic from '../components/Mic.vue'
-	import touchScreen from '../components/touchScreen.vue'
-	import spotLights from '../components/deadPixel.vue'
-	import speaker from '../components/soundTest.vue'
-	import brightness from '../components/Brightness.vue'
-	import webcam from '../components/webcam.vue'
-
 	export default {
-		components: {
-			Keyboard,
-			Mouse,
-			Mic,
-			touchScreen,
-			spotLights,
-			speaker,
-			brightness,
-			webcam,
-		},
 		data() {
 			return {
-				step: 1,
-				test: {},
-				stepper: [],
-				currentType: 'LAPTOP', // Default to MOUSE if no type is provided
+				data: [],
 			}
 		},
-		computed: {
-			filteredSteps() {
-				if (!Array.isArray(this.stepper) || this.stepper.length === 0) {
-					return []
-				}
-				// Filter steps based on types
-				return this.stepper
-					.filter((step) => step.types && step.types.includes(this.currentType.toUpperCase()))
-					.sort((a, b) => a.sort - b.sort)
-			},
-		},
 		methods: {
-			isStepValid(title) {
-				return this.test[title] && this.test[title].status === true
-			},
-			nextStep(index) {
-				this.step = index + 2
-			},
-			lastStep() {
-				console.log('Last step executed')
-			},
-			initializeTestModel() {
-				this.filteredSteps.forEach((step) => {
-					this.$set(this.test, step.title, {})
-				})
+			navigateTo(route, type) {
+				this.$router.push({ path: `/${route.toLowerCase()}`, query: { type } })
 			},
 		},
 		async mounted() {
-			// Get currentType from route params, default to MOUSE if not provided
-			this.currentType = this.$route.params.type
-				? this.$route.params.type.toUpperCase()
-				: this.currentType
-
-			this.$db
+			this.data = await this.$db
 				.collection('TestSettings')
-				.conditions({ Description: 'Test' })
+				.conditions({ Description: 'testType' })
 				.admin()
 				.get()
-				.then((v) => {
-					if (v && Array.isArray(v) && v.length > 0 && v[0] && v[0].stepComponents) {
-						this.stepper = v[0].stepComponents
-						this.initializeTestModel()
-					} else {
-						console.error('Invalid data structure:', v)
-					}
-				})
-				.catch((error) => {
-					console.error('Error fetching data:', error)
-				})
 		},
 	}
 </script>
 
 <style scoped>
-	.q-pa-md {
-		padding: 16px;
+	.q-card-container {
+		width: 80%;
+		margin: 0 auto;
+		padding: 20px;
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+		border-radius: 12px;
+		background-color: white;
 	}
-	.q-stepper-navigation {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-	.full-width-stepper {
-		width: 100%;
-	}
-	.q-stepper {
-		font-size: 0.9rem; /* Adjust font size for better fit */
-	}
-	.q-stepper .q-step {
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	.q-stepper .q-step .q-stepper-header {
-		display: flex;
-		justify-content: space-between;
-	}
-	.q-stepper .q-stepper-header {
-		gap: 0.5rem;
-	}
-	.text-center {
+
+	.category-container {
 		text-align: center;
+		padding: 10px;
+	}
+
+	.details-container {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 24px;
+	}
+
+	.detail-card {
+		width: 100px;
+		height: 100px;
+		text-align: center;
+		cursor: pointer;
+		transition: transform 0.2s, box-shadow 0.2s;
+		padding: 10px;
+		border: 1px solid transparent;
+		border-radius: 8px;
+		background: linear-gradient(145deg, #f3f3f3, #e6e6e6);
+		box-shadow: 3px 3px 6px #cccccc, -3px -3px 6px #ffffff;
+	}
+
+	.detail-card:hover {
+		transform: scale(1.05);
+		box-shadow: 4px 4px 10px #bbbbbb, -4px -4px 10px #ffffff;
+		background: linear-gradient(145deg, #e6e6e6, #f3f3f3);
+	}
+
+	.detail-card:active {
+		transform: scale(0.95);
+		box-shadow: inset 2px 2px 4px #cccccc, inset -2px -2px 4px #ffffff;
+	}
+
+	.image-section {
+		display: flex;
+		justify-content: center;
+	}
+
+	.detail-image {
+		width: 40px;
+		height: 40px;
+		object-fit: cover;
+		margin-bottom: 8px;
+		border-radius: 4px;
+	}
+
+	h2 {
+		font-size: 24px;
+		font-weight: bold;
+		margin-bottom: 10px;
+		color: var(--q-primary);
 	}
 </style>
