@@ -7,7 +7,19 @@
 			</div>
 		</div>
 		<div v-else>
-			<div id="kb_box_l">
+			<div
+				id="kb_box_l"
+				style="
+					width: 700px;
+					height: 300px;
+					border: 1px solid #ccc;
+					display: flex;
+					flex-direction: column;
+					justify-content: space-between;
+					border-radius: 8px;
+					padding: 10px;
+				"
+			>
 				<div v-for="row in keyRows" :key="row.id" class="kb_row">
 					<div
 						v-for="key in row.keys"
@@ -17,7 +29,7 @@
 						:style="{ backgroundColor: key.color }"
 						@click="pressKey(key.id)"
 					>
-						<span v-html="key.label"></span>
+						<span style="font-size: calc(5px + 0.3vw)" v-html="key.label"></span>
 					</div>
 				</div>
 			</div>
@@ -535,28 +547,28 @@
 							{
 								id: 'kb_btn_ControlLeft',
 								label: 'Ctrl',
-								size: 'kb_btn_large',
+								size: 'kb_btn_small',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
 							{
 								id: 'kb_btn_MetaLeft',
 								label: 'Win',
-								size: 'kb_btn_large',
+								size: 'kb_btn_small',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
 							{
 								id: 'kb_btn_AltLeft',
 								label: 'Alt',
-								size: 'kb_btn_large',
+								size: 'kb_btn_small',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
 							{
 								id: 'kb_btn_FnLeft',
 								label: 'Fn',
-								size: 'kb_btn_large',
+								size: 'kb_btn_small',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
@@ -570,35 +582,35 @@
 							{
 								id: 'kb_btn_FnRight',
 								label: 'Fn',
-								size: 'kb_btn_large',
+								size: 'kb_btn_small',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
 							{
 								id: 'kb_btn_AltRight',
 								label: 'Alt',
-								size: 'kb_btn_large',
+								size: 'kb_btn_small',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
 							{
 								id: 'kb_btn_MetaRight',
 								label: 'Win',
-								size: 'kb_btn_large',
+								size: 'kb_btn_small',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
 							{
 								id: 'kb_btn_ContextMenu',
 								label: 'Menu',
-								size: 'kb_btn_large',
+								size: 'kb_btn_small',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
 							{
 								id: 'kb_btn_ControlRight',
 								label: 'Ctrl',
-								size: 'kb_btn_large',
+								size: 'kb_btn_small',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
@@ -610,28 +622,28 @@
 							{
 								id: 'kb_btn_ArrowUp',
 								label: '↑',
-								size: 'kb_btn_small',
+								size: 'kb_btn_Arrow',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
 							{
 								id: 'kb_btn_ArrowLeft',
 								label: '←',
-								size: 'kb_btn_small',
+								size: 'kb_btn_Arrow',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
 							{
 								id: 'kb_btn_ArrowDown',
 								label: '↓',
-								size: 'kb_btn_small',
+								size: 'kb_btn_Arrow',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
 							{
 								id: 'kb_btn_ArrowRight',
 								label: '→',
-								size: 'kb_btn_small',
+								size: 'kb_btn_Arrow',
 								color: 'rgba(255, 255, 255, 0.1)',
 								pressed: false,
 							},
@@ -846,6 +858,18 @@
 
 	.kb_btn_small {
 		flex: 1 1 5%;
+	}
+	.kb_btn_space {
+		flex: 1 1 50%;
+	}
+	.kb_btn_large {
+		flex: 1 1 10%;
+	}
+	.kb_btn_xlarge {
+		flex: 1 1 13%;
+	}
+	.kb_btn_Arrow {
+		flex: 1 0 5%;
 	}
 	.success-message {
 		margin-top: 10px;
