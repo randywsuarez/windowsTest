@@ -111,9 +111,10 @@
 		},
 		async mounted() {
 			// Get currentType from route params, default to MOUSE if not provided
-			this.currentType = this.$route.params.type
-				? this.$route.params.type.toUpperCase()
+			this.currentType = this.$route.query.type
+				? this.$route.query.type.toUpperCase()
 				: this.currentType
+			console.log(this.$route.query.type)
 
 			this.$db
 				.collection('TestSettings')

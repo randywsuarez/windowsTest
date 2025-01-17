@@ -1,6 +1,30 @@
 <template>
 	<q-page>
 		<q-card class="q-card-container">
+			<q-card class="corner-card top-left" @click="cornerAction('top-left')">
+				<q-item>
+					<q-item-section class="image-section">
+						<img src="SYSINFO.png" class="detail-image" />
+					</q-item-section>
+				</q-item>
+				<q-item-section>
+					<q-item-label style="font-size: 10px">System Info</q-item-label>
+				</q-item-section>
+			</q-card>
+			<q-card
+				class="corner-card top-right"
+				@click="toggleQualityAssurance"
+				:class="{ selected: isQualityAssuranceSelected }"
+			>
+				<q-item>
+					<q-item-section class="image-section">
+						<img :src="isQualityAssuranceSelected ? 'QA-A.png' : 'QA-D.png'" class="detail-image" />
+					</q-item-section>
+				</q-item>
+				<q-item-section>
+					<q-item-label style="font-size: 10px">Quality Assurance</q-item-label>
+				</q-item-section>
+			</q-card>
 			<div v-for="category in data" :key="category._id" class="category-container">
 				<h2>{{ category.Category }}</h2>
 				<div class="details-container">
@@ -30,11 +54,18 @@
 		data() {
 			return {
 				data: [],
+				isQualityAssuranceSelected: false,
 			}
 		},
 		methods: {
+			toggleQualityAssurance() {
+				this.isQualityAssuranceSelected = !this.isQualityAssuranceSelected
+			},
 			navigateTo(route, type) {
 				this.$router.push({ path: `/${route.toLowerCase()}`, query: { type } })
+			},
+			cornerAction(position) {
+				console.log(`Action triggered from ${position} corner.`)
 			},
 		},
 		async mounted() {
@@ -55,6 +86,46 @@
 		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 		border-radius: 12px;
 		background-color: white;
+		position: relative;
+	}
+
+	.corner-card {
+		width: auto;
+		position: absolute;
+		cursor: pointer;
+		transition: transform 0.2s, box-shadow 0.2s;
+		padding: 10px; /* Updated to match q-card-container padding */
+		border: 1px solid transparent;
+		border-radius: 8px;
+		background: linear-gradient(145deg, #f3f3f3, #e6e6e6);
+		box-shadow: 3px 3px 6px #cccccc, -3px -3px 6px #ffffff;
+	}
+
+	.corner-card.selected {
+		box-shadow: 0 0 15px 3px rgba(0, 120, 215, 0.75);
+		background: linear-gradient(145deg, #e6f7ff, #d4efff);
+	}
+
+	.corner-card:hover {
+		transform: scale(1.05);
+		box-shadow: 4px 4px 10px #bbbbbb, -4px -4px 10px #ffffff;
+		background: linear-gradient(145deg, #e6e6e6, #f3f3f3);
+	}
+
+	.corner-card:active {
+		transform: scale(0.95);
+		box-shadow: inset 2px 2px 4px #cccccc, inset -2px -2px 4px #ffffff;
+	}
+
+	.top-left {
+		top: 5px;
+		left: 5px;
+	}
+
+	.top-right {
+		top: 5px;
+		right: 5px;
+		gap: 24px;
 	}
 
 	.category-container {

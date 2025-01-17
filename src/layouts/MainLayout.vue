@@ -2,13 +2,14 @@
 	<q-layout view="lHh Lpr lFf" class="main-layout">
 		<q-header class="main-header" v-show="myHeader">
 			<q-toolbar @mousedown="startDrag">
-				<q-btn flat dense round icon="logout" @click="cerrarSesion" style="color: black" />
+				<q-btn flat dense round icon="home" to="/" style="color: green" />
 
 				<q-toolbar-title style="color: black; font-size: 14px"
 					>Windows Test - Close the Loop V{{ version }}</q-toolbar-title
 				>
 
 				<!-- Botón de cierre con animación -->
+				<q-btn flat dense round icon="logout" @click="cerrarSesion" style="color: red" />
 				<div class="close-button" @click="cerrarVentana">
 					<q-icon name="close" size="24px" color="black" />
 				</div>
