@@ -1,9 +1,9 @@
 <template>
 	<q-page>
-		<div class="row q-col-gutter-lg">
+		<div id="battery-capture" class="row q-col-gutter-lg">
 			<!-- Columna de la batería -->
 			<div class="col-12 col-md-7 flex flex-center">
-				<div class="battery-container" style="transform: scale(1.5)">
+				<div id="battery-capture" class="battery-container" style="transform: scale(1.5)">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" class="battery-svg">
 						<!-- Fondo gris del círculo -->
 						<circle
@@ -53,60 +53,58 @@
 			<!-- Columna de la información -->
 			<div class="col-12 col-md-5">
 				<q-card>
-					<q-card-section> <div class="text-h6">Specifications</div> </q-card-section>
+					<q-card-section>
+						<div class="text-h6">Specifications</div>
+					</q-card-section>
 					<q-separator />
 					<q-card-section>
-						<q-list>
-							<q-item clickable v-ripple>
-								<q-item-section>
-									<q-item-label caption>Model</q-item-label>
-									<q-item-label>{{ batteryInfo.model }}</q-item-label>
+						<q-list dense>
+							<q-item
+								v-for="(item, index) in batteryDetails"
+								:key="index"
+								clickable
+								v-ripple
+								:class="index % 2 === 0 ? 'bg-grey-2' : ''"
+							>
+								<q-item-section avatar>
+									<q-icon :name="item.icon" color="primary" />
 								</q-item-section>
-							</q-item>
-							<q-item clickable v-ripple>
 								<q-item-section>
-									<q-item-label caption>Manufacturer</q-item-label>
-									<q-item-label>{{ batteryInfo.manufacturer || 'N/A' }}</q-item-label>
-								</q-item-section>
-							</q-item>
-							<q-item clickable v-ripple>
-								<q-item-section>
-									<q-item-label caption>Voltage</q-item-label>
-									<q-item-label>{{ batteryInfo.voltage }} V</q-item-label>
-								</q-item-section>
-							</q-item>
-							<q-item clickable v-ripple>
-								<q-item-section>
-									<q-item-label caption>Estimated Life</q-item-label>
-									<q-item-label>{{ batteryInfo.estimatedLife }}%</q-item-label>
-								</q-item-section>
-							</q-item>
-							<q-item clickable v-ripple>
-								<q-item-section>
-									<q-item-label caption>Percent</q-item-label>
-									<q-item-label>{{ batteryInfo.percent }}%</q-item-label>
-								</q-item-section>
-							</q-item>
-							<q-item clickable v-ripple>
-								<q-item-section>
-									<q-item-label caption>Charging</q-item-label>
-									<q-item-label>{{ batteryInfo.isCharging ? 'Yes' : 'No' }}</q-item-label>
+									<q-item-label caption>{{ item.label }}</q-item-label>
+									<q-item-label>{{ item.value }}</q-item-label>
 								</q-item-section>
 							</q-item>
 						</q-list>
 					</q-card-section>
 				</q-card>
 			</div>
+
+			<!-- Botones de acción -->
+			<div class="col">
+				<div id="kb_box_b" class="row justify-between q-pt-md">
+					<q-btn color="red" icon="close" label="Fail" @click="captureBatteryStatus('fail')" />
+					<q-btn
+						color="green"
+						icon="check"
+						label="Pass"
+						:disable="batteryInfo.estimatedLife < minimum"
+						@click="captureBatteryStatus('pass')"
+					/>
+				</div>
+			</div>
 		</div>
 	</q-page>
 </template>
+
 <script>
+	import html2canvas from 'html2canvas'
+
 	export default {
 		name: 'BatteryComponent',
 		props: {
 			batteryInfo: {
 				type: Object,
-				required: true,
+				required: false,
 				default: () => ({
 					hasBattery: true,
 					cycleCount: 0,
@@ -116,7 +114,7 @@
 					currentCapacity: 54923,
 					voltage: 12.582,
 					capacityUnit: 'mWh',
-					percent: 75,
+					percent: 95,
 					timeRemaining: null,
 					acConnected: true,
 					type: '',
@@ -126,12 +124,30 @@
 					estimatedLife: 100,
 				}),
 			},
-			minimum: {
-				type: Number,
-				default: 80,
-			},
 		},
 		computed: {
+			batteryDetails() {
+				return [
+					{ label: 'Model', value: this.batteryInfo.model, icon: 'devices' },
+					{ label: 'Manufacturer', value: this.batteryInfo.manufacturer || 'N/A', icon: 'factory' },
+					{
+						label: 'Voltage',
+						value: `${this.batteryInfo.voltage} V`,
+						icon: 'battery_charging_full',
+					},
+					{
+						label: 'Estimated Life',
+						value: `${this.batteryInfo.estimatedLife}%`,
+						icon: 'health_and_safety',
+					},
+					{ label: 'Percent', value: `${this.batteryInfo.percent}%`, icon: 'battery_std' },
+					{
+						label: 'Charging',
+						value: this.batteryInfo.isCharging ? 'Yes' : 'No',
+						icon: this.batteryInfo.isCharging ? 'power' : 'power_off',
+					},
+				]
+			},
 			batteryColor() {
 				const percent = this.batteryInfo.percent
 				if (percent > 100) return 'gray'
@@ -159,6 +175,22 @@
 				return 314 - (percent / 100) * 314
 			},
 		},
+		methods: {
+			async captureBatteryStatus(status) {
+				const element = document.getElementById('battery-capture')
+				const canvas = await html2canvas(element)
+				const imageData = canvas.toDataURL('image/png')
+				const result = {
+					base64: imageData,
+					ext: 'png',
+					type: 'battery',
+					status: status === 'pass',
+					message: `Battery test ${status.toUpperCase()}`,
+				}
+				localStorage.setItem('batteryTestState', JSON.stringify(result))
+				this.$emit('input', result)
+			},
+		},
 	}
 </script>
 
@@ -174,19 +206,7 @@
 		height: 100%;
 	}
 
-	.green {
-		color: green;
-	}
-
-	.orange {
-		color: orange;
-	}
-
-	.red {
-		color: red;
-	}
-
-	.error {
-		color: gray;
+	.bg-grey-2 {
+		background-color: #f5f5f5;
 	}
 </style>
