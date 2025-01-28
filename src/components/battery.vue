@@ -3,7 +3,12 @@
 		<div id="battery-capture" class="row q-col-gutter-lg">
 			<!-- Columna de la batería -->
 			<div class="col-12 col-md-7 flex flex-center">
-				<div id="battery-capture" class="battery-container" style="transform: scale(1.5)">
+				<div
+					id="battery-capture"
+					class="battery-container"
+					:class="{ 'battery-disabled': isBatteryInvalid }"
+					style="transform: scale(1.5)"
+				>
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" class="battery-svg">
 						<!-- Fondo gris del círculo -->
 						<circle
@@ -19,6 +24,7 @@
 						/>
 						<!-- Círculo animado -->
 						<circle
+							v-if="!isBatteryInvalid"
 							cx="60"
 							cy="75"
 							r="50"
@@ -34,7 +40,7 @@
 						<!-- Fondo gris de la batería -->
 						<rect x="45" y="45" width="30" height="60" rx="5" ry="5" fill="gray" />
 						<!-- Batería interna con bloques -->
-						<g v-for="(block, index) in batteryBlocks" :key="index">
+						<g v-if="!isBatteryInvalid" v-for="(block, index) in batteryBlocks" :key="index">
 							<rect
 								x="45"
 								:y="105 - (index + 1) * 10"
@@ -46,6 +52,25 @@
 								:opacity="batteryOpacity"
 							/>
 						</g>
+						<!-- X para indicar batería inválida -->
+						<line
+							v-if="isBatteryInvalid"
+							x1="20"
+							y1="50"
+							x2="100"
+							y2="120"
+							stroke="red"
+							stroke-width="5"
+						/>
+						<line
+							v-if="isBatteryInvalid"
+							x1="100"
+							y1="50"
+							x2="20"
+							y2="120"
+							stroke="red"
+							stroke-width="5"
+						/>
 					</svg>
 				</div>
 			</div>
@@ -98,6 +123,7 @@
 
 <script>
 	import html2canvas from 'html2canvas'
+	import { mapState } from 'vuex'
 
 	export default {
 		name: 'BatteryComponent',
@@ -126,6 +152,10 @@
 			},
 		},
 		computed: {
+			...mapState(['informationBios', 'hardwareInfo']),
+			isBatteryInvalid() {
+				return !this.batteryInfo.hasBattery || this.batteryInfo.estimatedLife > 100
+			},
 			batteryDetails() {
 				return [
 					{ label: 'Model', value: this.batteryInfo.model, icon: 'devices' },
@@ -190,6 +220,9 @@
 				localStorage.setItem('batteryTestState', JSON.stringify(result))
 				this.$emit('input', result)
 			},
+		},
+		mounted() {
+			//this.batteryInfo = this.hardwareInfo?.battery
 		},
 	}
 </script>
