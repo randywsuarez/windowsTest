@@ -1,7 +1,8 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import createPersistedState from 'vuex-persistedstate'
 
-// import example from './module-example'
+import information from './information'
 
 Vue.use(Vuex)
 
@@ -15,15 +16,21 @@ Vue.use(Vuex)
  */
 
 export default function (/* { ssrContext } */) {
-  const Store = new Vuex.Store({
-    modules: {
-      // example
-    },
+	const Store = new Vuex.Store({
+		modules: {
+			information,
+		},
+		plugins: [
+			createPersistedState({
+				key: 'myApp', // Nombre de la clave en localStorage
+				storage: window.localStorage, // Cambiar a sessionStorage si es necesario
+			}),
+		],
 
-    // enable strict mode (adds overhead!)
-    // for dev mode only
-    strict: process.env.DEBUGGING
-  })
+		// enable strict mode (adds overhead!)
+		// for dev mode only
+		strict: process.env.DEBUGGING,
+	})
 
-  return Store
+	return Store
 }

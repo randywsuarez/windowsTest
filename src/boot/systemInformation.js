@@ -32,18 +32,10 @@ async function getSystemInfo() {
 	try {
 		const results = await Promise.all([
 			safeGetData(si.chassis),
-			safeGetData(si.osInfo),
 			safeGetData(si.uuid),
 			safeGetData(si.versions),
-			safeGetData(si.cpu),
-			safeGetData(si.mem),
-			safeGetData(si.memLayout),
-			safeGetData(si.battery),
-			safeGetData(si.graphics),
-			safeGetData(si.diskLayout),
 			safeGetData(si.blockDevices),
 			safeGetData(si.fsSize),
-			safeGetData(si.fsStats),
 			safeGetData(si.networkInterfaces),
 			safeGetData(si.audio),
 			safeGetData(si.bluetoothDevices),
@@ -53,26 +45,56 @@ async function getSystemInfo() {
 
 		return {
 			chassis: results[0],
-			osInfo: results[1],
-			uuid: results[2],
-			versions: results[3],
-			cpu: results[4],
-			mem: results[5],
-			memLayout: results[6],
-			battery: results[7],
-			graphics: results[8],
-			diskLayout: results[9],
-			blockDevices: results[10],
-			fsSize: results[11],
-			fsStats: results[12],
-			networkInterfaces: results[13],
-			audio: results[14],
-			bluetooth: results[15],
-			wifiNetworks: results[16],
-			wifiInterfaces: results[17],
+			uuid: results[1],
+			versions: results[2],
+			blockDevices: results[3],
+			fsSize: results[4],
+			networkInterfaces: results[5],
+			audio: results[6],
+			bluetooth: results[7],
+			wifiNetworks: results[8],
+			wifiInterfaces: results[9],
 		}
 	} catch (error) {
 		console.error('Error getting system information:', error)
+		return null
+	}
+}
+
+async function getHardwareInfo() {
+	try {
+		const results = await Promise.all([
+			safeGetData(si.cpu),
+			safeGetData(si.mem),
+			safeGetData(si.memLayout),
+			safeGetData(si.graphics),
+			safeGetData(si.diskLayout),
+			safeGetData(si.osInfo),
+		])
+
+		return {
+			cpu: results[0],
+			mem: results[1],
+			memLayout: results[2],
+			graphics: results[3],
+			diskLayout: results[4],
+			osInfo: results[5],
+		}
+	} catch (error) {
+		console.error('Error getting hardware information:', error)
+		return null
+	}
+}
+
+async function getSpecificInfo(key) {
+	try {
+		if (si[key]) {
+			return await safeGetData(si[key])
+		} else {
+			throw new Error(`Invalid key: ${key}`)
+		}
+	} catch (error) {
+		console.error(`Error getting specific information for ${key}:`, error)
 		return null
 	}
 }
@@ -88,13 +110,32 @@ module.exports = ({ Vue }) => {
 		}
 	}
 
-	// Prototype para obtener toda la información del sistema, excepto system, bios y baseboard
+	// Prototype para obtener toda la información del sistema, excepto hardware
 	Vue.prototype.$si = async function () {
 		try {
-			const systemInfo = await getSystemInfo()
-			return systemInfo
+			return await getSystemInfo()
 		} catch (error) {
 			console.error('Error getting system information:', error)
+			return null
+		}
+	}
+
+	// Prototype para obtener información de hardware
+	Vue.prototype.$hardwareInfo = async function () {
+		try {
+			return await getHardwareInfo()
+		} catch (error) {
+			console.error('Error getting hardware information:', error)
+			return null
+		}
+	}
+
+	// Prototype para obtener información específica
+	Vue.prototype.$getSpecificInfo = async function (key) {
+		try {
+			return await getSpecificInfo(key)
+		} catch (error) {
+			console.error(`Error getting specific information for ${key}:`, error)
 			return null
 		}
 	}

@@ -128,7 +128,18 @@ export default ({ Vue, router }) => {
 						else resolve({})
 					})
 					.catch((e) => {
-						if (e.data.error == 'token')
+						if (
+							(typeof e == 'object' && e.code === 'ERR_NETWORK') ||
+							e.message.includes('Network Error')
+						) {
+							Dialog.create({
+								title: 'Connection Error',
+								message:
+									'Unable to connect to the server. Please check your network connection or call your supervisor.',
+								ok: true,
+								color: 'negative',
+							})
+						} else if (e.data.error == 'token')
 							Dialog.create({
 								title: 'Error',
 								message: 'Error con el token',
@@ -433,8 +444,20 @@ export default ({ Vue, router }) => {
 							}
 						})
 						.catch((e) => {
+							console.log(e)
 							Loading.hide()
-							if (e.data.error == 'token')
+							if (
+								(typeof e == 'object' && e.code === 'ERR_NETWORK') ||
+								e.message.includes('Network Error')
+							) {
+								Dialog.create({
+									title: 'Connection Error',
+									message:
+										'Unable to connect to the server. Please check your network connection or call your supervisor.',
+									ok: true,
+									color: 'negative',
+								})
+							} else if (typeof e == 'object' && e.data.error == 'token')
 								Dialog.create({
 									title: 'Error',
 									message: e.data.message,
@@ -444,8 +467,26 @@ export default ({ Vue, router }) => {
 									// localStorage.clear()
 									router.go('/login')
 								})
-							else {
-								Notify.create(e.data)
+							else if (typeof e == 'string') {
+								Dialog.create({
+									title: 'Error',
+									message: `${e}. Call your supervisor.`,
+									color: 'negative', // Color principal (rojo)
+									ok: {
+										label: 'Close', // Texto del botón
+										color: 'white', // Color del texto del botón
+										outline: true, // Botón tipo outline
+									},
+									style: 'color: white; background-color: #e53935;', // Fondo rojo y texto blanco
+								}).onOk(() => {
+									router.push('/') // Redirige a la ruta "/"
+								})
+								//router.push('/')
+
+								/* Notify.create({
+									message: e,
+									color: 'negative',
+								}) */
 							}
 							/* reject(new Error(e))
 							router.go('/login') */

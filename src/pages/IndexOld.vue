@@ -6,7 +6,7 @@
 	>
 		<user-info-grid
 			v-show="activate.select"
-			:username="user.usuario"
+			:username="select.user"
 			:project="`${project.id}${
 				infoTest.ProgramType != 'BatteryPercentage' ? ' - ' + infoTest.ProgramType : ''
 			}`"
@@ -36,14 +36,19 @@
 						@input="handleInputChange('sku')"
 						type="text"
 						label="SKU"
-						:prefix="miniSKU"
-						hint="Write the missing"
 						class="col-6"
 					/>
 				</q-card-section>
 				<q-card-actions align="right" id="actionComparation">
-					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" :disable="!isValid" />
+					<q-btn flat color="negative" size="xl" label="Fail" @click="action = 'FAIL'" />
+					<q-btn
+						flat
+						color="positive"
+						size="xl"
+						label="Pass"
+						@click="action = 'PASS'"
+						:disable="!isValid"
+					/>
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.type">
@@ -65,6 +70,21 @@
 					<!-- <q-btn color="positive" :label="audit ? 'Shut Down' : 'SysPrep'" @click="sdDevice" /> -->
 				</q-card-section>
 			</q-card>
+			<q-card class="card" v-show="activate.logo">
+				<q-card-section
+					class="row justify-center"
+					id="actionType"
+					style="padding: 0; height: 40vh; width: 100%"
+				>
+					<q-img
+						src="Logo.png"
+						spinner-color="primary"
+						spinner-size="120px"
+						style="height: auto; width: 50%; max-height: 100%; max-width: 100%; object-fit: contain"
+					/>
+				</q-card-section>
+			</q-card>
+
 			<q-card class="card" v-show="activate.audio">
 				<q-card-section> <div class="text-h6">Audio Test</div> </q-card-section><q-separator />
 				<q-card-section class="reproductor-content">
@@ -83,6 +103,7 @@
 						id="audioFail"
 						ref="audioFail"
 						flat
+						size="xl"
 						color="red"
 						label="FAIL"
 						@click="detenerReproduccion('fail')"
@@ -91,6 +112,7 @@
 						id="audioPass"
 						ref="audioPass"
 						flat
+						size="xl"
 						color="green"
 						label="PASS"
 						@click="detenerReproduccion('pass')"
@@ -123,16 +145,24 @@
 					<div v-if="!camera">No Found</div>
 				</q-card-section>
 				<q-card-actions align="right" id="actionCamera">
-					<q-btn flat color="negative" label="Fail" @click="test['camera'] = 'Webcam test FAIL'" />
+					<q-btn
+						flat
+						color="negative"
+						size="xl"
+						label="Fail"
+						@click="test['camera'] = 'Webcam test FAIL'"
+					/>
 					<q-btn
 						flat
 						color="primary"
+						size="xl"
 						label="No Camera (PASS)"
 						@click=";(test['camera'] = 'No Webcam test PASS'), (componentes.Webcam = 'NO')"
 					/>
 					<q-btn
 						flat
 						color="positive"
+						size="xl"
 						label="Pass"
 						@click=";(test['camera'] = 'Webcam test PASS'), (componentes.Webcam = 'YES')"
 					/>
@@ -145,18 +175,19 @@
 				</q-card-section>
 				<q-card-section class="center" style="min-height: 200px">
 					<virtual-keyboard @allKeysPressed="handleAllKeysPressed"></virtual-keyboard>
-					<p>All keys pressed: {{ allKeysPressed }}</p></q-card-section
-				>
+				</q-card-section>
 				<q-card-actions align="right" v-show="activate.keyboard" id="actionKeyboard">
 					<q-btn
 						flat
 						color="negative"
+						size="xl"
 						label="Fail"
 						@click="test['keyboard'] = 'Keyboard test FAIL'"
 					/>
 					<q-btn
 						flat
 						color="positive"
+						size="xl"
 						label="Pass"
 						@click="test['keyboard'] = 'Keyboard test PASS'"
 					/>
@@ -172,8 +203,20 @@
 					<audio-recorder></audio-recorder>
 				</q-card-section>
 				<q-card-actions align="right" v-show="activate.mic" id="actionMic">
-					<q-btn flat color="negative" label="Fail" @click="test['mic'] = 'Mic test FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="test['mic'] = 'Mic test PASS'" />
+					<q-btn
+						flat
+						color="negative"
+						size="xl"
+						label="Fail"
+						@click="test['mic'] = 'Mic test FAIL'"
+					/>
+					<q-btn
+						flat
+						color="positive"
+						size="xl"
+						label="Pass"
+						@click="test['mic'] = 'Mic test PASS'"
+					/>
 				</q-card-actions>
 			</q-card>
 			<!-- Mic End -->
@@ -187,8 +230,20 @@
 					<Touch ref="touch" />
 				</q-card-section>
 				<q-card-actions align="right" v-show="activate.touch" id="actionTouch">
-					<q-btn flat color="negative" label="Fail" @click="test['touch'] = 'Touch test FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="test['touch'] = 'Touch test PASS'" />
+					<q-btn
+						flat
+						color="negative"
+						size="xl"
+						label="Fail"
+						@click="test['touch'] = 'Touch test FAIL'"
+					/>
+					<q-btn
+						flat
+						color="positive"
+						size="xl"
+						label="Pass"
+						@click="test['touch'] = 'Touch test PASS'"
+					/>
 				</q-card-actions>
 			</q-card>
 			<!-- Mic End -->
@@ -202,54 +257,14 @@
 					<q-btn
 						flat
 						color="negative"
+						size="xl"
 						label="Fail"
 						@click="test['brightness'] = 'Brightness test FAIL'"
 					/>
 					<q-btn
 						flat
 						color="positive"
-						label="Pass"
-						@click="test['brightness'] = 'Brightness test PASS'"
-					/>
-				</q-card-actions>
-			</q-card>
-			<q-card class="card" v-show="activate.drivers">
-				<q-card-section>
-					<div class="row items-center no-wrap">
-						<div class="col">
-							<div class="text-h6">Drivers Test</div>
-						</div>
-						<div class="col-auto">
-							<q-btn
-								round
-								color="primary"
-								icon="restart_alt"
-								@click="$cmd.executeScriptCode(drivers)"
-							/>
-						</div>
-					</div>
-				</q-card-section>
-				<q-separator />
-				<q-card-section class="center">
-					Is the Drivers and Video working?
-					<div>Driver: {{ driver.status }}</div>
-					<div>Video: {{ driver.video ? 'PASS' : 'FAIL' }}</div>
-					<q-list bordered v-if="driver.missingDrivers.length">
-						<q-item v-for="(d, k) in driver.missingDrivers" :key="k">
-							<q-item-section>{{ d }}</q-item-section>
-						</q-item>
-					</q-list>
-				</q-card-section>
-				<q-card-actions align="right" id="actionDrivers">
-					<q-btn
-						flat
-						color="negative"
-						label="Fail"
-						@click="test['brightness'] = 'Brightness test FAIL'"
-					/>
-					<q-btn
-						flat
-						color="positive"
+						size="xl"
 						label="Pass"
 						@click="test['brightness'] = 'Brightness test PASS'"
 					/>
@@ -257,7 +272,14 @@
 			</q-card>
 			<q-card class="card" v-show="activate.windows">
 				<q-card-section>
-					<q-card-section> <div class="text-h6">Windows Test</div> </q-card-section><q-separator />
+					<div class="row items-center no-wrap">
+						<div class="col">
+							<div class="text-h6">Windows Test</div>
+						</div>
+						<div class="col-auto">
+							<q-btn round color="primary" icon="restart_alt" @click="testWindows" />
+						</div>
+					</div>
 				</q-card-section>
 				<q-card-section class="center" v-if="win.os">
 					<div>{{ win.edition }}</div>
@@ -267,9 +289,10 @@
 				<q-card-section class="center" v-else>
 					<div>Wait...</div>
 				</q-card-section>
+				<pre v-show="false">{{ win }}</pre>
 				<q-card-actions align="right" id="actionWindows" v-show="win.actived">
-					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn flat color="negative" size="xl" label="Fail" @click="action = 'FAIL'" />
+					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.battery">
@@ -290,6 +313,7 @@
 					<q-btn
 						flat
 						color="negative"
+						size="xl"
 						label="Fail"
 						@click="action = 'FAIL'"
 						v-if="battery.Status != 'fail'"
@@ -297,6 +321,7 @@
 					<q-btn
 						flat
 						color="positive"
+						size="xl"
 						label="Pass"
 						@click="action = 'PASS'"
 						v-if="battery.Status != 'fail'"
@@ -315,47 +340,17 @@
 					<q-btn
 						flat
 						color="negative"
+						size="xl"
 						label="Fail"
 						@click="test['mousepad'] = 'Mouse pad test FAIL'"
 					/>
 					<q-btn
 						flat
 						color="positive"
+						size="xl"
 						label="Pass"
 						@click="test['mousepad'] = 'Mouse pad test PASS'"
 					/>
-				</q-card-actions>
-			</q-card>
-			<q-card class="card" v-show="activate.hotKey">
-				<q-card-section>
-					<q-card-section> <div class="text-h6">HotKey</div> </q-card-section><q-separator />
-				</q-card-section>
-				<q-card-section class="center">
-					<b>You need to test the Hotkeys</b>
-					<div class="q-gutter-sm row col-6">
-						<q-checkbox size="150px" v-model="hotKey.mic" val="80px" label="Mic" />
-						<q-checkbox size="150px" v-model="hotKey.speakers" val="80x" label="Speakers" />
-						<q-checkbox size="150px" v-model="hotKey.brights" val="80px" label="Brightness" />
-						<q-checkbox
-							size="150px"
-							v-model="hotKey.privacy"
-							val="80px"
-							label="Privacy"
-							v-if="componentes.Keyboard.Privacy == 'YES'"
-						/>
-						<!-- <q-checkbox
-							size="150px"
-							v-model="componentes.Keyboard.Privacy"
-							val="80px"
-							label="Privacy"
-							v-if="componentes.Keyboard.Privacy == 'YES'"
-						/> -->
-					</div>
-					<!-- <q-checkbox left-label v-model="hotkey.speakers" label="Speackers" /> -->
-				</q-card-section>
-				<q-card-actions align="right" id="actionHotKey">
-					<q-btn flat color="negative" label="Fail" @click="test['hotKey'] = 'HotKeys test FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="test['hotKey'] = 'HotKeys test PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.components">
@@ -441,7 +436,7 @@
 					<q-input v-model="form.adapter" type="number" label="Adapter/PowerSupply" />
 				</q-card-section>
 				<q-card-actions align="right" id="actionDesktop">
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.note">
@@ -452,84 +447,145 @@
 					<q-input v-model="form.note" label="Note" />
 				</q-card-section>
 				<q-card-actions align="right" id="actionNote">
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.information">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">Information</div> </q-card-section><q-separator />
 				</q-card-section>
-				<q-card-section class="center">
+				<q-card-section class="row col center">
 					<ColorSelect
+						class="col-6"
 						:partsurfer="partsurfer"
 						@color-selected="handleColorSelected"
 						@form-generated="resetForm"
 						:brand="device.brand"
 					/>
-				</q-card-section>
-				<q-separator />
-				<q-card-section class="center">
-					<div></div>
 					<q-checkbox
+						v-show="type == 'laptop' || type == 'all-in-one'"
 						size="xl"
+						class="col-6"
 						v-model="test.touchScreen"
 						true-value="YES"
 						false-value="NO"
 						label="Touch Me"
 					/>
-					<q-checkbox
-						size="xl"
-						v-model="test.WWAN"
-						true-value="YES"
-						false-value="NO"
-						label="WWAN"
-					/>
-					<q-checkbox
-						size="xl"
-						v-model="componentes.Keyboard.Privacy"
-						true-value="YES"
-						false-value="NO"
-						label="Privacy"
-					/>
-					<q-checkbox size="xl" v-model="test.NFC" true-value="YES" false-value="NO" label="NFC" />
-					<q-checkbox
-						size="xl"
-						v-model="test.SmartCard"
-						true-value="YES"
-						false-value="NO"
-						label="Smart Card"
-					/>
-					<q-checkbox
-						size="xl"
-						v-model="componentes.Keyboard.Backlight"
-						true-value="YES"
-						false-value="NO"
-						label="Backlight"
-					/>
-					<q-checkbox
-						size="xl"
-						v-model="componentes.Keyboard.RGB"
-						true-value="YES"
-						false-value="NO"
-						label="RGB Keyboard"
-					/>
-					<q-checkbox
-						size="xl"
-						v-model="test.Fingerprint"
-						true-value="YES"
-						false-value="NO"
-						label="Fingerprint"
-					/>
 				</q-card-section>
-				<q-card-actions align="right" id="actionInformation">
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+				<q-separator />
+				<q-card-section class="center">
+					<div v-show="this.myDb.TYPE != 'BTO' && type == 'laptop'">
+						<q-checkbox
+							size="xl"
+							v-model="test.WWAN"
+							true-value="YES"
+							false-value="NO"
+							label="WWAN"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="test.WLAN"
+							true-value="YES"
+							false-value="NO"
+							label="WLAN"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="componentes.Keyboard.Privacy"
+							true-value="YES"
+							false-value="NO"
+							label="Privacy"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="test.NFC"
+							true-value="YES"
+							false-value="NO"
+							label="NFC"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="test.SmartCard"
+							true-value="YES"
+							false-value="NO"
+							label="Smart Card"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="componentes.Keyboard.Backlight"
+							true-value="YES"
+							false-value="NO"
+							label="Backlight"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="componentes.Keyboard.RGB"
+							true-value="YES"
+							false-value="NO"
+							label="RGB Keyboard"
+						/>
+						<q-checkbox
+							size="xl"
+							v-model="test.Fingerprint"
+							true-value="YES"
+							false-value="NO"
+							label="Fingerprint"
+						/>
+					</div>
+				</q-card-section>
+				<q-card-section>
+					<q-card-section> <div class="text-h6">HotKey</div> </q-card-section><q-separator />
+				</q-card-section>
+				<q-card-section class="center" v-show="type == 'laptop'">
+					<b>You need to test the Hotkeys</b>
+					<div class="q-gutter-sm row col-6">
+						<q-checkbox size="xl" v-model="hotKey.mic" val="80px" label="Mic" />
+						<q-checkbox size="xl" v-model="hotKey.speakers" val="80x" label="Speakers" />
+						<q-checkbox size="xl" v-model="hotKey.brights" val="80px" label="Brightness" />
+						<q-checkbox
+							size="150px"
+							v-model="hotKey.privacy"
+							val="80px"
+							label="Privacy"
+							v-if="componentes.Keyboard.Privacy == 'YES'"
+						/>
+					</div>
+				</q-card-section>
+				<q-card-section>
+					<div class="row items-center no-wrap">
+						<div class="col">
+							<div class="text-h6">Drivers Test</div>
+						</div>
+						<div class="col-auto">
+							<q-btn
+								round
+								color="primary"
+								icon="restart_alt"
+								@click="$cmd.executeScriptCode(drivers)"
+							/>
+						</div>
+					</div>
+				</q-card-section>
+				<q-separator />
+				<q-card-section class="center">
+					Is the Drivers and Video working?
+					<div>Driver: {{ driver.status }}</div>
+					<div>Video: {{ driver.video ? 'PASS' : 'FAIL' }}</div>
+					<q-list bordered v-if="driver.missingDrivers.length">
+						<q-item v-for="(d, k) in driver.missingDrivers" :key="k">
+							<q-item-section>{{ d }}</q-item-section>
+						</q-item>
+					</q-list>
+				</q-card-section>
+
+				<q-card-actions align="left" id="actionInformation">
+					<q-btn flat color="positive" size="xl" label="Next" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.gpu">
 				<q-card-section>
 					<q-card-section> <div class="text-h6">GPU Test</div> </q-card-section><q-separator />
 				</q-card-section>
-				<pre>{{ myGpu }}</pre>
 				<q-card-section class="center" v-if="myGpu.length">
 					<q-checkbox
 						size="150px"
@@ -578,15 +634,15 @@
 					<div>Wait...</div>
 				</q-card-section>
 				<q-card-actions align="right" id="actionGPU" v-show="myGpu.length">
-					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn flat color="negative" size="xl" label="Fail" @click="action = 'FAIL'" />
+					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-card class="card" v-show="activate.done">
 				<q-card-section>
 					<div class="row items-center no-wrap">
 						<div class="col">
-							<div class="text-h6">Done</div>
+							<div class="text-h6">Test completed</div>
 						</div>
 						<div class="col-auto">
 							<q-btn round color="primary" icon="info" @click="activate.txt = true" />
@@ -602,7 +658,7 @@
 						style="justify-content: center"
 					>
 						<div class="col-12 justify-center" v-if="activate.scan">
-							<h6>{{ activate.scan }}</h6>
+							<h6 v-html="activate.scan"></h6>
 						</div>
 						<div class="col-6 justify-center">
 							<svg width="75%" id="barcode"></svg>
@@ -629,28 +685,15 @@
 
 								<q-item-section>
 									<q-item-label>{{ disk.name }}</q-item-label>
-									<!-- <q-item-label caption>{{ disk.totalSpace }}</q-item-label> -->
 									<q-item-label caption>{{ disk.description }}</q-item-label>
 								</q-item-section>
-
-								<!--
-        <q-item-section>
-          <q-item-label>{{ disk.name }}</q-item-label>
-          <q-item-label caption>{{ disk.freeSpace }} free of {{ disk.totalSpace }}</q-item-label>
-          <q-linear-progress :value="calculatePercentage(disk.free, disk.total)" color="primary" rounded />
-        </q-item-section>
-        -->
-
-								<!-- <q-item-section side>
-									<q-btn flat icon="delete" color="negative" @click="formatDisk(disk.device)" />
-								</q-item-section> -->
 							</q-item>
 						</q-list>
 					</div>
 				</q-card-section>
 				<q-card-actions align="right" id="actionStorage">
-					<q-btn flat color="negative" label="Fail" @click="action = 'FAIL'" />
-					<q-btn flat color="positive" label="Pass" @click="action = 'PASS'" />
+					<q-btn flat color="negative" size="xl" label="Fail" @click="action = 'FAIL'" />
+					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
 			<q-dialog v-model="msn.active" persistent transition-show="scale" transition-hide="scale">
@@ -694,21 +737,6 @@
 					</q-card-actions>
 				</q-card>
 			</q-dialog>
-			<!--
-			<q-dialog v-model="winChange" class="login-card" persistent>
-				<q-card class="bg-white text-dark q-pa-md" style="max-width: 400px">
-					<q-card-section class="text-center">
-						<q-icon name="error" color="negative" size="40px" />
-						<div class="text-h6 q-mt-md">Failed to change the DPK</div>
-						<p>Please click retry or call your supervisor</p>
-					</q-card-section>
-
-					<q-card-actions align="center">
-						<q-btn color="negative" label="Retry" @click="retryAction" />
-					</q-card-actions>
-				</q-card>
-			</q-dialog>
-      -->
 		</div>
 	</q-page>
 </template>
@@ -798,7 +826,8 @@
 				Authorization: '',
 				itDG: {},
 				activate: {
-					type: true,
+					logo: true,
+					type: false,
 					select: false,
 					audio: false,
 					camera: false,
@@ -824,7 +853,9 @@
 				},
 				showActions: false,
 				GPUIntegrated: '',
-				win: {},
+				win: {
+					actived: false,
+				},
 				intDev: {},
 				getDev: {},
 				driver: {
@@ -1071,15 +1102,10 @@
 							title: 'Alert<em>!</em>',
 							message: `<em>Error: </em> <span class="text-red">${result.errorMessage}.</span> <strong> Talk to your supervisor.</strong>`,
 							html: true,
+							persistent: true,
 						})
 						.onOk(async () => {
 							await this.verifyDPK()
-						})
-						.onCancel(() => {
-							// console.log('Cancel')
-						})
-						.onDismiss(() => {
-							// console.log('I am triggered on both OK and Cancel')
 						})
 				}
 				return result
@@ -1156,7 +1182,7 @@
 				return `
 		       CTL Windows Test - ${this.$env.version} - ${this.select.TenantName}
 		       Operator ID: ${this.select.operator}
-		       Operator Name:${this.user.usuario}
+		       Operator Name:${this.select.user}
 		       Start Date: ${this.test.Date}
 		       Start Time: ${this.test.startTime}
 		       End Date: ${lastdate.date}
@@ -1281,6 +1307,8 @@
 					this.bios && this.bios.components.Privacy ? this.bios.components.Privacy : data.Privacy
 				this.test['WWAN'] =
 					this.bios && this.bios.components.WWAN ? this.bios.components.WWAN : 'NO'
+				this.test['WLAN'] =
+					this.bios && this.bios.components.WLAN ? this.bios.components.WLAN : 'NO'
 				this.test.NFC = this.bios && this.bios.components.NFC ? this.bios.components.NFC : 'NO'
 				this.test.Fingerprint =
 					this.bios && this.bios.Fingerprint
@@ -1401,17 +1429,18 @@
 				}
 				await this.checkDevice()
 				this.setTypeUnit()
+				this.$q.loading.show()
 				if (this.device.brand == 'HP') {
 					this.bios = JSON.parse(JSON.stringify(await this.$cmd.biosData()))
 					console.log('BIOS: ', this.bios.components)
 					await this.infoHP()
 				}
 				//if (this.device.brand == 'HP')
-				if (projectInfo.ArrivedSKU !== this.device.SKU && this.device.brand == 'HP') {
+				if (!this.select.validateSKU && this.device.brand == 'HP') {
 					this.$q.loading.hide()
 					this.showNotification(
 						'No Math',
-						`SKUs are not the same, Device: ${this.device.SKU} <> System: ${projectInfo.ArrivedSKU}`,
+						`SKUs are not the same, Device: ${this.device.SKU} <> System: ${this.select.useSKU}`,
 					)
 					return
 				}
@@ -1436,6 +1465,8 @@
 				this.test = { ...this.test, ...test }
 
 				this.$q.loading.hide()
+
+				this.activate.logo = false
 				this.activate.type = true
 				await this.espera2('actionType')
 				this.activate.type = false
@@ -1466,14 +1497,10 @@
 				console.log('SI: ', this.si)
 				this.test.touchScreen =
 					this.device.brand == 'HP' ? this.partsurfer.Display.TouchScreen : 'NO'
-				await this.simpleTest('Information')
-
-				/* if (this.intDev.video.length) {
-						await this.testGPU()
-					} */
 				await this.$cmd.executeScriptCode(`Start-Process "devmgmt.msc"`)
-				this.activate.drivers = true
-				await this.espera('actionDrivers')
+				await this.simpleTest('Information')
+				this.test['hotKey'] = 'HotKeys test PASS'
+				this.test['drivers'] = 'Drivers test PASS'
 				this.test['drivers'] =
 					this.driver.status == 'PASS'
 						? 'Device Manager Drivers Test PASS'
@@ -1482,11 +1509,10 @@
 					? 'Display Adapter Drivers Test PASS'
 					: 'Display Adapter Drivers Test FAIL'
 				this.activate.drivers = false
-
 				if (this.type == 'laptop') {
 					await this.testLaptopSpecifics()
 				}
-
+				console.log(this.type)
 				if (this.type != 'desktop') {
 					await this.testNonDesktopSpecifics()
 				}
@@ -1503,6 +1529,8 @@
 					this.activate.camera = false
 				}
 
+				this.win = { ...(await this.win), actived: false }
+				localStorage.setItem('dpk', this.win.keyWindows)
 				await this.testWindows()
 				await this.testDisk()
 
@@ -1601,7 +1629,10 @@
 			},
 			async getProjectInfo(Serial) {
 				let infoToken = (await this.$rsNeDB('credenciales').find())[0]
-				let infoUnit = await this.$db.funcAdmin('modules/ispt/validateUnit', { Serial })
+				let infoUnit = await this.$db.funcAdmin('modules/ispt/validateUnit', {
+					Serial,
+					sku: this.device.SKU,
+				})
 				this.project = {
 					Station: infoUnit[0].StationTypeID,
 					TenantId: infoUnit[0].TenantId,
@@ -1613,57 +1644,10 @@
 				console.log('Select: ', this.select)
 				return infoUnit[0]
 			},
-			async getProjectInfoOld(serial) {
-				let res = ''
-				for (let x of this.$env.project) {
-					let u = await this.$rsNeDB('credenciales').findOne({ tenant: x.id })
-
-					const options = {
-						method: 'POST',
-						headers: {
-							tenant: `${this.select.TenantName}`,
-							Authorization: `Bearer ${this.select.authToken}`,
-						},
-					}
-					let status = await this.$db
-						.funcAdmin('modules/ispt/statusStation', {
-							options,
-							Serial: this.test.Serial,
-							Project: this.select.TenantName,
-							System: this.$env.project.url,
-						})
-						.then((v) => {
-							return v
-						})
-						.catch((err) => {
-							console.error(err)
-							return err
-						})
-					res = await this.$rsDB(x.db)
-						.select('SerialNumber, ArrivedSKU, StationID, SKU, TenantId')
-						.from('WorkTracking')
-						.where(`SerialNumber = '${serial}'`)
-						.execute()
-					if (res.length) {
-						this.project = {
-							...this.project,
-							Station: res[0].StationID,
-							TenantId: res[0].TenantId,
-							id: x.id,
-							db: x.db,
-							operator: u.id,
-						}
-						this.select = { ...x, ...u }
-						//console.log('Select: ', this.select)
-						return res[0]
-					}
-				}
-				return null
-			},
 			showNotification(title, message) {
 				this.msn = { title, message, active: true }
 			},
-			checkBiosItems() {
+			async checkBiosItems() {
 				const itemsToCheck = [
 					'ProgrammingMode',
 					'Microphone',
@@ -1677,36 +1661,47 @@
 					'LockBIOS',
 					'ProgrammingMode',
 				]
-
+				console.log(this.bios)
 				const itemsNotSet = itemsToCheck.filter((item) => {
 					if (this.bios[item] !== null) {
 						if (['LockWireless', 'LockBIOS'].includes(item)) {
 							return this.bios[item] === 'YES'
 						} else {
+							console.log(this.bios[item] === 'NO')
 							return this.bios[item] === 'NO'
 						}
 					}
 					return false
 				})
+				console.log('itemsNotSet', itemsNotSet)
 				if (itemsNotSet.length > 0) {
-					this.$q.dialog({
-						title: 'BIOS Settings',
-						message: `The following BIOS settings need to be adjusted:\n\n${itemsNotSet.join(
-							', ',
-						)}`,
-						persistent: true,
-						color: 'red',
-						ok: {
-							label: 'Restart',
-							handler: () => {
-								this.$cmd.executeScriptCode(`shutdown -s -t 2`)
+					this.activate.components = true
+					this.$q
+						.dialog({
+							title: 'BIOS Settings',
+							message: `The following BIOS settings need to be adjusted:\n\n${itemsNotSet.join(
+								', ',
+							)}`,
+							persistent: true,
+							color: 'red',
+							ok: {
+								label: 'Restart',
 							},
-						},
-					})
+						})
+						.onOk(async () => {
+							await this.$cmd.executeScriptCode(`shutdown -s -t 2`)
+						})
+					await this.espera('actionComponents')
+				} else {
+					console.log('Components')
+					this.test['components'] = 'Components test PASS'
+
+					this.activate.components = false
+
+					return true
 				}
 			},
 			async testLaptopSpecifics() {
-				//this.activate.battery = true
 				let battery = await this.si.battery
 				battery['Status'] =
 					battery.maxCapacity == 0
@@ -1731,16 +1726,11 @@
 				this.info = { ...this.info, battery }
 				this.battery = battery
 				await this.simpleTest('Battery')
-				/* await this.espera('actionBattery')
-					this.activate.battery = false */
 				this.activate.mousepad = true
 				await this.espera('actionMousePad')
 				this.activate.mousepad = false
 				if (this.device.brand == 'HP') {
-					this.activate.components = true
 					await this.checkBiosItems()
-					await this.espera('actionComponents')
-					this.activate.components = false
 				}
 			},
 			async testNonDesktopSpecifics() {
@@ -1757,16 +1747,12 @@
 				/*  */
 				if (this.type == 'laptop') {
 					await this.simpleTest('Mic')
-					this.activate.hotKey = true
-					await this.espera('actionHotKey')
-					this.activate.hotKey = false
 					await this.simpleTest('Keyboard')
 				}
 				this.test['spotLights'] =
 					(await this.$cmd.executeScriptCode(spotLights)).result == 'PASS'
 						? 'Spot Lights Test PASS'
 						: 'Spot Lights Test FAIL'
-				//this.test['touchScreen'] = (await this.$cmd.executeScriptCode(touchScreen)).result
 			},
 			async checkCameraAvailability() {
 				if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -1784,88 +1770,162 @@
 				}
 			},
 			async testWindows() {
-				this.win.actived = false
-				this.$q.loading.show({
-					message:
-						'Obtaining <b>DPK</b> status.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
-				})
-				this.win = await this.win
-				this.activate.windows = true
-				//await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`)
-				this.$q.loading.hide()
-				console.log(this.win, this.infoTest.ProductKeys)
-				if (this.infoTest.DPK) {
-					let nDPK = this.win.hasOwnProperty('fail') ? this.win.fail : await this.verifyDPK()
-					if (nDPK.error) {
-						setTimeout(() => {
-							this.$q.notify({
-								type: 'negative',
-								message: nDPK.errorMessage,
-							})
-						}, 30000)
-					} else if (nDPK.needsNewProductKey) {
-						this.$q.loading.show({
-							message:
-								'Deactivating the active <b>DPK</b><br/><span class="text-orange text-weight-bold">Hang on...</span>',
-						})
-						await this.$cmd.executeScriptCode(dWin)
-						let ndpk = aWin
-							.replace('$dpk', nDPK.replacementProductKey)
-							.replace('$mode', this.infoTest.DPKMode)
+				try {
+					console.log('--- Starting Windows Activation Test ---')
 
-						this.$q.loading.hide()
-						this.$q.loading.show({
-							message:
-								'Activating <b>Windows</b><br/><span class="text-orange text-weight-bold">Hang on...</span>',
+					// Iniciando el proceso con loading
+					this.$q.loading.show({
+						message:
+							'Obtaining <b>DPK</b> status.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
+					})
+					this.activate.windows = true
+
+					console.log('Initial state: ', {
+						win: this.win,
+						infoTest: this.infoTest,
+					})
+
+					this.$q.loading.hide()
+					if (!this.win.hasOwnProperty('keyWindows') || this.win.keyWindows == 'Key not found') {
+						this.$db.funcAdmin('modules/ispt/issueReport', {
+							title: 'No DPK',
+							message: `DPK for ${this.device.Serial} is not available.`,
 						})
-						let iny = await this.$cmd.executeScriptCode(ndpk)
-						this.$q.loading.hide()
-						if (iny.error) {
-							console.log(iny.message)
-							this.$q
-								.dialog({
-									title: 'Alert<em>!</em>',
-									message: `<em>The following DPK </em> <span class="text-red">${nDPK.replacementProductKey}</span> <strong> is invalid</strong>`,
-									html: true,
-								})
-								.onOk(async () => {
-									if (this.infoTest.DPKRetry) {
-										this.win.fail = await this.failDPK()
-										await this.testWindows()
-									}
-								})
-								.onCancel(() => {
-									// console.log('Cancel')
-								})
-								.onDismiss(() => {
-									// console.log('I am triggered on both OK and Cancel')
-								})
-						} else {
-							this.win.actived = true
-							this.$q.notify({
-								type: 'positive',
-								message: iny.message,
+						this.$q
+							.dialog({
+								title: 'Alert<em>!</em>',
+								message: `<em>Error: </em> <span class="text-red">the device needs DPK.</span> <strong> Talk to your supervisor.</strong>`,
+								html: true,
+								persistent: true,
 							})
-							this.win.oldKeyWin = this.win.keyWindows
-							this.win.keyWindows = iny.productKeyUsed
-							this.win.licenseDetails = iny.message
-							let sDPK = await this.statusDPK()
-							console.log('sDPK: ', sDPK)
-							await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`)
+							.onOk(async () => {
+								await this.testWindows()
+							})
+					}
+
+					// Verificar si hay DPK
+					if (this.infoTest.DPK) {
+						console.log('DPK Found: ', this.infoTest.DPK)
+
+						let nDPK = this.win.hasOwnProperty('fail') ? this.win.fail : await this.verifyDPK()
+						console.log('DPK Verification Result: ', nDPK)
+
+						// Manejo de errores
+						if (nDPK.error) {
+							console.error('DPK Error: ', nDPK.errorMessage)
+							setTimeout(() => {
+								this.$q.notify({
+									type: 'negative',
+									message: nDPK.errorMessage,
+								})
+							}, 3000)
+							return
+						}
+
+						// Si necesita una nueva clave de producto
+						if (nDPK.needsNewProductKey) {
+							console.log('DPK requires replacement product key.')
+
+							this.$q.loading.show({
+								message:
+									'Deactivating the active <b>DPK</b><br/><span class="text-orange text-weight-bold">Hang on...</span>',
+							})
+							await this.$cmd.executeScriptCode(dWin)
+
+							let ndpk = aWin
+								.replace('$dpk', nDPK.replacementProductKey)
+								.replace('$mode', this.infoTest.DPKMode)
+							console.log('New DPK Command: ', ndpk)
+
+							this.$q.loading.hide()
+							this.$q.loading.show({
+								message:
+									'Activating <b>Windows</b><br/><span class="text-orange text-weight-bold">Hang on...</span>',
+							})
+
+							let iny = await this.$cmd.executeScriptCode(ndpk)
+							console.log('Activation Result: ', iny)
+
+							this.$q.loading.hide()
+
+							// Si hay error al activar
+							if (iny.error) {
+								console.error('Activation Error: ', iny.message)
+
+								this.$q
+									.dialog({
+										title: 'Alert<em>!</em>',
+										message: `<em>The following DPK </em> <span class="text-red">${nDPK.replacementProductKey}</span> <strong> is invalid</strong>`,
+										html: true,
+									})
+									.onOk(async () => {
+										this.$q.loading.show()
+										let retryKey =
+											this.win.keyWindows != 'No license found'
+												? this.win.keyWindows
+												: localStorage.getItem('dpk')
+
+										let retryNdpk = aWin
+											.replace('$dpk', retryKey)
+											.replace('$mode', this.infoTest.DPKMode)
+
+										console.log('Retry Activation Command: ', retryNdpk)
+
+										await this.$cmd.executeScriptCode(retryNdpk)
+										this.$q.loading.hide()
+
+										this.testWindows()
+										this.win.actived = true
+
+										if (this.infoTest.DPKRetry) {
+											this.win.fail = await this.failDPK()
+											console.log('Failed DPK Retry: ', this.win.fail)
+										}
+									})
+							} else {
+								console.log('Activation Successful: ', iny.message)
+								this.win.actived = true
+								this.win.oldKeyWin = this.win.keyWindows
+								this.win.keyWindows = iny.productKeyUsed
+								this.win.licenseDetails = iny.message
+
+								let sDPK = await this.statusDPK()
+								console.log('DPK Status: ', sDPK)
+							}
 						}
 					}
-				} else this.win.actived = true
-				await this.espera('actionWindows')
-				this.info = { ...this.info, ...this.win }
-				this.activate.windows = false
-				this.test['windows'] =
-					this.action == 'PASS' && this.win.activate
-						? 'Windows Activation Test PASS'
-						: 'Windows Activation Test FAIL'
-				this.test['OS'] = this.win.edition
-				this.myDb.OS = this.win.edition
-				this.test['keyWindows'] = this.win.keyWindows
-				this.test['oldKeyWin'] = this.win.oldKeyWin
+
+					this.win.actived = true
+
+					console.log('Final Activation State: ', this.win)
+
+					// Ejecutar configuraciones finales
+					await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`)
+					await this.espera('actionWindows')
+
+					// Actualizar información
+					this.info = { ...this.info, ...this.win }
+					this.activate.windows = false
+
+					this.test['windows'] =
+						this.action == 'PASS' && this.win.activate
+							? 'Windows Activation Test PASS'
+							: 'Windows Activation Test FAIL'
+					this.test['OS'] = this.win.edition
+					this.myDb.OS = this.win.edition
+					this.test['keyWindows'] = this.win.keyWindows
+					this.test['oldKeyWin'] = this.win.oldKeyWin
+
+					console.log('Test Results: ', this.test)
+					console.log('--- Windows Activation Test Completed ---')
+				} catch (error) {
+					console.error('Unexpected Error in testWindows: ', error)
+					this.$q.notify({
+						type: 'negative',
+						message: 'An unexpected error occurred during Windows activation.',
+					})
+					this.$q.loading.hide()
+				}
 			},
 			async testDisk() {
 				for (let disk of this.si.diskLayout) {
@@ -1888,43 +1948,60 @@
 			},
 
 			async testGPU() {
-				if (this.myGpu.length) {
-					this.activate.gpu = true
-					const dedicatedGPUs = this.intDev.video.filter((v) => v.Type === 'Dedicated')
-					const integratedGPUs = this.intDev.video.filter((v) => v.Type === 'Integrated')
+				this.myGpu = await this.myGpu
+				console.log('Initial state:', { myGpu: this.myGpu, intDevVideo: this.intDev.video })
 
-					// Procesar GPUs dedicadas
-					if (dedicatedGPUs.some((obj) => obj.AdapterRAM.includes('4'))) {
-						this.myGpu = await this.myGpu
-
-						this.intDev.video = this.intDev.video.map((objA) => {
-							const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
-							return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
-						})
-					} else {
-						this.myGpu = dedicatedGPUs
-					}
-
-					// Asignar valores para GPUs dedicadas
-					const dedicatedGPUInfoArray = await this.GPUInfo(this.myGpu)
-					if (dedicatedGPUInfoArray.GPU != null) {
-						this.myDb.GPU = dedicatedGPUInfoArray.GPU
-						this.myDb.GPU_RAM = dedicatedGPUInfoArray.RAM_GPU
-					} else {
-						this.myDb.GPU = ''
-						this.myDb.GPU_RAM = ''
-					}
-					// Procesar GPUs integradas
-					const integratedGPUInfo = await this.IntegratedGPUInfo(integratedGPUs)
-					this.GPUIntegrated = integratedGPUInfo || ''
-
-					await this.espera('actionGPU')
-					if (this.type == 'desktop' && this.noGPU) {
-						this.myDb.GPU = ''
-						this.myDb.GPU_RAM = ''
-					}
-					this.activate.gpu = false
+				if (!this.myGpu || !this.myGpu.length) {
+					console.error('myGpu is empty or not defined:', this.myGpu)
+					return
 				}
+
+				this.activate.gpu = true
+
+				const dedicatedGPUs = this.intDev.video.filter((v) => v.Type === 'Dedicated')
+				const integratedGPUs = this.intDev.video.filter((v) => v.Type === 'Integrated')
+				console.log('Dedicated GPUs:', dedicatedGPUs)
+				console.log('Integrated GPUs:', integratedGPUs)
+
+				if (dedicatedGPUs.some((obj) => obj.AdapterRAM && obj.AdapterRAM.includes('4'))) {
+					console.log('Resolving myGpu as a Promise:', this.myGpu)
+					this.myGpu = await this.myGpu
+					console.log('Resolved myGpu:', this.myGpu)
+
+					this.intDev.video = this.intDev.video.map((objA) => {
+						const matchB = this.myGpu.find((objB) => objB.Description === objA.Description)
+						console.log('Matching object:', { objA, matchB })
+						return matchB ? { ...objA, AdapterRAM: matchB.AdapterRAM } : objA
+					})
+				} else {
+					this.myGpu = dedicatedGPUs
+				}
+
+				const dGPUInfoArray = await this.GPUInfo(this.myGpu)
+				console.log('GPUInfo result:', dGPUInfoArray)
+
+				this.myDb.GPU = dGPUInfoArray.GPU || ''
+				this.myDb.GPU_RAM = dGPUInfoArray.RAM_GPU || ''
+
+				const iGPUInfo = await this.IntegratedGPUInfo(integratedGPUs)
+				this.GPUIntegrated = iGPUInfo || ''
+				console.log('IntegratedGPUInfo result:', iGPUInfo)
+
+				await this.espera('actionGPU')
+				console.log('Finished espera("actionGPU")')
+
+				if (this.type === 'desktop' && this.noGPU) {
+					console.log('Setting GPU and GPU_RAM to empty for desktop with no GPU')
+					this.myDb.GPU = ''
+					this.myDb.GPU_RAM = ''
+				}
+
+				this.activate.gpu = false
+				console.log('Final state:', {
+					myGpu: this.myGpu,
+					intDevVideo: this.intDev.video,
+					myDb: this.myDb,
+				})
 			},
 			async saveComponents() {
 				this.componentes = {
@@ -2155,27 +2232,29 @@
 			async espera(a) {
 				return new Promise((resolve) => {
 					let cardActions = document.querySelector(`#${a}`)
+
 					let clickHandler = (event) => {
-						let target = event.target
+						// Asegúrate de capturar solo los clics en el botón
+						let target = event.target.closest('.q-btn') // Filtrar solo por clase 'q-btn'
+
+						if (!target) return // Si no es un botón, salimos
 
 						// Verificar si el botón tiene el atributo 'disable'
-						if (target.hasAttribute('disable')) {
-							// Si el botón tiene el atributo 'disable' pero está habilitado (disable es falso), hacer el proceso
-							if (target.disabled) {
-								// Si está deshabilitado, no hacemos nada
-								return
-							}
+						if (target.hasAttribute('disable') && target.disabled) {
+							return // No hacemos nada si el botón está deshabilitado
 						}
-						// Convertir el texto del target a mayúsculas para la comparación
+
+						// Convertir el texto del botón a mayúsculas para comparación
 						let targetText = target.innerText.toUpperCase()
 
 						// Comparar el texto en mayúsculas
-						if (targetText.includes('PASS') || targetText === 'FAIL') {
+						if (targetText.includes('PASS') || targetText === 'NEXT' || targetText === 'FAIL') {
 							cardActions.removeEventListener('click', clickHandler)
 							resolve()
 						}
 					}
 
+					// Asignar el event listener
 					cardActions.addEventListener('click', clickHandler)
 				})
 			},
@@ -2342,52 +2421,101 @@
 				console.error('Error during beforeCreate:', error)
 			}
 		},
+		clearLocalStorage() {
+			localStorage.removeItem('infoSystem')
+			localStorage.removeItem('iTest')
+			localStorage.removeItem('intDev')
+			localStorage.removeItem('componentes')
+			localStorage.removeItem('datetime')
+			localStorage.removeItem('driver')
+		},
 		async mounted() {
-			this.$q.loading.show({
-				message:
-					'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
-			})
-			console.log('Begin System Information...')
-			this.win = this.$cmd.executeScriptCode(sWin)
-			if (!localStorage.getItem('infoSystem')) {
-				let [is, it, id, cp, dt, dr] = await Promise.all([
-					this.$system(),
-					this.$cmd.executeScriptCode(imaging),
-					this.$cmd.executeScriptCode(intenalDevices),
-					this.$cmd.executeScriptCode(components),
-					this.DateTime(),
-					this.$cmd.executeScriptCode(drivers),
-				])
-				console.log('End System Information...')
-				this.infoSystem = is
-				this.iTest = it
-				this.intDev = id
-				this.componentes = cp
-				this.datetime = dt
-				this.driver = dr
-				localStorage.setItem('infoSystem', JSON.stringify(this.infoSystem))
-				localStorage.setItem('iTest', JSON.stringify(this.iTest))
-				localStorage.setItem('intDev', JSON.stringify(this.intDev))
-				localStorage.setItem('componentes', JSON.stringify(this.componentes))
-				localStorage.setItem('datetime', JSON.stringify(this.datetime))
-				localStorage.setItem('driver', JSON.stringify(this.driver))
-			} else {
-				this.infoSystem = JSON.parse(localStorage.getItem('infoSystem'))
-				this.iTest = JSON.parse(localStorage.getItem('iTest'))
-				this.intDev = JSON.parse(localStorage.getItem('intDev'))
-				this.componentes = JSON.parse(localStorage.getItem('componentes'))
-				this.datetime = JSON.parse(localStorage.getItem('datetime'))
-				this.driver = JSON.parse(localStorage.getItem('driver'))
+			try {
+				this.$q.loading.show({
+					message:
+						'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
+				})
+
+				console.log('Begin System Information...')
+
+				// Initialize the win variable
+				this.win = this.$cmd.executeScriptCode(sWin)
+
+				if (!localStorage.getItem('infoSystem')) {
+					try {
+						// Execute all promises concurrently
+						let [is, it, id, cp, dt, dr] = await Promise.all([
+							this.$system(),
+							this.$cmd.executeScriptCode(imaging),
+							this.$cmd.executeScriptCode(intenalDevices),
+							this.$cmd.executeScriptCode(components),
+							this.DateTime(),
+							this.$cmd.executeScriptCode(drivers),
+						])
+
+						console.log('End System Information...')
+
+						// Assign results to variables
+						this.infoSystem = is
+						this.iTest = it
+						this.intDev = id
+						this.componentes = cp
+						this.datetime = dt
+						this.driver = dr
+
+						// Save results to localStorage
+						localStorage.setItem('infoSystem', JSON.stringify(this.infoSystem))
+						localStorage.setItem('iTest', JSON.stringify(this.iTest))
+						localStorage.setItem('intDev', JSON.stringify(this.intDev))
+						localStorage.setItem('componentes', JSON.stringify(this.componentes))
+						localStorage.setItem('datetime', JSON.stringify(this.datetime))
+						localStorage.setItem('driver', JSON.stringify(this.driver))
+					} catch (error) {
+						console.error('Error during system information retrieval:', error)
+						this.clearLocalStorage()
+						throw error // Re-throw the error to handle it in the catch block below
+					}
+				} else {
+					// Load data from localStorage
+					this.infoSystem = JSON.parse(localStorage.getItem('infoSystem'))
+					this.iTest = JSON.parse(localStorage.getItem('iTest'))
+					this.intDev = JSON.parse(localStorage.getItem('intDev'))
+					this.componentes = JSON.parse(localStorage.getItem('componentes'))
+					this.datetime = JSON.parse(localStorage.getItem('datetime'))
+					this.driver = JSON.parse(localStorage.getItem('driver'))
+				}
+
+				// Perform GPU check if conditions are met
+				if (
+					this.intDev.video
+						.filter((v) => v.Type === 'Dedicated')
+						.some((obj) => obj.AdapterRAM.includes('4'))
+				) {
+					this.myGpu = this.$cmd.getDx({ Serial: this.infoSystem.system.serial })
+				}
+
+				console.log('Drivers: ', this.driver)
+
+				// Final validation
+				this.validation()
+			} catch (error) {
+				// Display error dialog using Quasar
+				this.$q.dialog({
+					title: 'Error',
+					message: `An error occurred during initialization: ${error.message}`,
+					persistent: true,
+					color: 'red',
+					ok: {
+						label: 'Retry',
+						handler: () => {
+							window.location.reload() // Reload the page to retry
+						},
+					},
+				})
+			} finally {
+				// Hide the loading spinner
+				this.$q.loading.hide()
 			}
-			if (
-				this.intDev.video
-					.filter((v) => v.Type === 'Dedicated')
-					.some((obj) => obj.AdapterRAM.includes('4'))
-			)
-				this.myGpu = this.$cmd.getDx({ Serial: this.infoSystem.system.serial })
-			console.log('Drivers: ', this.driver)
-			this.$q.loading.hide()
-			this.validation()
 		},
 	}
 </script>

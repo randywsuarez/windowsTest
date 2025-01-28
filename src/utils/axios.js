@@ -40,6 +40,7 @@ instance.interceptors.response.use(
 		// data = error.response.data.error
 
 		if (error.response) {
+			//console.log(data)
 			// The request was made and the server responded with a status code
 			// that falls out of the range of 2xx
 			//console.log(error.response.data);
@@ -48,11 +49,11 @@ instance.interceptors.response.use(
 				// LocalStorage.remove('user')
 				// LocalStorage.remove('token')
 				// window.location.reload()
-				return Promise.reject(data.response.data.error)
+				return Promise.reject(data.response.data)
 			}
 
-			data = error.response.data.error
-			Notify.create(error.response.data.error.message)
+			data = error.response.data
+			//Notify.create(error.response.data)
 			//console.log(error.response.status);
 			//console.log(error.response.headers);
 		} else if (error.request) {

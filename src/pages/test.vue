@@ -3,6 +3,7 @@
 		<title>Components Test</title>
 
 		<q-stepper
+			flat
 			v-model="step"
 			header-nav
 			ref="stepper"
@@ -54,6 +55,7 @@
 </template>
 
 <script>
+	import { mapState } from 'vuex'
 	import Keyboard from '../components/Keyboard.vue'
 	import Mouse from '../components/Mouse.vue'
 	import Mic from '../components/Mic.vue'
@@ -62,6 +64,8 @@
 	import speaker from '../components/soundTest.vue'
 	import brightness from '../components/Brightness.vue'
 	import webcam from '../components/webcam.vue'
+	import battery from '../components/battery.vue'
+	import formComponent from '../components/formComponent.vue'
 
 	export default {
 		components: {
@@ -73,6 +77,8 @@
 			speaker,
 			brightness,
 			webcam,
+			battery,
+			formComponent,
 		},
 		data() {
 			return {
@@ -83,6 +89,7 @@
 			}
 		},
 		computed: {
+			...mapState(['hardwareInfo', 'type']),
 			filteredSteps() {
 				if (!Array.isArray(this.stepper) || this.stepper.length === 0) {
 					return []
@@ -108,6 +115,47 @@
 					this.$set(this.test, step.title, {})
 				})
 			},
+			async scrapping() {
+				if (!this.scrappingPromise) {
+					//this.$q.loading.show()
+					// Solo inicializa la promesa si no existe
+					this.scrappingPromise = (async () => {
+						try {
+							// Ejecutar las consultas asincrónicas concurrentemente
+							let [info, battery] = await Promise.all([
+								this.$hardwareInfo(),
+								this.type == 'LAPTOP' || this.type == 'TABLET'
+									? this.$getSpecificInfo('battery')
+									: {},
+							])
+							// Asignar resultados a variables
+							this.$store.state.hardwareInfo = { ...info, battery }
+							console.log(this.hardwareInfo)
+
+							//this.$q.loading.hide()
+							//else this.bios = {}
+						} catch (error) {
+							// Manejo de errores
+							//this.$q.loading.hide()
+							this.$q
+								.dialog({
+									title: 'Error',
+									message: `An error occurred during the scrapping of the information: ${error.message}`,
+									persistent: true,
+									color: 'red',
+									ok: {
+										label: 'Retry',
+									},
+								})
+								.onOk(() => {
+									this.scrapping() // Reintenta el proceso
+								})
+							throw error // Lanza el error para que sea manejado si es necesario
+						}
+					})()
+				}
+				return this.scrappingPromise // Retorna la promesa para que pueda ser usada
+			},
 		},
 		async mounted() {
 			// Get currentType from route params, default to MOUSE if not provided
@@ -128,6 +176,7 @@
 					} else {
 						console.error('Invalid data structure:', v)
 					}
+					this.scrapping()
 				})
 				.catch((error) => {
 					console.error('Error fetching data:', error)

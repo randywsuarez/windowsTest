@@ -12,6 +12,8 @@
 	"dependencies": {
 		"@quasar/cli": "^2.4.1",
 		"@quasar/extras": "^1.16.4",
+		"@vuelidate/core": "^2.0.3",
+		"@vuelidate/validators": "^2.0.4",
 		"adm-zip": "^0.5.10",
 		"axios": "^1.6.2",
 		"core-js": "^3.6.5",
@@ -31,7 +33,9 @@
 		"systeminformation": "^5.23.5",
 		"tone": "^15.0.4",
 		"uuid": "^9.0.1",
-		"vue-i18n": "8"
+		"vue-i18n": "8",
+		"vuelidate": "^0.7.7",
+		"vuex-persistedstate": "^4.1.0"
 	},
 	"devDependencies": {
 		"@babel/plugin-proposal-nullish-coalescing-operator": "^7.18.6",

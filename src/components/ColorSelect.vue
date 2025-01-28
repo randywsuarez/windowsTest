@@ -61,6 +61,10 @@
 				type: String,
 				required: true,
 			},
+			colorType: {
+				type: String,
+				required: true,
+			},
 		},
 		data() {
 			return {
@@ -95,10 +99,7 @@
 						this.emitColorSelected(this.selectedColor)
 					}
 
-					let colors = await this.$db
-						.collection(`${this.brand == 'HP' ? 'HPColor' : 'GenericColor'}`)
-						.admin()
-						.get()
+					let colors = await this.$db.collection(`${this.colorType}`).admin().get()
 					this.colorOptions = colors.map((color) => ({
 						label: color.Description.toUpperCase(),
 						value: color.Description.toUpperCase(),

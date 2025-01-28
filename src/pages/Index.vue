@@ -1,7 +1,7 @@
 <template>
 	<q-page>
 		<q-card class="q-card-container">
-			<q-card class="corner-card top-left" @click="cornerAction('top-left')">
+			<!-- <q-card class="corner-card top-left" @click="cornerAction('top-left')">
 				<q-item>
 					<q-item-section class="image-section">
 						<img src="SYSINFO.png" class="detail-image" />
@@ -24,7 +24,7 @@
 				<q-item-section>
 					<q-item-label style="font-size: 10px">Quality Assurance</q-item-label>
 				</q-item-section>
-			</q-card>
+			</q-card> -->
 			<div v-for="category in data" :key="category._id" class="category-container">
 				<h2>{{ category.Category }}</h2>
 				<div class="details-container">
@@ -50,6 +50,8 @@
 </template>
 
 <script>
+	import { mapState } from 'vuex'
+
 	export default {
 		data() {
 			return {
@@ -57,15 +59,65 @@
 				isQualityAssuranceSelected: false,
 			}
 		},
+		computed: {
+			...mapState(['informationBios', 'advancedBios', 'type']), // Mapea las propiedades del estado a las variables locales
+		},
 		methods: {
 			toggleQualityAssurance() {
 				this.isQualityAssuranceSelected = !this.isQualityAssuranceSelected
 			},
 			navigateTo(route, type) {
-				this.$router.push({ path: `/${route.toLowerCase()}`, query: { type } })
+				this.$store.state.type = type
+				this.$router.push({
+					path: `/${route.toLowerCase()}`,
+					query: {
+						type,
+						//informationBios: this.informationBios,
+					},
+				})
 			},
 			cornerAction(position) {
 				console.log(`Action triggered from ${position} corner.`)
+			},
+			async scrapping() {
+				if (!this.scrappingPromise) {
+					this.$q.loading.show()
+					// Solo inicializa la promesa si no existe
+					this.scrappingPromise = (async () => {
+						try {
+							// Ejecutar las consultas asincrónicas concurrentemente
+							let [info] = await Promise.all([this.$system()])
+							// Asignar resultados a variables
+							this.$store.state.informationBios = info
+							if (
+								info.system.manufacturer.toUpperCase() == 'HP' ||
+								info.system.manufacturer.toUpperCase() == 'HEWLETT-PACKARD'
+							)
+								this.$store.state.advancedBios = await this.$cmd.biosData()
+
+							this.$q.loading.hide()
+							//else this.bios = {}
+						} catch (error) {
+							// Manejo de errores
+							this.$q.loading.hide()
+							this.$q
+								.dialog({
+									title: 'Error',
+									message: `An error occurred during the scrapping of the information: ${error.message}`,
+									persistent: true,
+									color: 'red',
+									ok: {
+										label: 'Retry',
+									},
+								})
+								.onOk(() => {
+									this.scrapping() // Reintenta el proceso
+								})
+							throw error // Lanza el error para que sea manejado si es necesario
+						}
+					})()
+				}
+				return this.scrappingPromise // Retorna la promesa para que pueda ser usada
 			},
 		},
 		async mounted() {
@@ -74,6 +126,9 @@
 				.conditions({ Description: 'testType' })
 				.admin()
 				.get()
+			console.log(new Date())
+			await this.scrapping()
+			console.log(new Date())
 		},
 	}
 </script>
