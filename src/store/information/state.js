@@ -5,5 +5,6 @@ export default function () {
 		systemInformation: {},
 		type: '',
 		hardwareInfo: {},
+		infoServer: {},
 	}
 }

@@ -188,10 +188,10 @@
 			<div class="row col-12">
 				<ColorSelect
 					class="col-6"
-					:partsurfer="components.infoTest"
+					:partsurfer="infoServer.infoTest"
 					@color-selected="handleColorSelected"
-					:brand="components.information.brand"
-					:colorType="components.validateUnit.colorType"
+					:brand="infoServer.information.brand"
+					:colorType="infoServer.validateUnit.colorType"
 				/>
 			</div>
 		</q-expansion-item>
@@ -323,7 +323,7 @@
 			}
 		},
 		computed: {
-			...mapState(['informationBios', 'advancedBios', 'type', 'hardwareInfo']),
+			...mapState(['informationBios', 'advancedBios', 'type', 'hardwareInfo', 'infoServer']),
 		},
 		methods: {
 			handleInputChange(id) {
@@ -414,6 +414,7 @@
 						type: this.type,
 					})
 					.then(async (v) => {
+						this.$store.state.infoServer = v
 						this.components = v.information
 						this.miniSerial = v.information.Serial.slice(0, -2)
 						this.miniSKU = v.information.Model.includes('#')
