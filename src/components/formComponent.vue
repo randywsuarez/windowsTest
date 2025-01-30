@@ -1,5 +1,5 @@
 <template>
-	<div class="row col">
+	<div id="info" class="row col">
 		<!-- Check Label -->
 		<q-expansion-item
 			expand-separator
@@ -187,10 +187,9 @@
 
 			<div class="row col-12">
 				<ColorSelect
-					class="col-6"
-					:partsurfer="infoServer.infoTest"
+					:partsurfer="infoServer.infoTest.Specs"
 					@color-selected="handleColorSelected"
-					:brand="infoServer.information.brand"
+					:brand="infoServer.information.Brand"
 					:colorType="infoServer.validateUnit.colorType"
 				/>
 			</div>
@@ -248,6 +247,16 @@
 				/>
 			</div>
 		</q-expansion-item>
+		<div class="row justify-between q-pt-md">
+			<q-btn color="red" icon="close" label="Fail" @click="captureInfoStatus('fail')" />
+			<q-btn
+				color="green"
+				icon="check"
+				label="Pass"
+				:disable="v$.form.$invalid"
+				@click="captureInfoStatus('pass')"
+			/>
+		</div>
 	</div>
 </template>
 
@@ -255,8 +264,13 @@
 	import { mapState } from 'vuex'
 	import useVuelidate from '@vuelidate/core'
 	import { required, minLength, helpers } from '@vuelidate/validators'
+	import ColorSelect from '../components/ColorSelect.vue'
+	import html2canvas from 'html2canvas'
 
 	export default {
+		components: {
+			ColorSelect,
+		},
 		data() {
 			return {
 				hotkey: {
@@ -326,14 +340,52 @@
 			...mapState(['informationBios', 'advancedBios', 'type', 'hardwareInfo', 'infoServer']),
 		},
 		methods: {
+			hasError() {
+				console.log(this.v$.form)
+				return this.v$.form.$invalid
+			},
+			async captureInfoStatus(status) {
+				const element = document.getElementById('info')
+				if (!element) {
+					console.error('Element not found')
+					return
+				}
+				try {
+					const canvas = await html2canvas(element)
+					const imageBase64 = canvas.toDataURL('image/png')
+					const infoObject = {
+						status: status === 'pass',
+						ext: 'png',
+						type: 'information',
+						Message: `Information Test ${status.toUpperCase()}`,
+						base64: imageBase64,
+					}
+					let i = {}
+					if (this.type == 'DESKTOP') {
+						i = { Desktop: this.form }
+						delete i.Desktop.serial
+						delete i.Desktop.sku
+					}
+					console.log('Captured Info:', infoObject)
+					this.infoServer.information = {
+						...this.infoServer.information,
+						hotkey: this.hotkey,
+						...i,
+					}
+					this.$store.state.infoServer = this.infoServer
+					this.$emit('input', infoObject)
+				} catch (error) {
+					console.error('Error capturing the element:', error)
+				}
+			},
 			handleInputChange(id) {
 				this.form[id] = this.form[id].toUpperCase()
 			},
 			validateSerial() {
 				console.log(`${this.miniSerial}${this.form.serial}`)
 				if (
-					this.components.information.Serial !== `${this.miniSerial}${this.form.serial}` &&
-					this.components.information.Serial.length ===
+					this.infoServer.information.Serial !== `${this.miniSerial}${this.form.serial}` &&
+					this.infoServer.information.Serial.length ===
 						`${this.miniSerial}${this.form.serial}`.length
 				) {
 					this.$q.notify({
@@ -341,8 +393,8 @@
 						message: 'Serial does not match the expected value.',
 					})
 				} else if (
-					this.components.information.Serial === `${this.miniSerial}${this.form.serial}` &&
-					this.components.information.Serial.length ===
+					this.infoServer.information.Serial === `${this.miniSerial}${this.form.serial}` &&
+					this.infoServer.information.Serial.length ===
 						`${this.miniSerial}${this.form.serial}`.length
 				) {
 					this.$refs.sku.focus()
@@ -355,8 +407,8 @@
 			},
 			validateSKU() {
 				if (
-					this.components.information.Model !== `${this.miniSKU}${this.form.sku}` &&
-					`${this.miniSKU}${this.form.sku}`.length == this.components.information.Model.length
+					this.infoServer.information.Model !== `${this.miniSKU}${this.form.sku}` &&
+					`${this.miniSKU}${this.form.sku}`.length == this.infoServer.information.Model.length
 				) {
 					this.$q.notify({
 						type: 'negative',
@@ -375,6 +427,7 @@
 					])
 					this.driver = drivers
 					this.windowsDPK = winDPK
+					this.$store.state.win = winDPK
 				} catch (error) {
 					this.$q
 						.dialog({
@@ -449,7 +502,6 @@
 				: this.currentType
 			await this.scrapping()
 			this.systemInformation = await this.systemInformation
-			console.log(this.informationBios, this.driver, this.windowsDPK)
 			this.saveComponent()
 			this.$q.loading.hide()
 		},
