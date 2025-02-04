@@ -1,2 +1,3 @@
-export function someGetter (/* state */) {
+export default {
+	systemInfo: (state) => state.systemInfo,
 }
