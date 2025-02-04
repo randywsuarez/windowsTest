@@ -72,6 +72,10 @@
 			async handlePass() {
 				await this.captureGrid(true, 'Webcam test PASS')
 			},
+			async handleNoCam() {
+				this.$store.state.Webcam = 'NO'
+				await this.captureGrid(true, 'Webcam test PASS')
+			},
 			async handleFail() {
 				await this.captureGrid(false, 'Webcam test FAIL')
 			},
@@ -140,8 +144,8 @@
 		text-align: center;
 	}
 	video {
-		width: 100%;
-		height: 100%;
+		width: 70%;
+		height: 70%;
 		object-fit: cover; /* Ensure the video fits within the grid item */
 		border-radius: 8px 8px 0 0;
 	}

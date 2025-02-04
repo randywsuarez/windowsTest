@@ -8,7 +8,7 @@
 				round
 			/>
 		</div>
-		<canvas ref="visualizer" width="600" height="300" class="visualizer-canvas"></canvas>
+		<canvas ref="visualizer" width="600" height="200" class="visualizer-canvas"></canvas>
 
 		<!-- Botones debajo del canvas -->
 		<div id="kb_box_b" class="row justify-between q-pt-md">

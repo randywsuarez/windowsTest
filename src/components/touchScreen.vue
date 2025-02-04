@@ -44,6 +44,7 @@
 
 <script>
 	import html2canvas from 'html2canvas'
+	import { mapState } from 'vuex'
 
 	export default {
 		props: {
@@ -62,6 +63,9 @@
 				test: {},
 			}
 		},
+		computed: {
+			...mapState(['TocuhScreen']),
+		},
 		mounted() {
 			document.addEventListener('keydown', this.handleEscapeKey)
 		},
@@ -71,6 +75,7 @@
 		methods: {
 			confirmTouchScreen(isTouchScreen) {
 				this.testDecided = true
+				this.$store.state.TocuhScreen = isTouchScreen
 				if (isTouchScreen) {
 					this.startTest()
 				} else {
