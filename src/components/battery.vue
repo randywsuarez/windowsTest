@@ -127,32 +127,15 @@
 
 	export default {
 		name: 'BatteryComponent',
-		props: {
-			batteryInfo: {
-				type: Object,
-				required: false,
-				default: () => ({
-					hasBattery: true,
-					cycleCount: 0,
-					isCharging: false,
-					designedCapacity: 68426,
-					maxCapacity: 54923,
-					currentCapacity: 54923,
-					voltage: 12.582,
-					capacityUnit: 'mWh',
-					percent: 95,
-					timeRemaining: null,
-					acConnected: true,
-					type: '',
-					model: '00020 2023/02/04Hewlett-PackardPrimary',
-					manufacturer: '',
-					serial: '',
-					estimatedLife: 100,
-				}),
-			},
+		props: {},
+		data() {
+			return {
+				batteryInfo: {},
+				minimum: 80,
+			}
 		},
 		computed: {
-			...mapState(['informationBios', 'hardwareInfo']),
+			...mapState(['informationBios', 'hardwareInfo', 'infoServer']),
 			isBatteryInvalid() {
 				return !this.batteryInfo.hasBattery || this.batteryInfo.estimatedLife > 100
 			},
@@ -222,7 +205,15 @@
 			},
 		},
 		mounted() {
-			//this.batteryInfo = this.hardwareInfo?.battery
+			this.minimum = this.infoServer.validateUnit.batteryFailPercentage
+				? this.infoServer.validateUnit.batteryFailPercentage
+				: this.minimum
+			if (typeof this.infoServer.validateUnit.batteryFailPercentage !== 'number')
+				this.$q.notify({
+					type: 'warning',
+					message: `The minimum battery is not defined, the following is used by default: ${this.minimum}.`,
+				})
+			this.batteryInfo = this.infoServer.information.Battery
 		},
 	}
 </script>
