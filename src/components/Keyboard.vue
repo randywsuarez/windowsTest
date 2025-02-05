@@ -36,7 +36,13 @@
 			<div id="kb_box_b" class="row justify-between q-pt-md">
 				<q-btn color="red" icon="close" label="Fail" @click="captureKeyboard('fail')" />
 				<q-btn color="primary" label="Reset" @click="resetKeyboard" />
-				<q-btn color="green" icon="check" label="Pass" @click="captureKeyboard('pass')" />
+				<q-btn
+					color="green"
+					icon="check"
+					label="Pass"
+					@click="captureKeyboard('pass')"
+					:disable="complete"
+				/>
 			</div>
 		</div>
 	</div>
@@ -653,6 +659,8 @@
 				showStartModal: true,
 				keydownSet: {},
 				allKeysPressedMessage: '',
+				noTest: [],
+				complete: false,
 			}
 		},
 		methods: {
@@ -685,9 +693,12 @@
 				this.saveStateToLocalStorage()
 			},
 			checkAllKeysPressed() {
-				const allPressed = this.keyRows.every((row) => row.keys.every((key) => key.pressed))
+				const allPressed = this.keyRows.every((row) =>
+					row.keys.every((key) => key.pressed || this.noTest.includes(key.id)),
+				)
 				if (allPressed) {
-					this.captureKeyboard('pass')
+					this.complete = true
+					// this.captureKeyboard('pass'); // Comentar esta línea
 				}
 			},
 
@@ -704,7 +715,7 @@
 						const message = status === 'pass' ? 'Keyboard test PASS' : 'Keyboard test FAIL'
 						const result = {
 							status: status === 'pass',
-							image: imageData,
+							...imageData,
 							message: message,
 						}
 
@@ -815,6 +826,20 @@
 		beforeDestroy() {
 			this.removeKeyboardListeners()
 			this.enableDefaultKeys()
+		},
+
+		async mounted() {
+			this.$db
+				.collection('TestSettings')
+				.conditions({ Description: 'Keyboard' })
+				.admin()
+				.get()
+				.then((v) => {
+					this.noTest = v.noTest
+				})
+				.catch((error) => {
+					console.error('Error fetching data:', error)
+				})
 		},
 	}
 </script>
