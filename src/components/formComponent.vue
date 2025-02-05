@@ -1,252 +1,263 @@
 <template>
-	<div id="info" class="row col">
-		<!-- Check Label -->
-		<q-expansion-item
-			expand-separator
-			:default-opened="true"
-			dense
-			header-class="bg-grey-3 text-bold full-width-header"
-			class="row col-6"
-		>
-			<template v-slot:header>
-				<div class="text-teal">
-					<q-icon name="label" />
-					Check Label
-				</div>
-			</template>
+	<div>
+		<div id="info" class="row col">
+			<!-- Check Label -->
+			<q-expansion-item
+				expand-separator
+				:default-opened="true"
+				dense
+				header-class="bg-grey-3 text-bold full-width-header"
+				class="row col-6"
+			>
+				<template v-slot:header>
+					<div class="text-teal">
+						<q-icon name="label" />
+						Check Label
+					</div>
+				</template>
 
-			<div class="row col-12 q-mb-lg">
-				<q-input
-					dense
-					ref="serial"
-					standout="bg-teal text-white"
-					v-model="form.serial"
-					@input="
-						v$.form.serial.$touch()
-						handleInputChange('serial')
-						validateSerial()
-					"
-					:prefix="miniSerial"
-					placeholder="XX"
-					hint="Write the last 2 digits"
-					type="text"
-					maxlength="2"
-					label="Serial"
-					:error="v$.form.serial.$error"
-					:error-message="
-						v$.form.serial.required ? 'Serial is required' : 'Serial must be exactly 2 characters.'
-					"
-					class="col-6 q-pa-sm"
-				/>
-				<q-input
-					dense
-					ref="sku"
-					standout="bg-teal text-white"
-					v-model="form.sku"
-					@input="
-						v$.form.sku.$touch()
-						handleInputChange('sku')
-						validateSKU()
-					"
-					type="text"
-					label="SKU/Model"
-					:prefix="miniSKU"
-					placeholder="XXXX"
-					hint="Write the missing"
-					maxlength="4"
-					:error="v$.form.sku.$error"
-					:error-message="
-						v$.form.sku.required ? 'SKU is required' : 'SKU must be at least 4 characters.'
-					"
-					class="col-6 q-pa-sm"
-				/>
-			</div>
-		</q-expansion-item>
-		<!-- HotKeys -->
-		<q-expansion-item
-			expand-separator
-			:default-opened="true"
-			dense
-			header-class="bg-grey-3 text-bold full-width-header"
-			class="row col-6"
-			v-if="type === 'LAPTOP'"
-		>
-			<template v-slot:header>
-				<div class="text-teal">
-					<q-icon name="label" />
-					Hotkeys
+				<div class="row col-12 q-mb-lg">
+					<q-input
+						dense
+						ref="serial"
+						standout="bg-teal text-white"
+						v-model="form.serial"
+						@input="
+							v$.form.serial.$touch()
+							handleInputChange('serial')
+							validateSerial()
+						"
+						:prefix="miniSerial"
+						placeholder="XX"
+						hint="Write the last 2 digits"
+						type="text"
+						maxlength="2"
+						label="Serial"
+						:error="v$.form.serial.$error"
+						:error-message="
+							v$.form.serial.required
+								? 'Serial is required'
+								: 'Serial must be exactly 2 characters.'
+						"
+						class="col-6 q-pa-sm"
+					/>
+					<q-input
+						dense
+						ref="sku"
+						standout="bg-teal text-white"
+						v-model="form.sku"
+						@input="
+							v$.form.sku.$touch()
+							handleInputChange('sku')
+							validateSKU()
+						"
+						type="text"
+						label="SKU/Model"
+						:prefix="miniSKU"
+						placeholder="XXXX"
+						hint="Write the missing"
+						maxlength="4"
+						:error="v$.form.sku.$error"
+						:error-message="
+							v$.form.sku.required ? 'SKU is required' : 'SKU must be at least 4 characters.'
+						"
+						class="col-6 q-pa-sm"
+					/>
 				</div>
-			</template>
+			</q-expansion-item>
+			<!-- HotKeys -->
+			<q-expansion-item
+				expand-separator
+				:default-opened="true"
+				dense
+				header-class="bg-grey-3 text-bold full-width-header"
+				class="row col-6"
+				v-if="type === 'LAPTOP'"
+			>
+				<template v-slot:header>
+					<div class="text-teal">
+						<q-icon name="label" />
+						Hotkeys
+					</div>
+				</template>
 
-			<div class="row col-12">
-				<q-checkbox size="xl" v-model="hotkey.mic" val="80px" label="Mic" class="col-3" />
-				<q-checkbox size="xl" v-model="hotkey.privacy" val="80px" label="Privacy" class="col-3" />
-				<q-checkbox size="xl" v-model="hotkey.speakers" val="80x" label="Speakers" class="col-3" />
-				<q-checkbox
-					size="xl"
-					v-model="hotkey.brights"
-					val="80px"
-					label="Brightness"
-					class="col-3"
-				/>
-			</div>
-		</q-expansion-item>
-		<!-- Components -->
-		<q-expansion-item
-			expand-separator
-			:default-opened="true"
-			dense
-			header-class="bg-grey-3 text-bold full-width-header"
-			class="row col-6"
-			v-if="(type === 'LAPTOP' || type === 'TABLET') && components.Product == 'CTO'"
-		>
-			<template v-slot:header>
-				<div class="text-teal">
-					<q-icon name="label" />
-					Components
+				<div class="row col-12">
+					<q-checkbox size="xl" v-model="hotkey.mic" val="80px" label="Mic" class="col-3" />
+					<q-checkbox size="xl" v-model="hotkey.privacy" val="80px" label="Privacy" class="col-3" />
+					<q-checkbox
+						size="xl"
+						v-model="hotkey.speakers"
+						val="80x"
+						label="Speakers"
+						class="col-3"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="hotkey.brights"
+						val="80px"
+						label="Brightness"
+						class="col-3"
+					/>
 				</div>
-			</template>
+			</q-expansion-item>
+			<!-- Components -->
+			<q-expansion-item
+				expand-separator
+				:default-opened="true"
+				dense
+				header-class="bg-grey-3 text-bold full-width-header"
+				class="row col-6"
+				v-if="(type === 'LAPTOP' || type === 'TABLET') && components.Product == 'CTO'"
+			>
+				<template v-slot:header>
+					<div class="text-teal">
+						<q-icon name="label" />
+						Components
+					</div>
+				</template>
 
-			<div class="row col-12">
-				<q-checkbox
-					size="xl"
-					v-model="components.WWAN"
-					true-value="YES"
-					false-value="NO"
-					label="WWAN"
-				/>
-				<q-checkbox
-					size="xl"
-					v-model="components.WLAN"
-					true-value="YES"
-					false-value="NO"
-					label="WLAN"
-				/>
-				<q-checkbox
-					size="xl"
-					v-model="components.Keyboard.Privacy"
-					true-value="YES"
-					false-value="NO"
-					label="Privacy"
-				/>
-				<q-checkbox
-					size="xl"
-					v-model="components.NFC"
-					true-value="YES"
-					false-value="NO"
-					label="NFC"
-				/>
-				<q-checkbox
-					size="xl"
-					v-model="components.SmartCard"
-					true-value="YES"
-					false-value="NO"
-					label="Smart Card"
-				/>
-				<q-checkbox
-					size="xl"
-					v-model="components.Keyboard.Backlight"
-					true-value="YES"
-					false-value="NO"
-					label="Backlight"
-				/>
-				<q-checkbox
-					size="xl"
-					v-model="components.Keyboard.RGB"
-					true-value="YES"
-					false-value="NO"
-					label="RGB Keyboard"
-				/>
-				<q-checkbox
-					size="xl"
-					v-model="components.Fingerprint"
-					true-value="YES"
-					false-value="NO"
-					label="Fingerprint"
-				/>
-			</div>
-		</q-expansion-item>
-		<!-- Color -->
-		<q-expansion-item
-			expand-separator
-			:default-opened="true"
-			dense
-			header-class="bg-grey-3 text-bold full-width-header"
-			class="row col-6"
-			v-if="
-				(type === 'LAPTOP' || type === 'TABLET' || type === 'ALL-IN-ONE' || type === 'DESKTOP') &&
-				components.Product == 'CTO'
-			"
-		>
-			<template v-slot:header>
-				<div class="text-teal">
-					<q-icon name="label" />
-					Unit color
+				<div class="row col-12">
+					<q-checkbox
+						size="xl"
+						v-model="components.WWAN"
+						true-value="YES"
+						false-value="NO"
+						label="WWAN"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="components.WLAN"
+						true-value="YES"
+						false-value="NO"
+						label="WLAN"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="components.Keyboard.Privacy"
+						true-value="YES"
+						false-value="NO"
+						label="Privacy"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="components.NFC"
+						true-value="YES"
+						false-value="NO"
+						label="NFC"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="components.SmartCard"
+						true-value="YES"
+						false-value="NO"
+						label="Smart Card"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="components.Keyboard.Backlight"
+						true-value="YES"
+						false-value="NO"
+						label="Backlight"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="components.Keyboard.RGB"
+						true-value="YES"
+						false-value="NO"
+						label="RGB Keyboard"
+					/>
+					<q-checkbox
+						size="xl"
+						v-model="components.Fingerprint"
+						true-value="YES"
+						false-value="NO"
+						label="Fingerprint"
+					/>
 				</div>
-			</template>
+			</q-expansion-item>
+			<!-- Color -->
+			<q-expansion-item
+				expand-separator
+				:default-opened="true"
+				dense
+				header-class="bg-grey-3 text-bold full-width-header"
+				class="row col-6"
+				v-if="
+					(type === 'LAPTOP' || type === 'TABLET' || type === 'ALL-IN-ONE' || type === 'DESKTOP') &&
+					components.Product == 'CTO'
+				"
+			>
+				<template v-slot:header>
+					<div class="text-teal">
+						<q-icon name="label" />
+						Unit color
+					</div>
+				</template>
 
-			<div class="row col-12">
-				<ColorSelect
-					:partsurfer="infoServer.infoTest.Specs"
-					@color-selected="handleColorSelected"
-					:brand="infoServer.information.Brand"
-					:colorType="infoServer.validateUnit.colorType"
-				/>
-			</div>
-		</q-expansion-item>
-		<!-- Desktop Information -->
-		<q-expansion-item
-			expand-separator
-			:default-opened="true"
-			dense
-			header-class="bg-grey-3 text-bold full-width-header"
-			class="row col-6"
-			v-if="type === 'DESKTOP' && components.Product == 'CTO'"
-		>
-			<template v-slot:header>
-				<div class="text-teal">
-					<q-icon name="label" />
-					Desktop Information
+				<div class="row col-12">
+					<ColorSelect
+						:partsurfer="infoServer.infoTest.Specs"
+						@color-selected="handleColorSelected"
+						:brand="infoServer.information.Brand"
+						:colorType="infoServer.validateUnit.colorType"
+					/>
 				</div>
-			</template>
+			</q-expansion-item>
+			<!-- Desktop Information -->
+			<q-expansion-item
+				expand-separator
+				:default-opened="true"
+				dense
+				header-class="bg-grey-3 text-bold full-width-header"
+				class="row col-6"
+				v-if="type === 'DESKTOP' && components.Product == 'CTO'"
+			>
+				<template v-slot:header>
+					<div class="text-teal">
+						<q-icon name="label" />
+						Desktop Information
+					</div>
+				</template>
 
-			<div class="row col-12">
-				<q-select
-					dense
-					standout="bg-teal text-white"
-					v-model="form.coolerSystem"
-					:options="coolingOptions"
-					label="Cooling System"
-					filled
-					class="col-6 q-pa-sm"
-				/>
-				<q-input
-					ref="adapter"
-					dense
-					standout="bg-teal text-white"
-					v-model="form.Adapter"
-					type="number"
-					label="Adapter/PowerSupply"
-					class="col-6 q-pa-sm"
-				/>
-				<q-input
-					ref="note"
-					dense
-					standout="bg-teal text-white"
-					v-model="form.note"
-					type="textarea"
-					label="Note"
-					class="col-6 q-pa-sm"
-				/>
-				<q-checkbox
-					ref="lightRAM"
-					left-label
-					v-model="form.lightRAM"
-					label="RGB RAM"
-					class="col-6 q-pa-sm"
-				/>
-			</div>
-		</q-expansion-item>
+				<div class="row col-12">
+					<q-select
+						dense
+						standout="bg-teal text-white"
+						v-model="form.coolerSystem"
+						:options="coolingOptions"
+						label="Cooling System"
+						filled
+						class="col-6 q-pa-sm"
+					/>
+					<q-input
+						ref="adapter"
+						dense
+						standout="bg-teal text-white"
+						v-model="form.Adapter"
+						type="number"
+						label="Adapter/PowerSupply"
+						class="col-6 q-pa-sm"
+					/>
+					<q-input
+						ref="note"
+						dense
+						standout="bg-teal text-white"
+						v-model="form.note"
+						type="textarea"
+						label="Note"
+						class="col-6 q-pa-sm"
+					/>
+					<q-checkbox
+						ref="lightRAM"
+						left-label
+						v-model="form.lightRAM"
+						label="RGB RAM"
+						class="col-6 q-pa-sm"
+					/>
+				</div>
+			</q-expansion-item>
+		</div>
+
 		<div class="row justify-between q-pt-md">
 			<q-btn color="red" icon="close" label="Fail" @click="captureInfoStatus('fail')" />
 			<q-btn
@@ -337,7 +348,14 @@
 			}
 		},
 		computed: {
-			...mapState(['informationBios', 'advancedBios', 'type', 'hardwareInfo', 'infoServer']),
+			...mapState([
+				'informationBios',
+				'advancedBios',
+				'type',
+				'hardwareInfo',
+				'infoServer',
+				'typeCTO',
+			]),
 		},
 		methods: {
 			hasError() {
@@ -417,17 +435,19 @@
 				}
 			},
 			async scrapping() {
-				this.systemInformation = this.$si()
 				try {
-					const driversCode = await this.$db.funcAdmin('modules/powershell/drivers')
 					const statusWindows = await this.$db.funcAdmin('modules/powershell/statusWindows')
-					let [drivers, winDPK] = await Promise.all([
-						this.$cmd.executeScriptCode(driversCode),
+					let [winDPK, si] = await Promise.all([
 						this.$cmd.executeScriptCode(statusWindows),
+						!this.informationBios.system.sku.includes('UA') &&
+						(this.informationBios.system.manufacturer.includes('HP') ||
+							this.informationBios.system.sku.includes('HEWLETT'))
+							? this.$si()
+							: {},
 					])
-					this.driver = drivers
 					this.windowsDPK = winDPK
 					this.$store.state.win = winDPK
+					this.systemInformation = si
 				} catch (error) {
 					this.$q
 						.dialog({
@@ -442,25 +462,31 @@
 						})
 				}
 			},
+			async fetchSystemInfoIfNeeded() {
+				if (this.typeCTO) {
+					return {}
+				}
+				if (this.systemInfo) {
+					this.localLoading = false
+					return this.systemInfo
+				} else if (this.systemInfoPromise) {
+					await this.systemInfoPromise
+					this.localLoading = false
+					return this.systemInfo
+				} else {
+					this.systemInfoPromise = this.fetchSystemInfo()
+					await this.systemInfoPromise
+					this.localLoading = false
+					return this.systemInfo
+				}
+			},
 			async saveComponent() {
-				console.log({
-					systemInformation: {
-						...this.informationBios,
-						...this.hardwareInfo,
-						...this.systemInformation,
-						drivers: this.driver,
-						statusDPK: this.windowsDPK,
-						advancedBios: this.advancedBios,
-					},
-					type: this.type,
-				})
 				this.$db
 					.funcAdmin('modules/windowsTest/index', {
 						systemInformation: {
 							...this.informationBios,
 							...this.hardwareInfo,
 							...this.systemInformation,
-							drivers: this.driver,
 							statusDPK: this.windowsDPK,
 							advancedBios: this.advancedBios,
 						},
@@ -501,7 +527,7 @@
 				? this.$route.query.type.toUpperCase()
 				: this.currentType
 			await this.scrapping()
-			this.systemInformation = await this.systemInformation
+			//this.systemInformation = await this.systemInformation
 			this.saveComponent()
 			this.$q.loading.hide()
 		},
