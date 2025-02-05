@@ -127,8 +127,19 @@
 				.admin()
 				.get()
 			console.log(new Date())
+			this.$q.loading.show({
+				message:
+					'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
+			})
 			await this.scrapping()
+			this.$q.loading.hide()
 			console.log(new Date())
+			const isValid = await this.$db.funcAdmin('modules/windowsTest/ctoValidate', {
+				brand: this.informationBios.system.manufacturer,
+				sku: this.informationBios.system.sku,
+			})
+			if (!isValid) await this.fetchSystemInfo()
+			this.$store.state.typeCTO = isValid
 		},
 	}
 </script>
