@@ -12,7 +12,7 @@
 				</div>
 			</div>
 		</div>
-		<div id="kb_box_b" class="row justify-between q-pt-md" v-if="Webcam === 'YES'">
+		<div id="kb_box_b" class="row justify-between q-pt-md" v-if="cameras.length">
 			<q-btn color="red" icon="close" label="Fail" @click="handleFail" />
 			<q-btn color="primary" label="Reset" @click="handleReset" />
 			<q-btn color="green" icon="check" label="Pass" @click="handlePass" />
