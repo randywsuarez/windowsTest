@@ -12,7 +12,7 @@
 				</div>
 			</div>
 		</div>
-		<div id="kb_box_b" class="row justify-between q-pt-md">
+		<div id="kb_box_b" class="row justify-between q-pt-md" v-if="Webcam === 'YES'">
 			<q-btn color="red" icon="close" label="Fail" @click="handleFail" />
 			<q-btn color="primary" label="Reset" @click="handleReset" />
 			<q-btn color="green" icon="check" label="Pass" @click="handlePass" />
@@ -22,6 +22,7 @@
 
 <script>
 	import html2canvas from 'html2canvas'
+	import { mapState } from 'vuex'
 
 	export default {
 		name: 'MultiCameraCapture',
@@ -38,6 +39,7 @@
 			}
 		},
 		computed: {
+			...mapState(['Webcam']),
 			getGridTemplateStyle() {
 				const numCameras = this.cameras.length
 				if (numCameras === 1) {
@@ -57,6 +59,9 @@
 					(device) =>
 						device.kind === 'videoinput' && !device.label.toLowerCase().includes('infrared'),
 				)
+				if (this.cameras.length === 0) {
+					this.handleNoCam()
+				}
 
 				this.cameras.forEach(async (camera, index) => {
 					const stream = await navigator.mediaDevices.getUserMedia({

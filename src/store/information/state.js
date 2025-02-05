@@ -8,7 +8,7 @@ export default function () {
 		infoServer: {},
 		win: {},
 		TocuhScreen: false,
-		Webcam: 'SI',
+		Webcam: 'YES',
 		typeCTO: false,
 		GPU: true,
 		systemInfo: null, // Datos obtenidos
