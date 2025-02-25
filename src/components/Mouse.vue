@@ -743,7 +743,6 @@
 					wheelUp: 'not tested',
 					wheelDown: 'not tested',
 					status: false,
-					image: null, // Propiedad para almacenar la captura
 				},
 				buttons: '',
 			}
@@ -776,7 +775,8 @@
 					try {
 						const canvas = await html2canvas(svgElement)
 						const base64Image = canvas.toDataURL('image/png')
-						this.buttonStatus.image = {
+						this.buttonStatus = {
+							...this.buttonStatus,
 							type: 'mouse',
 							ext: 'png',
 							base64: base64Image,
@@ -934,13 +934,13 @@
 		},
 		mounted() {
 			console.log('Component mounted')
-			const savedStatus = localStorage.getItem('mouseTestStatus')
+			/* const savedStatus = localStorage.getItem('mouseTestStatus')
 			if (savedStatus) {
 				this.buttonStatus = JSON.parse(savedStatus) // Restaurar estado desde localStorage
 				console.log('Restored buttonStatus:', this.buttonStatus)
 			} else {
 				this.buttonStatus = { ...this.value } // Usar estado inicial si no hay datos guardados
-			}
+			} */
 		},
 		beforeDestroy() {
 			console.log('Component beforeDestroy')

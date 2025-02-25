@@ -97,8 +97,8 @@
 </style>
 
 <script>
+	import { mapState, mapMutations } from 'vuex'
 	import EssentialLink from 'components/EssentialLink.vue'
-	import winDate from '../scripts/updateDate'
 	import UpdateService from '../utils/updateService'
 	import env from '../utils/env'
 	const electron = require('electron')
@@ -142,26 +142,6 @@
 		async created() {
 			this.version = env.version
 			this.startInternetCheckInterval()
-			/* this.test = await this.$cmd.executeScriptCode(winDate)
-			console.log(this.test)
-			if (!this.test.result)
-				this.$q
-					.dialog({
-						dark: true,
-						title: 'Error',
-						message: `You must run the program as administrator`,
-						persistent: true,
-					})
-					.onOk(() => {
-						this.cerrarVentana()
-					})
-					.onCancel(() => {
-						this.cerrarVentana()
-						// console.log('Cancel')
-					})
-					.onDismiss(() => {
-						// console.log('I am triggered on both OK and Cancel')
-					}) */
 			let credencialesGuardadas = await this.$rsNeDB('credenciales').findOne({})
 			if (credencialesGuardadas == null) {
 				this.$q.loading.hide()
@@ -171,10 +151,13 @@
 			}
 		},
 
+		computed: {
+			...mapState('information', ['token', 'user', 'userID']),
+		},
 		methods: {
+			...mapMutations('information', ['SET_TOKEN', 'SET_USER', 'SET_USERID']),
 			myFunction() {
 				// Aquí puedes ejecutar tu función
-
 				this.$q
 					.dialog({
 						title: 'Select Server',
@@ -250,8 +233,12 @@
 					let data = await this.$db.funcAdmin('modules/ispt/obtainTenants', {
 						token: info.authToken,
 					})
-					if (data.length) return { status: 'OK' }
-					else return { status: 'FAIL' }
+					if (data.length) {
+						this.SET_TOKEN(info.authToken)
+						this.SET_USER(info.user)
+						this.SET_USERID(info.id)
+						return { status: 'OK' }
+					} else return { status: 'FAIL' }
 					/* const options = {
 							method: 'GET',
 							headers: {

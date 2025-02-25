@@ -44,7 +44,7 @@
 
 <script>
 	import html2canvas from 'html2canvas'
-	import { mapState } from 'vuex'
+	import { mapState, mapMutations } from 'vuex'
 
 	export default {
 		props: {
@@ -64,7 +64,16 @@
 			}
 		},
 		computed: {
-			...mapState(['TocuhScreen']),
+			...mapState('information', ['TouchScreen']),
+		},
+		watch: {
+			TouchScreen(newVal) {
+				if (!newVal) {
+					this.test = { status: true }
+					localStorage.setItem('touchscreenState', JSON.stringify(this.test))
+					this.$emit('input', this.test)
+				}
+			},
 		},
 		mounted() {
 			document.addEventListener('keydown', this.handleEscapeKey)
@@ -73,9 +82,12 @@
 			document.removeEventListener('keydown', this.handleEscapeKey)
 		},
 		methods: {
+			...mapMutations('information', ['SET_TOUCH_SCREEN']),
+
 			confirmTouchScreen(isTouchScreen) {
 				this.testDecided = true
-				this.$store.state.TocuhScreen = isTouchScreen
+				this.SET_TOUCH_SCREEN(isTouchScreen) // 🔥 Corrección: Usar mutación de Vuex en lugar de modificar `state` directamente
+
 				if (isTouchScreen) {
 					this.startTest()
 				} else {
@@ -86,6 +98,7 @@
 					this.$emit('input', this.test)
 				}
 			},
+
 			initializeGrid() {
 				this.grid = Array.from({ length: this.rows * this.cols }, () => ({
 					active: false,
@@ -94,6 +107,7 @@
 				}))
 				this.randomlyHighlightCells()
 			},
+
 			randomlyHighlightCells() {
 				const totalCells = this.rows * this.cols
 				const indices = Array.from({ length: totalCells }, (_, i) => i)
@@ -103,6 +117,7 @@
 					this.grid[index].disabled = false
 				})
 			},
+
 			shuffleArray(array) {
 				for (let i = array.length - 1; i > 0; i--) {
 					const j = Math.floor(Math.random() * (i + 1))
@@ -110,6 +125,7 @@
 				}
 				return array
 			},
+
 			handleCellClick(index) {
 				if (this.grid[index].highlighted) {
 					this.grid[index].highlighted = false
@@ -120,16 +136,19 @@
 					}
 				}
 			},
+
 			startTest() {
 				this.testStarted = true
 				this.toggleFullScreen()
 				this.initializeGrid()
 			},
+
 			resetTest() {
 				this.testStarted = false
 				this.grid = []
 				document.exitFullscreen()
 			},
+
 			toggleFullScreen() {
 				if (!document.fullscreenElement) {
 					document.documentElement.requestFullscreen()
@@ -139,41 +158,42 @@
 					document.body.style.overflow = ''
 				}
 			},
+
 			async captureScreen(status) {
-				// Obtener el elemento por su ID
-				const test = document.getElementById('test')
+				await this.$nextTick() // 🔥 Corrección: Asegurar que el DOM se actualizó antes de capturar
 
-				// Verificar que el elemento exista y esté en el documento
-				if (test && document.body.contains(test)) {
-					// Esperar a que el DOM se actualice completamente (opcional, pero recomendado)
-					await this.$nextTick()
-
-					try {
-						const canvas = await html2canvas(test)
-						const base64Image = canvas.toDataURL('image/png')
-						this.test = {
-							ext: 'png',
-							base64: base64Image,
-							type: 'touchscreen',
-							status: status,
-							message: status ? 'Touch screen test PASS' : 'Touch screen test FAIL',
-						}
-						localStorage.setItem(
-							'touchscreenState',
-							JSON.stringify({ grid: this.grid, screenshot: this.test }),
-						)
-
-						this.$emit('input', this.test)
-						this.testStarted = false
-						this.testDecided = false // Permite volver a la pantalla inicial
-						this.exitFullScreen()
-					} catch (error) {
-						console.error('Error capturing image:', error)
-					}
-				} else {
+				const testElement = document.getElementById('test')
+				if (!testElement) {
 					console.error('El elemento con id "test" no está adjunto al DOM.')
+					return
+				}
+
+				try {
+					const canvas = await html2canvas(testElement)
+					const base64Image = canvas.toDataURL('image/png')
+
+					this.test = {
+						ext: 'png',
+						base64: base64Image,
+						type: 'touchscreen',
+						status,
+						message: status ? 'Touch screen test PASS' : 'Touch screen test FAIL',
+					}
+
+					localStorage.setItem(
+						'touchscreenState',
+						JSON.stringify({ grid: this.grid, screenshot: this.test }),
+					)
+
+					this.$emit('input', this.test)
+					this.testStarted = false
+					this.testDecided = false // Permite volver a la pantalla inicial
+					this.exitFullScreen()
+				} catch (error) {
+					console.error('Error capturing image:', error)
 				}
 			},
+
 			exitFullScreen() {
 				if (document.fullscreenElement) {
 					document.exitFullscreen()
@@ -181,6 +201,7 @@
 				document.body.style.overflow = ''
 				this.testStarted = false
 			},
+
 			handleEscapeKey(event) {
 				if (event.key === 'Escape' && this.testStarted) {
 					this.captureScreen(false)

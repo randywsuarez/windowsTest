@@ -50,96 +50,121 @@
 </template>
 
 <script>
-	import { mapState } from 'vuex'
+	import { mapState, mapMutations } from 'vuex'
 
 	export default {
 		data() {
 			return {
 				data: [],
 				isQualityAssuranceSelected: false,
+				scrappingPromise: null,
 			}
 		},
 		computed: {
-			...mapState(['informationBios', 'advancedBios', 'type']), // Mapea las propiedades del estado a las variables locales
+			...mapState('information', ['informationBios', 'advancedBios', 'type', 'typeCTO']),
 		},
 		methods: {
+			...mapMutations('information', [
+				'SET_TYPE',
+				'SET_INFORMATION_BIOS',
+				'SET_ADVANCED_BIOS',
+				'SET_TYPE_CTO',
+			]),
+
 			toggleQualityAssurance() {
 				this.isQualityAssuranceSelected = !this.isQualityAssuranceSelected
 			},
+
 			navigateTo(route, type) {
-				this.$store.state.type = type
+				this.SET_TYPE(type) // 🔥 Corrección: Usar mutación en lugar de modificar `state` directamente
 				this.$router.push({
 					path: `/${route.toLowerCase()}`,
-					query: {
-						type,
-						//informationBios: this.informationBios,
-					},
+					query: { type },
 				})
 			},
+
 			cornerAction(position) {
 				console.log(`Action triggered from ${position} corner.`)
 			},
+
 			async scrapping() {
 				if (!this.scrappingPromise) {
 					this.$q.loading.show()
-					// Solo inicializa la promesa si no existe
+
 					this.scrappingPromise = (async () => {
 						try {
-							// Ejecutar las consultas asincrónicas concurrentemente
 							let [info] = await Promise.all([this.$system()])
-							// Asignar resultados a variables
-							this.$store.state.informationBios = info
+
+							// 🔥 Corrección: Usar mutaciones en lugar de modificar `state` directamente
+							this.SET_INFORMATION_BIOS(info)
+
 							if (
-								info.system.manufacturer.toUpperCase() == 'HP' ||
-								info.system.manufacturer.toUpperCase() == 'HEWLETT-PACKARD'
-							)
-								this.$store.state.advancedBios = await this.$cmd.biosData()
+								info.system.manufacturer.toUpperCase() === 'HP' ||
+								info.system.manufacturer.toUpperCase() === 'HEWLETT-PACKARD'
+							) {
+								const advancedBiosData = await this.$cmd.biosData()
+								this.SET_ADVANCED_BIOS(advancedBiosData)
+							}
 
 							this.$q.loading.hide()
-							//else this.bios = {}
 						} catch (error) {
-							// Manejo de errores
 							this.$q.loading.hide()
+
 							this.$q
 								.dialog({
 									title: 'Error',
 									message: `An error occurred during the scrapping of the information: ${error.message}`,
 									persistent: true,
 									color: 'red',
-									ok: {
-										label: 'Retry',
-									},
+									ok: { label: 'Retry' },
 								})
 								.onOk(() => {
 									this.scrapping() // Reintenta el proceso
 								})
-							throw error // Lanza el error para que sea manejado si es necesario
+
+							console.error('Scrapping error:', error)
+							throw error
 						}
 					})()
 				}
-				return this.scrappingPromise // Retorna la promesa para que pueda ser usada
+				return this.scrappingPromise
 			},
 		},
 		async mounted() {
-			this.data = await this.$db
-				.collection('TestSettings')
-				.conditions({ Description: 'testType' })
-				.admin()
-				.get()
-			console.log(new Date())
-			this.$q.loading.show({
-				message:
-					'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
-			})
-			await this.scrapping()
-			this.$q.loading.hide()
-			console.log(new Date())
-			const isValid = await this.$db.funcAdmin('modules/windowsTest/ctoValidate', {
-				brand: this.informationBios.system.manufacturer,
-				sku: this.informationBios.system.sku,
-			})
-			if (!isValid) await this.fetchSystemInfo()
-			this.$store.state.typeCTO = isValid
+			try {
+				this.data = await this.$db
+					.collection('TestSettings')
+					.conditions({ Description: 'testType' })
+					.admin()
+					.get()
+
+				console.log('Inicio de scrapping:', new Date())
+
+				this.$q.loading.show({
+					message:
+						'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
+				})
+
+				await this.scrapping()
+
+				this.$q.loading.hide()
+
+				console.log('Fin de scrapping:', new Date())
+
+				// 🔥 Validación de CTO
+				const isValid = await this.$db.funcAdmin('modules/windowsTest/ctoValidate', {
+					brand: this.informationBios.system.manufacturer,
+					sku: this.informationBios.system.sku,
+				})
+
+				if (!isValid) {
+					await this.fetchSystemInfo()
+				}
+
+				this.SET_TYPE_CTO(isValid) // 🔥 Corrección: Usar mutación en lugar de modificar `state` directamente
+			} catch (error) {
+				console.error('Error en mounted:', error)
+			}
 		},
 	}
 </script>

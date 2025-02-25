@@ -22,7 +22,7 @@
 
 <script>
 	import html2canvas from 'html2canvas'
-	import { mapState } from 'vuex'
+	import { mapState, mapMutations } from 'vuex'
 
 	export default {
 		name: 'MultiCameraCapture',
@@ -39,7 +39,8 @@
 			}
 		},
 		computed: {
-			...mapState(['Webcam']),
+			...mapState('information', ['Webcam']),
+
 			getGridTemplateStyle() {
 				const numCameras = this.cameras.length
 				if (numCameras === 1) {
@@ -53,57 +54,89 @@
 			},
 		},
 		methods: {
-			async initializeCameras() {
-				const devices = await navigator.mediaDevices.enumerateDevices()
-				this.cameras = devices.filter(
-					(device) =>
-						device.kind === 'videoinput' && !device.label.toLowerCase().includes('infrared'),
-				)
-				if (this.cameras.length === 0) {
-					this.handleNoCam()
-				}
+			...mapMutations('information', ['SET_WEBCAM_STATUS']),
 
-				this.cameras.forEach(async (camera, index) => {
-					const stream = await navigator.mediaDevices.getUserMedia({
-						video: { deviceId: { exact: camera.deviceId } },
-					})
-					const videoElement = this.$refs.video[index]
-					videoElement.srcObject = stream
-					videoElement.onloadedmetadata = () => {
-						videoElement.play()
+			async initializeCameras() {
+				try {
+					const devices = await navigator.mediaDevices.enumerateDevices()
+					this.cameras = devices.filter(
+						(device) =>
+							device.kind === 'videoinput' && !device.label.toLowerCase().includes('infrared'),
+					)
+
+					if (this.cameras.length === 0) {
+						this.handleNoCam()
+						return
 					}
-				})
+
+					this.cameras.forEach(async (camera, index) => {
+						try {
+							const stream = await navigator.mediaDevices.getUserMedia({
+								video: { deviceId: { exact: camera.deviceId } },
+							})
+							const videoElement = this.$refs.video[index]
+							if (videoElement) {
+								videoElement.srcObject = stream
+								videoElement.onloadedmetadata = () => {
+									videoElement.play()
+								}
+							}
+						} catch (error) {
+							console.error(`Error initializing camera ${camera.label}:`, error)
+						}
+					})
+				} catch (error) {
+					console.error('Error accessing camera devices:', error)
+				}
 			},
+
 			async handlePass() {
 				await this.captureGrid(true, 'Webcam test PASS')
 			},
+
 			async handleNoCam() {
-				this.$store.state.Webcam = 'NO'
+				this.SET_WEBCAM_STATUS('NO') // 🔥 Corrección: Usar mutación en lugar de modificar `state` directamente
 				await this.captureGrid(true, 'Webcam test PASS')
 			},
+
 			async handleFail() {
 				await this.captureGrid(false, 'Webcam test FAIL')
 			},
+
 			async handleReset() {
 				this.results = []
 				await this.startAllCameras()
 				this.emitResults()
 			},
-			async captureGrid(status, message) {
-				const gridElement = this.$refs.gridContainer
-				const canvas = await html2canvas(gridElement)
-				const base64Image = canvas.toDataURL('image/png')
 
-				this.results = {
-					status,
-					message,
-					base64: base64Image,
-					ext: 'png',
-					type: 'webcam',
+			async captureGrid(status, message) {
+				await this.$nextTick() // 🔥 Corrección: Asegurar que el DOM se haya actualizado antes de capturar
+
+				const gridElement = this.$refs.gridContainer
+				if (!gridElement) {
+					console.error('Grid container not found')
+					return
 				}
-				await this.stopAllCameras()
-				this.emitResults()
+
+				try {
+					const canvas = await html2canvas(gridElement)
+					const base64Image = canvas.toDataURL('image/png')
+
+					this.results = {
+						status,
+						message,
+						base64: base64Image,
+						ext: 'png',
+						type: 'webcam',
+					}
+
+					await this.stopAllCameras()
+					this.emitResults()
+				} catch (error) {
+					console.error('Error capturing webcam grid:', error)
+				}
 			},
+
 			async stopAllCameras() {
 				for (const [index, camera] of this.cameras.entries()) {
 					const videoElement = this.$refs.video[index]
@@ -117,9 +150,11 @@
 					}
 				}
 			},
+
 			async startAllCameras() {
 				await this.initializeCameras()
 			},
+
 			emitResults() {
 				this.$emit('input', this.results)
 			},

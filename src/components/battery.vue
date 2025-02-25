@@ -135,7 +135,7 @@
 			}
 		},
 		computed: {
-			...mapState(['informationBios', 'hardwareInfo', 'infoServer']),
+			...mapState('information', ['informationBios', 'hardwareInfo', 'infoServer']),
 			isBatteryInvalid() {
 				return !this.batteryInfo.hasBattery || this.batteryInfo.estimatedLife > 100
 			},
@@ -205,10 +205,11 @@
 			},
 		},
 		mounted() {
+			console.log('infoServer: ', this.infoServer)
 			this.minimum = this.infoServer.validateUnit.batteryFailPercentage
 				? this.infoServer.validateUnit.batteryFailPercentage
 				: this.minimum
-			if (typeof this.infoServer.validateUnit.batteryFailPercentage !== 'number')
+			if (typeof this.minimum !== 'number')
 				this.$q.notify({
 					type: 'warning',
 					message: `The minimum battery is not defined, the following is used by default: ${this.minimum}.`,

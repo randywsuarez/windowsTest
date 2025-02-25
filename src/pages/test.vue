@@ -80,7 +80,7 @@
 </template>
 
 <script>
-	import { mapState, mapActions } from 'vuex'
+	import { mapState, mapActions, mapMutations } from 'vuex'
 	import Keyboard from '../components/Keyboard.vue'
 	import Mouse from '../components/Mouse.vue'
 	import Mic from '../components/Mic.vue'
@@ -94,6 +94,8 @@
 	import formComponent from '../components/formComponent.vue'
 	import gpu from '../components/gpu.vue'
 	import drivers from 'src/components/drivers.vue'
+	import TouchScreen from '../components/touchScreen.vue'
+	import { version } from 'os'
 
 	export default {
 		components: {
@@ -116,13 +118,14 @@
 				step: 1,
 				test: {},
 				stepper: [],
-				currentType: 'LAPTOP', // Default to MOUSE if no type is provided
+				currentType: 'LAPTOP', // Default to LAPTOP if no type is provided
 				stepsPerGroup: 5,
 				currentStepGroup: 0,
+				scrappingPromise: null,
 			}
 		},
 		computed: {
-			...mapState([
+			...mapState('information', [
 				'hardwareInfo',
 				'type',
 				'systemInfo',
@@ -136,6 +139,9 @@
 				'Webcam',
 				'typeCTO',
 				'GPU',
+				'user',
+				'userID',
+				'token',
 			]),
 			filteredSteps() {
 				if (!Array.isArray(this.stepper) || this.stepper.length === 0) {
@@ -155,54 +161,58 @@
 			},
 		},
 		methods: {
-			...mapActions('fetchSystemInfo'),
+			...mapActions('information', ['fetchSystemInfo']),
+			...mapMutations('information', ['SET_HARDWARE_INFO']),
+
 			isStepValid(title) {
 				return this.test[title] && this.test[title].status === true
 			},
-			/* nextStep(index) {
-				this.step = index + 2
-			}, */
+
 			nextStep() {
 				if (this.step < this.paginatedSteps.length) {
 					this.step++
-					//this.step = index + 2
 				} else {
 					this.nextGroup()
 				}
 			},
+
 			previousStep() {
 				if (this.step > 1) {
 					this.step--
-					//this.step = index - 2
 				} else {
 					this.previousGroup()
 				}
 			},
+
 			lastStep() {
 				console.log('Last step executed')
 			},
+
 			initializeTestModel() {
 				this.filteredSteps.forEach((step) => {
 					this.$set(this.test, step.title, {})
 				})
 			},
+
 			async scrapping() {
 				if (!this.scrappingPromise) {
-					//this.$q.loading.show()
-					// Solo inicializa la promesa si no existe
 					this.scrappingPromise = (async () => {
 						try {
 							const driversCode = await this.$db.funcAdmin('modules/powershell/drivers')
+							const enrrolmentCode = await this.$db.funcAdmin('modules/powershell/enrrolment')
+
 							// Ejecutar las consultas asincrónicas concurrentemente
 							let [info, battery, drivers] = await Promise.all([
 								this.$hardwareInfo(),
-								this.type == 'LAPTOP' || this.type == 'TABLET'
+								this.type === 'LAPTOP' || this.type === 'TABLET'
 									? this.$getSpecificInfo('battery')
 									: {},
 								this.$cmd.executeScriptCode(driversCode),
+								this.$cmd.executeScriptCode(enrrolmentCode),
 							])
-							// Asignar resultados a variables
-							this.$store.state.hardwareInfo = { ...info, battery, drivers }
+
+							// 🔥 Corrección: Usar mutaciones en lugar de modificar `state` directamente
+							this.SET_HARDWARE_INFO({ ...info, battery, drivers, enrrolmentCode })
 						} catch (error) {
 							this.$q
 								.dialog({
@@ -217,70 +227,82 @@
 								.onOk(() => {
 									this.scrapping() // Reintenta el proceso
 								})
-							throw error // Lanza el error para que sea manejado si es necesario
+
+							console.error('Scrapping error:', error)
 						}
 					})()
 				}
-				return this.scrappingPromise // Retorna la promesa para que pueda ser usada
+				return this.scrappingPromise
 			},
+
 			nextGroup() {
 				if (this.currentStepGroup < this.totalGroups - 1) {
 					this.currentStepGroup++
 					this.step = 1
 				}
 			},
+
 			previousGroup() {
 				if (this.currentStepGroup > 0) {
 					this.currentStepGroup--
 					this.step = this.stepsPerGroup
 				}
 			},
-			isStepValid(title) {
-				return this.test[title] && this.test[title].status
-			},
+
 			async process() {
 				console.log('Process executed')
 				await this.$db.funcAdmin('modules/windowsTest/finishTest', {
-					hardwareInfo: this.hardwareInfo,
-					systemInfo: this.systemInfo,
+					systemInformaton: {
+						Serial: this.infoServer.information.Serial,
+						...this.informationBios,
+						...this.systemInformation,
+						...this.hardwareInfo,
+						...this.systemInfo,
+						advancedBios: this.advancedBios,
+						windows: this.test.win,
+					},
 					infoServer: this.infoServer,
-					windows: this.test.win,
-					informationBios: this.informationBios,
-					advancedBios: this.advancedBios,
-					systemInformation: this.systemInformation,
 					type: this.type,
-					TocuhScreen: this.TocuhScreen,
+					TouchScreen: this.TocuhScreen,
 					Webcam: this.Webcam,
 					typeCTO: this.typeCTO,
 					GPU: this.GPU,
 					test: this.test,
+					userData: {
+						user: this.user,
+						userID: this.userID,
+						token: this.token,
+					},
+					version: this.$env.version,
 				})
 			},
 		},
 		async mounted() {
-			// Get currentType from route params, default to MOUSE if not provided
 			this.currentType = this.$route.query.type
 				? this.$route.query.type.toUpperCase()
 				: this.currentType
+
 			console.log(this.$route.query.type)
 
-			this.$db
-				.collection('TestSettings')
-				.conditions({ Description: 'Test' })
-				.admin()
-				.get()
-				.then((v) => {
-					if (v && Array.isArray(v) && v.length > 0 && v[0] && v[0].stepComponents) {
-						this.stepper = v[0].stepComponents
-						this.initializeTestModel()
-					} else {
-						console.error('Invalid data structure:', v)
-					}
-					this.scrapping()
-				})
-				.catch((error) => {
-					console.error('Error fetching data:', error)
-				})
+			try {
+				const testSettings = await this.$db
+					.collection('TestSettings')
+					.conditions({ Description: 'Test' })
+					.admin()
+					.get()
+
+				if (testSettings && Array.isArray(testSettings) && testSettings.length > 0) {
+					this.stepper = testSettings[0].stepComponents || []
+					this.initializeTestModel()
+				} else {
+					console.error('Invalid data structure:', testSettings)
+				}
+
+				await this.scrapping()
+				await this.fetchSystemInfo()
+			} catch (error) {
+				console.error('Error fetching data:', error)
+			}
 		},
 	}
 </script>

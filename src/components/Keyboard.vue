@@ -693,15 +693,29 @@
 				this.saveStateToLocalStorage()
 			},
 			checkAllKeysPressed() {
+				console.log('No Test Keys:', this.noTest)
+
 				const allPressed = this.keyRows.every((row) =>
-					row.keys.every((key) => key.pressed || this.noTest.includes(key.id)),
+					row.keys.every((key) => {
+						const keyId = key.id ? key.id.toString().trim() : ''
+						const isPressed = key.pressed
+						const isInNoTest = this.noTest.some(
+							(id) => id.trim().toLowerCase() === keyId.toLowerCase(),
+						)
+
+						console.log(`Checking Key: ${keyId}, Pressed: ${isPressed}, Ignored: ${isInNoTest}`)
+
+						return isPressed || isInNoTest
+					}),
 				)
+
+				console.log('All keys pressed:', allPressed)
+
 				if (allPressed) {
 					this.complete = true
-					// this.captureKeyboard('pass'); // Comentar esta línea
+					console.log('✅ All required keys have been pressed.')
 				}
 			},
-
 			captureKeyboard(status) {
 				const element = document.getElementById('kb_box')
 				if (element) {
@@ -829,13 +843,15 @@
 		},
 
 		async mounted() {
+			this.$q.loading.show()
 			this.$db
 				.collection('TestSettings')
 				.conditions({ Description: 'Keyboard' })
 				.admin()
 				.get()
 				.then((v) => {
-					this.noTest = v.noTest
+					this.noTest = v[0].noTest
+					this.$q.loading.hide()
 				})
 				.catch((error) => {
 					console.error('Error fetching data:', error)

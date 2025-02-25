@@ -58,25 +58,23 @@
 </template>
 
 <script>
-	import { mapState } from 'vuex'
+	import { mapState, mapMutations } from 'vuex'
 	import html2canvas from 'html2canvas'
+
 	export default {
 		data() {
 			return {
 				noGPU: false,
-				video: [
-					{ Type: 'GPU1', Description: 'NVIDIA GTX 1660', AdapterRAM: 6144 },
-					{ Type: 'GPU2', Description: 'AMD Radeon RX 580', AdapterRAM: 8192 },
-				],
+				video: [],
 				columns: [
 					{ name: 'Description', label: 'Description', field: 'Description', align: 'left' },
-					{ name: 'Memory', label: 'Memory', field: 'Memory', align: 'center' },
+					{ name: 'Memory', label: 'Memory', field: 'AdapterRAM', align: 'center' },
 					{ name: 'Type', label: 'Type', field: 'Type', align: 'left' },
 				],
 			}
 		},
 		computed: {
-			...mapState(['infoServer', 'type']),
+			...mapState('information', ['infoServer', 'type']),
 		},
 		watch: {
 			noGPU(newVal) {
@@ -88,31 +86,53 @@
 			},
 		},
 		methods: {
+			...mapMutations('information', ['SET_INFO_SERVER']),
+
 			loadGPUData() {
-				this.video = this.infoServer.infoTest.GPUs
+				this.video = [...(this.infoServer?.infoTest?.GPUs || [])] // ✅ Evitar fallos si GPUs es undefined
 			},
+
 			async captureGpuStatus(status) {
-				const element = document.getElementById('gpu')
-				const canvas = await html2canvas(element)
-				const imageData = canvas.toDataURL('image/png')
-				const result = {
-					base64: imageData,
-					ext: 'png',
-					type: 'gpu',
-					status: status === 'pass',
-					message: `GPU test ${status.toUpperCase()}`,
+				try {
+					const element = document.getElementById('gpu')
+					if (!element) {
+						console.error('GPU element not found')
+						return
+					}
+
+					const canvas = await html2canvas(element)
+					const imageData = canvas.toDataURL('image/png')
+
+					const result = {
+						base64: imageData,
+						ext: 'png',
+						type: 'gpu',
+						status: status === 'pass',
+						message: `GPU test ${status.toUpperCase()}`,
+					}
+
+					// ✅ Usar mutación en lugar de modificar `state` directamente
+					const updatedInfoServer = {
+						...this.infoServer,
+						information: {
+							...this.infoServer.information,
+							GPU: (this.infoServer.infoTest.GPUs || [])
+								.filter((gpu) => gpu.Type === 'Dedicated')
+								.map((gpu) => `${gpu.Description} ${gpu.AdapterRAM}`),
+
+							GPUIntegrated: (this.infoServer.infoTest.GPUs || [])
+								.filter((gpu) => gpu.Type === 'Integrated')
+								.map((gpu) => `${gpu.Description} ${gpu.AdapterRAM}`),
+						},
+					}
+
+					this.SET_INFO_SERVER(updatedInfoServer) // ✅ Mutación Vuex
+
+					localStorage.setItem('gpuTestState', JSON.stringify(result))
+					this.$emit('input', result)
+				} catch (error) {
+					console.error('Error capturing GPU status:', error)
 				}
-				this.$store.state.infoServer.information['GPU'] = this.infoServer.infoTest.GPUs.filter(
-					(gpu) => gpu.Type === 'Dedicated',
-				).map((gpu) => `${gpu.Description} ${gpu.Memory}`)
-
-				this.$store.state.infoServer.information['GPUIntegrated'] =
-					this.infoServer.infoTest.GPUs.filter((gpu) => gpu.Type === 'Integrated').map(
-						(gpu) => `${gpu.Description} ${gpu.Memory}`,
-					)
-
-				localStorage.setItem('gpuTestState', JSON.stringify(result))
-				this.$emit('input', result)
 			},
 		},
 		mounted() {

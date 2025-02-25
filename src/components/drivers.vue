@@ -52,20 +52,12 @@
 	import html2canvas from 'html2canvas'
 
 	export default {
-		props: {
-			/* data: {
-				type: Object,
-				required: true,
-				default: () => ({
-					status: 'FAIL',
-					missingDrivers: [],
-					video: false,
-				}),
-			}, */
-		},
 		data() {
 			return {
-				data: {},
+				data: {
+					missingDrivers: [],
+					video: false,
+				},
 				testResult: {
 					status: false,
 					ext: 'png',
@@ -76,7 +68,8 @@
 			}
 		},
 		computed: {
-			...mapState(['hardwareInfo']),
+			...mapState('information', ['hardwareInfo', 'infoServer']), // ✅ Uso correcto del namespace en Vuex
+
 			statusIcon() {
 				return this.testResult.status ? 'mdi-check-circle' : 'mdi-alert-circle'
 			},
@@ -90,21 +83,41 @@
 		methods: {
 			async captureScreenshot() {
 				const element = document.getElementById('drivers')
-				if (element) {
+				if (!element) {
+					console.error('Drivers element not found')
+					return
+				}
+
+				try {
 					const canvas = await html2canvas(element)
 					this.testResult.base64 = canvas.toDataURL('image/png')
+				} catch (error) {
+					console.error('Error capturing screenshot:', error)
 				}
 			},
+
 			markAsPass() {
 				this.testResult.status = true
 				this.testResult.message = 'Drivers test PASS'
+
 				this.captureScreenshot().then(() => {
 					this.$emit('input', this.testResult)
 				})
 			},
+
 			initializeTestResult() {
-				this.testResult.status = this.data.missingDrivers.length === 0
+				// ✅ Validar que `hardwareInfo.drivers` existe antes de asignarlo
+				if (this.hardwareInfo && this.hardwareInfo.drivers) {
+					this.data = { ...this.hardwareInfo.drivers }
+				} else {
+					console.warn('No driver information found in hardwareInfo')
+					this.data = { missingDrivers: [] } // Default vacío para evitar errores
+				}
+
+				// ✅ Validar que `missingDrivers` existe antes de acceder a `.length`
+				this.testResult.status = this.data.missingDrivers && this.data.missingDrivers.length === 0
 				this.testResult.message = this.testResult.status ? 'Drivers test PASS' : 'Drivers test FAIL'
+
 				this.captureScreenshot().then(() => {
 					if (this.testResult.status) {
 						this.$emit('input', this.testResult)
@@ -112,8 +125,8 @@
 				})
 			},
 		},
+
 		mounted() {
-			this.data = this.hardwareInfo.drivers
 			this.initializeTestResult()
 		},
 	}

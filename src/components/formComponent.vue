@@ -272,7 +272,7 @@
 </template>
 
 <script>
-	import { mapState } from 'vuex'
+	import { mapState, mapActions, mapMutations } from 'vuex'
 	import useVuelidate from '@vuelidate/core'
 	import { required, minLength, helpers } from '@vuelidate/validators'
 	import ColorSelect from '../components/ColorSelect.vue'
@@ -348,20 +348,72 @@
 			}
 		},
 		computed: {
-			...mapState([
+			...mapState('information', [
 				'informationBios',
 				'advancedBios',
 				'type',
 				'hardwareInfo',
 				'infoServer',
 				'typeCTO',
+				'systemInformation',
+				'systemInfo',
+				'systemInfoPromise',
 			]),
 		},
 		methods: {
+			...mapActions('information', ['fetchSystemInfo']),
+			...mapMutations('information', ['SET_INFO_SERVER', 'SET_WIN', 'SET_SYSTEM_INFORMATION']),
+
+			handleInputChange(id) {
+				this.form[id] = this.form[id].toUpperCase()
+			},
+			validateSerial() {
+				console.log(`${this.miniSerial}${this.form.serial}`)
+				if (
+					this.infoServer.information.Serial !== `${this.miniSerial}${this.form.serial}` &&
+					this.infoServer.information.Serial.length ===
+						`${this.miniSerial}${this.form.serial}`.length
+				) {
+					this.$q.notify({
+						type: 'negative',
+						message: 'Serial does not match the expected value.',
+					})
+				} else if (
+					this.infoServer.information.Serial === `${this.miniSerial}${this.form.serial}` &&
+					this.infoServer.information.Serial.length ===
+						`${this.miniSerial}${this.form.serial}`.length
+				) {
+					this.$refs.sku.focus()
+				}
+			},
+			validateSKU() {
+				if (
+					this.infoServer.information.Model !== `${this.miniSKU}${this.form.sku}` &&
+					`${this.miniSKU}${this.form.sku}`.length == this.infoServer.information.Model.length
+				) {
+					this.$q.notify({
+						type: 'negative',
+						message: 'SKU does not match the expected value.',
+					})
+				}
+			},
+			handleColorSelected(color) {
+				if (color && color !== this.infoServer.infoTest.COLOR) {
+					const updatedInfoServer = {
+						...this.infoServer,
+						information: {
+							...this.infoServer.information,
+							Color: color,
+						},
+					}
+					this.SET_INFO_SERVER(updatedInfoServer) // ✅ Actualizar en Vuex
+				}
+			},
 			hasError() {
 				console.log(this.v$.form)
 				return this.v$.form.$invalid
 			},
+
 			async captureInfoStatus(status) {
 				const element = document.getElementById('info')
 				if (!element) {
@@ -385,55 +437,24 @@
 						delete i.Desktop.sku
 					}
 					console.log('Captured Info:', infoObject)
-					this.infoServer.information = {
-						...this.infoServer.information,
-						hotkey: this.hotkey,
-						...i,
-					}
-					this.$store.state.infoServer = this.infoServer
+					this.SET_INFO_SERVER(
+						Object.freeze({
+							...this.infoServer,
+							information: {
+								...this.infoServer.information,
+								hotkey: this.hotkey,
+								...i,
+							},
+						}),
+					)
+
+					console.log('store: ', this.infoServer)
 					this.$emit('input', infoObject)
 				} catch (error) {
 					console.error('Error capturing the element:', error)
 				}
 			},
-			handleInputChange(id) {
-				this.form[id] = this.form[id].toUpperCase()
-			},
-			validateSerial() {
-				console.log(`${this.miniSerial}${this.form.serial}`)
-				if (
-					this.infoServer.information.Serial !== `${this.miniSerial}${this.form.serial}` &&
-					this.infoServer.information.Serial.length ===
-						`${this.miniSerial}${this.form.serial}`.length
-				) {
-					this.$q.notify({
-						type: 'negative',
-						message: 'Serial does not match the expected value.',
-					})
-				} else if (
-					this.infoServer.information.Serial === `${this.miniSerial}${this.form.serial}` &&
-					this.infoServer.information.Serial.length ===
-						`${this.miniSerial}${this.form.serial}`.length
-				) {
-					this.$refs.sku.focus()
-				}
-			},
-			handleColorSelected(color) {
-				if (color) {
-					this.components.information['Color'] = color
-				}
-			},
-			validateSKU() {
-				if (
-					this.infoServer.information.Model !== `${this.miniSKU}${this.form.sku}` &&
-					`${this.miniSKU}${this.form.sku}`.length == this.infoServer.information.Model.length
-				) {
-					this.$q.notify({
-						type: 'negative',
-						message: 'SKU does not match the expected value.',
-					})
-				}
-			},
+
 			async scrapping() {
 				try {
 					const statusWindows = await this.$db.funcAdmin('modules/powershell/statusWindows')
@@ -442,12 +463,11 @@
 						!this.informationBios.system.sku.includes('UA') &&
 						(this.informationBios.system.manufacturer.includes('HP') ||
 							this.informationBios.system.sku.includes('HEWLETT'))
-							? this.$si()
+							? this.fetchSystemInfoIfNeeded()
 							: {},
 					])
-					this.windowsDPK = winDPK
-					this.$store.state.win = winDPK
-					this.systemInformation = si
+					this.SET_WIN(winDPK)
+					this.SET_SYSTEM_INFORMATION(si)
 				} catch (error) {
 					this.$q
 						.dialog({
@@ -462,51 +482,51 @@
 						})
 				}
 			},
+
 			async fetchSystemInfoIfNeeded() {
 				if (this.typeCTO) {
 					return {}
 				}
+				console.log('systemInfo: ', this.systemInfo, 'type: ', this.typeCTO)
 				if (this.systemInfo) {
-					this.localLoading = false
 					return this.systemInfo
 				} else if (this.systemInfoPromise) {
-					await this.systemInfoPromise
-					this.localLoading = false
-					return this.systemInfo
+					return await this.systemInfoPromise
 				} else {
-					this.systemInfoPromise = this.fetchSystemInfo()
-					await this.systemInfoPromise
-					this.localLoading = false
-					return this.systemInfo
+					return await this.fetchSystemInfo()
 				}
 			},
+
 			async saveComponent() {
+				this.$q.loading.show()
 				this.$db
 					.funcAdmin('modules/windowsTest/index', {
 						systemInformation: {
 							...this.informationBios,
 							...this.hardwareInfo,
 							...this.systemInformation,
+							...this.systemInfo,
 							statusDPK: this.windowsDPK,
 							advancedBios: this.advancedBios,
 						},
 						type: this.type,
 					})
 					.then(async (v) => {
-						this.$store.state.infoServer = v
+						await this.SET_INFO_SERVER(v)
 						this.components = v.information
 						this.miniSerial = v.information.Serial.slice(0, -2)
 						this.miniSKU = v.information.Model.includes('#')
 							? v.information.Model.split('#')[0].slice(0, -2)
 							: v.information.Model.slice(0, -4)
+						this.$q.loading.hide()
 					})
 					.catch((e) => {
+						this.$q.loading.hide()
 						console.log(e)
-
 						this.$q
 							.dialog({
 								title: 'Error',
-								message: `Validate information failed: ${error.message}`,
+								message: `Validate information failed: ${e.message}`,
 								persistent: true,
 								color: 'red',
 								ok: { label: 'Retry' },
@@ -526,9 +546,9 @@
 			this.currentType = this.$route.query.type
 				? this.$route.query.type.toUpperCase()
 				: this.currentType
+
 			await this.scrapping()
-			//this.systemInformation = await this.systemInformation
-			this.saveComponent()
+			await this.saveComponent()
 			this.$q.loading.hide()
 		},
 	}

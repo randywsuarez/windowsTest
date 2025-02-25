@@ -14,5 +14,8 @@ export default function () {
 		systemInfo: null, // Datos obtenidos
 		systemInfoPromise: null, // Guardará la promesa en curso
 		loading: false, // Estado de carga global
+		token: '',
+		user: '',
+		userID: '',
 	}
 }
