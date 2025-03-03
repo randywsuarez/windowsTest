@@ -11,6 +11,10 @@
 				height="40vh"
 				xmlns="http://www.w3.org/2000/svg"
 				xmlns:bx="https://boxy-svg.com"
+				@contextmenu="preventRightClick"
+				@mousedown="handleMouseDown"
+				@mouseup="handleMouseUp"
+				@wheel="handleWheel"
 			>
 				<polygon
 					style="fill: rgb(255, 255, 255)"
@@ -761,10 +765,8 @@
 				this.capturing = !this.capturing
 				if (this.capturing) {
 					this.addEventListeners()
-					console.log('Event capturing started')
 				} else {
 					this.removeEventListeners()
-					console.log('Event capturing stopped')
 				}
 			},
 			async captureImage(type) {
@@ -880,12 +882,6 @@
 
 				this.deactivateArea(this.buttons)
 			},
-			handleMouseUpOld() {
-				console.log('Mouse up event detected')
-				;['mouse-1', 'mouse-2', 'mouse-3', 'mouse-4', 'mouse-5'].forEach((id) => {
-					this.deactivateArea(id)
-				})
-			},
 			handleWheel(e) {
 				console.log('Wheel event detected:', e.deltaY)
 				let targetId
@@ -927,9 +923,10 @@
 					console.warn(`Element with id ${id} not found`)
 				}
 			},
-			preventDefaultContext(e) {
-				console.log('Context menu event detected')
-				e.preventDefault()
+			preventRightClick(e) {
+				e.preventDefault();
+				// Aquí puedes agregar la lógica que deseas ejecutar en el clic derecho
+				this.handleMouseDown(e); // Ejemplo: ejecutar handleMouseDown para el clic derecho
 			},
 		},
 		mounted() {

@@ -693,28 +693,7 @@
 				this.saveStateToLocalStorage()
 			},
 			checkAllKeysPressed() {
-				console.log('No Test Keys:', this.noTest)
-
-				const allPressed = this.keyRows.every((row) =>
-					row.keys.every((key) => {
-						const keyId = key.id ? key.id.toString().trim() : ''
-						const isPressed = key.pressed
-						const isInNoTest = this.noTest.some(
-							(id) => id.trim().toLowerCase() === keyId.toLowerCase(),
-						)
-
-						console.log(`Checking Key: ${keyId}, Pressed: ${isPressed}, Ignored: ${isInNoTest}`)
-
-						return isPressed || isInNoTest
-					}),
-				)
-
-				console.log('All keys pressed:', allPressed)
-
-				if (allPressed) {
-					this.complete = true
-					console.log('✅ All required keys have been pressed.')
-				}
+				return this.keyRows.every(row => row.keys.every(key => key.pressed));
 			},
 			captureKeyboard(status) {
 				const element = document.getElementById('kb_box')
@@ -747,31 +726,21 @@
 			},
 
 			handleKeydown(event) {
-				if (event.ctrlKey && event.code === 'Escape') {
-					this.captureKeyboard('fail')
-					return
+				const keyId = `kb_btn_${event.code}`;
+				const keyElement = document.getElementById(keyId);
+				if (keyElement && !keyElement.classList.contains('pressed')) {
+					this.pressKey(keyId);
 				}
-				event = event || window.event
-				const key = event.keyCode
-				if (this.keydownSet[key]) return
-				this.keydownSet[key] = true
-				event.preventDefault()
-
-				let keyId = `kb_btn_${event.code}`
-				if (event.code === 'Fn') {
-					keyId = event.location === 1 ? 'kb_btn_FnLeft' : 'kb_btn_FnRight'
-				} else if (event.code === 'ContextMenu') {
-					keyId = 'kb_btn_ContextMenu'
-				}
-				this.pressKey(keyId)
+				event.preventDefault();
 			},
 
 			handleKeyup(event) {
-				event = event || window.event
-				const key = event.keyCode
-				if (this.keydownSet[key]) {
-					delete this.keydownSet[key]
+				const keyId = `kb_btn_${event.code}`;
+				const keyElement = document.getElementById(keyId);
+				if (keyElement && keyElement.classList.contains('pressed')) {
+					this.toggleKeyColor(keyId);
 				}
+				event.preventDefault();
 			},
 
 			addKeyboardListeners() {
@@ -785,13 +754,14 @@
 			},
 
 			disableDefaultKeys(event) {
-				if (event.ctrlKey && event.code === 'Escape') {
-					return
+				const keysToDisable = ['Tab', 'Enter', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+				if (keysToDisable.includes(event.code)) {
+					event.preventDefault();
 				}
 			},
 
 			enableDefaultKeys() {
-				document.removeEventListener('keydown', this.disableDefaultKeys, { capture: true })
+				window.removeEventListener('keydown', this.disableDefaultKeys);
 			},
 
 			startCapture() {

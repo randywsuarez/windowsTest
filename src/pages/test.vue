@@ -337,4 +337,41 @@
 	.text-center {
 		text-align: center;
 	}
+	.q-stepper >>> .q-stepper__header {
+  min-height: 48px !important;
+}
+
+.q-stepper >>> .q-stepper__tab {
+  padding: 4px 16px !important;
+  min-height: 40px !important;
+}
+
+/* Mantiene una mejor proporción para el círculo del dot */
+.q-stepper >>> .q-stepper__dot {
+  width: 24px !important;
+  height: 24px !important;
+  font-size: 12px !important;
+}
+
+/* Ajusta el tamaño del icono dentro del dot para mantener proporción */
+.q-stepper >>> .q-stepper__dot .q-icon {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.q-stepper >>> .q-stepper__label {
+  font-size: 0.85rem !important;
+  line-height: 1.2 !important;
+}
+
+/* Ajusta la alineación vertical del icono */
+.q-stepper >>> .q-stepper__icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
 </style>
