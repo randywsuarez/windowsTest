@@ -197,6 +197,10 @@ module.exports = function (/* ctx */) {
 				// https://www.electron.build/configuration/configuration
 
 				appId: 'windowstest',
+				win: {
+					certificateFile: 'local_signature.pfx',
+					certificatePassword: 'V3n3zu3l@#'
+				},
 			},
 
 			// More info: https://v1.quasar.dev/quasar-cli/developing-electron-apps/node-integration
