@@ -1,15 +1,31 @@
 {
 	"name": "windowstest",
-	"version": "1.1.9",
-	"description": "Unit Test",
-	"productName": "Windows Test - Close the Loop",
-	"author": "Randy Suarez <suarez9ster@gmail.com>",
-	"private": true,
+  "version": "1.1.9",
+  "description": "Windows Test - Close the Loop Application",
+  "productName": "Windows Test - Close the Loop",
+  "author": {
+    "name": "Randy Suarez",
+    "email": "suarez9ster@gmail.com",
+    "url": "https://tu-sitio-web.com"
+  },
+  "copyright": "Copyright © 2025 Randy Suarez",
+  "homepage": "https://tu-sitio-web.com",
+  "private": true,
+  "companyName": "ISPT Services",
+  "fileVersion": "1.1.9.0",
+  "productVersion": "1.1.9.0",
+  "buildVersion": "1.1.9",
+  "buildNumber": "9",
+  "publisherName": "Randy Suarez",
+  "legalTrademarks": "ISPT Services",
+  "requestAdminPrivileges": true,
 	"scripts": {
 		"dev": "set NODE_OPTIONS=--max-old-space-size=8192 && npx quasar dev -m electron",
-		"build": "set NODE_OPTIONS=--max-old-space-size=8192 && npx quasar build -m electron"
+		"build": "set NODE_OPTIONS=--max-old-space-size=8192 && npx quasar build -m electron",
+		"portable": "quasar build -m electron --publish never"
 	},
 	"dependencies": {
+		"@electron/remote": "^2.1.2",
 		"@quasar/cli": "^2.4.1",
 		"@quasar/extras": "^1.16.4",
 		"@vuelidate/core": "^2.0.3",
@@ -17,22 +33,22 @@
 		"adm-zip": "^0.5.10",
 		"axios": "^1.6.2",
 		"core-js": "^3.6.5",
+		"electron-debug": "3.1.0",
 		"gifshot": "^0.4.5",
 		"html2canvas": "^1.4.1",
 		"jsbarcode": "^3.11.6",
 		"modernizr": "^3.13.1",
 		"moment": "^2.29.4",
-		"mssql": "7.3.5",
 		"nedb": "^1.8.0",
 		"nedb-promises": "^6.2.3",
-		"node": "^21.2.0",
+		"node": "^23.9.0",
 		"node-powershell": "^5.0.1",
 		"powershell": "^2.3.2",
 		"quasar": "^1.0.0",
 		"socket.io-client": "^4.7.2",
 		"systeminformation": "^5.23.5",
 		"tone": "^15.0.4",
-		"uuid": "^9.0.1",
+		"uuid": "^8.3.2",
 		"vue-i18n": "8",
 		"vuelidate": "^0.7.7",
 		"vuex-persistedstate": "^4.1.0"
@@ -41,11 +57,9 @@
 		"@babel/plugin-proposal-nullish-coalescing-operator": "^7.18.6",
 		"@babel/plugin-proposal-optional-chaining": "^7.21.0",
 		"@quasar/app": "^2.0.0",
-		"devtron": "^1.4.0",
-		"electron": "^9.0.0",
-		"electron-debug": "^3.0.1",
-		"electron-devtools-installer": "^3.0.0",
-		"electron-packager": "^14.1.1"
+		"electron": "^35.0.0",
+		"electron-builder": "^22.4.0",
+		"electron-packager": "^17.1.2"
 	},
 	"browserslist": [
 		"last 10 Chrome versions",
@@ -59,8 +73,8 @@
 		"last 5 Opera versions"
 	],
 	"engines": {
-		"node": ">= 10.18.1",
-		"npm": ">= 6.13.4",
-		"yarn": ">= 1.21.1"
+		"node": ">= 18.0.0",
+		"npm": ">= 9.6.7",
+		"yarn": ">= 1.22.19"
 	}
 }

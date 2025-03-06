@@ -1,84 +1,50 @@
-import { app, BrowserWindow, nativeTheme, session, dialog } from 'electron'
-
-try {
-	if (process.platform === 'win32' && nativeTheme.shouldUseDarkColors === true) {
-		require('fs').unlinkSync(require('path').join(app.getPath('userData'), 'DevTools Extensions'))
-	}
-} catch (_) {}
-
-/**
- * Set `__statics` path to static files in production;
- * The reason we are setting it here is that the path needs to be evaluated at runtime
- */
-if (process.env.PROD) {
-	global.__statics = __dirname
-}
+import { app, BrowserWindow, nativeTheme, session } from 'electron'
+import path from 'path'
 
 let mainWindow
 
 function createWindow() {
-	/**
-	 * Initial window options
-	 */
-	mainWindow = new BrowserWindow({
-		width: 1920,
-		height: 1080,
-		frame: false,
-		fullscreen: true,
-		useContentSize: true,
-		webPreferences: {
-			nodeIntegration: true,
-			webSecurity: false,
-			// Change from /quasar.conf.js > electron > nodeIntegration;
-			// More info: https://quasar.dev/quasar-cli/developing-electron-apps/node-integration
-			nodeIntegration: process.env.QUASAR_NODE_INTEGRATION,
-			nodeIntegrationInWorker: process.env.QUASAR_NODE_INTEGRATION,
+    mainWindow = new BrowserWindow({
+        width: 1920,
+        height: 1080,
+        frame: false,
+        fullscreen: true,
+        useContentSize: true,
+        webPreferences: {
+            // Cambiar a true para permitir que funcionen los módulos Node.js directamente
+            nodeIntegration: true,
+            
+            // Desactiva contextIsolation para compatibilidad con código antiguo
+            contextIsolation: false,
+            
+            // Asegúrate de que la ruta sea absoluta
+            preload: path.resolve(__dirname, 'electron-preload.js'),
+            
+            // Habilita el módulo remoto para compatibilidad
+            enableRemoteModule: true,
+            
+            // Permitir acceso a módulos nativos
+            sandbox: false
+        }
+    })
 
-			// More info: /quasar-cli/developing-electron-apps/electron-preload-script
-			// preload: path.resolve(__dirname, 'electron-preload.js')
-		},
-	})
+    mainWindow.loadURL(process.env.APP_URL)
 
-	mainWindow.loadURL(process.env.APP_URL)
-
-	mainWindow.on('closed', () => {
-		mainWindow = null
-	})
+    mainWindow.on('closed', () => {
+        mainWindow = null
+    })
 }
 
-app.whenReady().then(() => {
-	createWindow()
-
-	// Allow camera access
-	session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
-		if (permission === 'media') {
-			callback(true)
-			/* const response = dialog.showMessageBoxSync(mainWindow, {
-				type: 'question',
-				buttons: ['Allow', 'Deny'],
-				title: 'Camera Access Request',
-				message: 'This application requires access to your camera. Do you allow this?',
-			})
-
-			if (response === 0) {
-				callback(true)
-			} else {
-				callback(false)
-			} */
-		} else {
-			callback(false)
-		}
-	})
-})
+app.whenReady().then(createWindow)
 
 app.on('window-all-closed', () => {
-	if (process.platform !== 'darwin') {
-		app.quit()
-	}
+    if (process.platform !== 'darwin') {
+        app.quit()
+    }
 })
 
 app.on('activate', () => {
-	if (mainWindow === null) {
-		createWindow()
-	}
+    if (mainWindow === null) {
+        createWindow()
+    }
 })

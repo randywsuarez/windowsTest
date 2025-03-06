@@ -1,38 +1,34 @@
-const fs = require('fs')
-const path = require('path')
+// src/boot/image.js
 
-module.exports = ({ Vue }) => {
-	Vue.prototype.$uploadImage = function (imageName, imageData) {
-		// Ruta del directorio donde se guardarán las imágenes
-		const imagesDirectory = path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'LogPics')
-
-		// Crea el directorio si no existe
-		if (!fs.existsSync(imagesDirectory)) {
-			fs.mkdirSync(imagesDirectory, { recursive: true })
+// Función para resolver rutas de imágenes en entorno Electron
+export default async ({ Vue }) => {
+	// Directiva personalizada para resolver rutas de imágenes
+	Vue.directive('img-src', {
+	  bind(el, binding) {
+		// Si estamos en Electron y tenemos el API para resolver imágenes
+		if (window.electronAPI && window.electronAPI.resolveImagePath) {
+		  el.src = window.electronAPI.resolveImagePath(binding.value);
+		} else {
+		  // Fallback para entorno web normal
+		  el.src = binding.value;
 		}
-
-		// Ruta completa para guardar la imagen
-		const imagePath = path.join(imagesDirectory, imageName)
-
-		// Elimina el encabezado de los datos base64 (por ejemplo, "data:image/jpeg;base64,")
-		const base64Data = imageData.replace(/^data:image\/jpeg;base64,/, '')
-
-		// Convierte los datos base64 a un buffer
-		const buffer = Buffer.from(base64Data, 'base64')
-
-		// Guarda el buffer como un archivo JPG dentro del directorio
-		try {
-			fs.writeFileSync(imagePath, buffer)
-			sessionStorage.setItem('image', imagePath)
-		} catch (error) {
-			// Agrega más información al mensaje de error
-			console.error('Error al guardar la imagen:', error.message)
+	  },
+	  update(el, binding) {
+		if (binding.oldValue !== binding.value) {
+		  if (window.electronAPI && window.electronAPI.resolveImagePath) {
+			el.src = window.electronAPI.resolveImagePath(binding.value);
+		  } else {
+			el.src = binding.value;
+		  }
 		}
-
-		// Agrega la imagen al prototipo "image"
-		Vue.prototype.$imageFile = {
-			name: imageName,
-			path: imagePath,
-		}
-	}
-}
+	  }
+	});
+  
+	// Método global para resolver rutas de imágenes
+	Vue.prototype.$resolveImage = (imagePath) => {
+	  if (window.electronAPI && window.electronAPI.resolveImagePath) {
+		return window.electronAPI.resolveImagePath(imagePath);
+	  }
+	  return imagePath;
+	};
+  }

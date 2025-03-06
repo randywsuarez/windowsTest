@@ -1,14 +1,30 @@
 // src/boot/rsNeDB.js
 
 import path from 'path'
-import { app, remote } from 'electron'
 import fs from 'fs'
-import { v4 as uuidv4 } from 'uuid'
+const { v4: uuidv4 } = require('uuid'); // 🔥 Usamos require en lugar de import
 
 export default async ({ Vue }) => {
 	class RsNeDB {
 		constructor(databaseName) {
-			const appPath = (app || remote.app).getAppPath()
+			// Usamos require para obtener electron en tiempo de ejecución
+			const electron = require('electron');
+			
+			// Para Electron moderno (versiones recientes)
+			let appPath;
+			
+			if (electron.remote) {
+				// Para versiones antiguas de Electron
+				appPath = electron.remote.app.getAppPath();
+			} else if (window.electronAPI && window.electronAPI.getAppPath) {
+				// Usando electronAPI que definimos en preload
+				appPath = window.electronAPI.getAppPath();
+			} else {
+				// Fallback: usar el directorio de trabajo actual
+				appPath = process.cwd();
+				console.warn('No se pudo determinar appPath con electron.remote o electronAPI, usando fallback');
+			}
+			
 			this.dbFolderPath = path.join(path.dirname(appPath), 'data')
 			this.dbPath = path.join(this.dbFolderPath, `${databaseName}.json`)
 

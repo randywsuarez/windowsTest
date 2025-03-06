@@ -1,34 +1,16 @@
 /* eslint-env node */
-
-/*
- * This file runs in a Node context (it's NOT transpiled by Babel), so use only
- * the ES6 features that are supported by your Node version. https://node.green/
- */
-
-// Configuration for your app
-// https://v1.quasar.dev/quasar-cli/quasar-conf-js
+const packageJson = require('./package.json');
 
 module.exports = function (/* ctx */) {
 	return {
 		lang: {
-			// Puedes establecer el idioma predeterminado aquí
 			default: 'en-us',
-			// Lista de idiomas soportados
 			locales: ['en-us', 'es'],
 		},
-		// https://v1.quasar.dev/quasar-cli/supporting-ts
 		supportTS: false,
-
-		// https://v1.quasar.dev/quasar-cli/prefetch-feature
-		// preFetch: true,
-
-		// app boot file (/src/boot)
-		// --> boot files are part of "main.js"
-		// https://v1.quasar.dev/quasar-cli/boot-files
 		boot: [
 			'i18n',
 			'axios',
-			'MSSQL',
 			'rsNeDB',
 			'env',
 			'cmd',
@@ -37,99 +19,47 @@ module.exports = function (/* ctx */) {
 			'txt',
 			'systemInformation',
 		],
-
-		// https://v1.quasar.dev/quasar-cli/quasar-conf-js#Property%3A-css
 		css: ['app.scss'],
-
-		// https://github.com/quasarframework/quasar/tree/dev/extras
 		extras: [
-			// 'ionicons-v4',
-			// 'mdi-v5',
-			// 'fontawesome-v6',
-			// 'eva-icons',
-			// 'themify',
-			// 'line-awesome',
-			// 'roboto-font-latin-ext', // this or either 'roboto-font', NEVER both!
-
-			'roboto-font', // optional, you are not bound to it
-			'material-icons', // optional, you are not bound to it
+			'roboto-font',
+			'material-icons',
 		],
-
-		// Full list of options: https://v1.quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
 		build: {
-			vueRouterMode: 'hash', // available values: 'hash', 'history'
-			transpileDependencies: [
-				/[\\\/]node_modules[\\\/]quasar[\\\/]/,
-				/[\\\/]node_modules[\\\/]@quasar[\\\/]/,
-				/[\\\/]node_modules[\\\/]webpack[\\\/]/,
-				// ... (otras configuraciones)
-			],
-
-			// transpile: false,
-
-			// Add dependencies for transpiling with Babel (Array of string/regex)
-			// (from node_modules, which are by default not transpiled).
-			// Applies only if "transpile" is set to true.
-			// transpileDependencies: [],
-
-			// rtl: false, // https://v1.quasar.dev/options/rtl-support
-			// preloadChunks: true,
-			// showProgress: false,
-			// gzip: true,
-			// analyze: true,
-
-			// Options below are automatically set depending on the env, set them if you want to override
-			// extractCSS: false,
-
-			// https://v1.quasar.dev/quasar-cli/handling-webpack
-			// "chain" is a webpack-chain object https://github.com/neutrinojs/webpack-chain
-			chainWebpack(/* chain */) {},
+			transpileDependencies: ['uuid'],
+			extendWebpack(cfg) {
+				// Configura webpack para tratar ciertos módulos como externos
+				cfg.externals = {
+					url: 'commonjs url',
+					path: 'commonjs path',
+					fs: 'commonjs fs',
+					os: 'commonjs os',
+				};
+				
+				// Para compatibilidad con Electron
+				cfg.target = 'electron-renderer';
+			}
 		},
-
-		// Full list of options: https://v1.quasar.dev/quasar-cli/quasar-conf-js#Property%3A-devServer
 		devServer: {
 			https: false,
 			port: 8080,
-			open: true, // opens browser window automatically
+			open: true,
 		},
-
-		// https://v1.quasar.dev/quasar-cli/quasar-conf-js#Property%3A-framework
 		framework: {
-			iconSet: 'material-icons', // Quasar icon set
-			lang: 'en-us', // Quasar language pack
+			iconSet: 'material-icons',
+			lang: 'en-us',
 			config: {
 				dark: false,
 			},
-
-			// Possible values for "importStrategy":
-			// * 'auto' - (DEFAULT) Auto-import needed Quasar components & directives
-			// * 'all'  - Manually specify what to import
 			importStrategy: 'all',
-
-			// For special cases outside of where "auto" importStrategy can have an impact
-			// (like functional components as one of the examples),
-			// you can manually specify Quasar components/directives to be available everywhere:
-			//
-			// components: [],
-			// directives: [],
-
-			// Quasar plugins
 			plugins: ['Loading', 'Notify', 'LocalStorage', 'Dialog'],
 		},
-
-		// animations: 'all', // --- includes all animations
-		// https://v1.quasar.dev/options/animations
 		animations: [],
-
-		// https://v1.quasar.dev/quasar-cli/developing-ssr/configuring-ssr
 		ssr: {
 			pwa: false,
 		},
-
-		// https://v1.quasar.dev/quasar-cli/developing-pwa/configuring-pwa
 		pwa: {
-			workboxPluginMode: 'GenerateSW', // 'GenerateSW' or 'InjectManifest'
-			workboxOptions: {}, // only for GenerateSW
+			workboxPluginMode: 'GenerateSW',
+			workboxOptions: {},
 			manifest: {
 				name: `Windows Test -ISPT Services`,
 				short_name: `Windows Test -ISPT Services`,
@@ -167,48 +97,187 @@ module.exports = function (/* ctx */) {
 				],
 			},
 		},
-
-		// Full list of options: https://v1.quasar.dev/quasar-cli/developing-cordova-apps/configuring-cordova
-		cordova: {
-			// noIosLegacyBuildFlag: true, // uncomment only if you know what you are doing
-		},
-
-		// Full list of options: https://v1.quasar.dev/quasar-cli/developing-capacitor-apps/configuring-capacitor
+		cordova: {},
 		capacitor: {
 			hideSplashscreen: true,
 		},
-
-		// Full list of options: https://v1.quasar.dev/quasar-cli/developing-electron-apps/configuring-electron
 		electron: {
-			bundler: 'packager', // 'packager' or 'builder'
-
+			bundler: 'builder',
+			
+			// Configuración para packager
 			packager: {
-				// https://github.com/electron-userland/electron-packager/blob/master/docs/api.md#options
-				// OS X / Mac App Store
-				// appBundleId: '',
-				// appCategoryType: '',
-				// osxSign: '',
-				// protocol: 'myapp://path',
-				// Windows only
-				// win32metadata: { ... }
+				extraResource: [
+					'.quasar/electron/electron-preload.js',
+					'src-electron/main-process/electron-preload.js'
+				],
+				// Asegurar que las imágenes se copien correctamente
+				ignore: [
+					/node_modules/,
+					/src/
+				]
 			},
-
+			
+			// Configuración para builder
 			builder: {
-				// https://www.electron.build/configuration/configuration
-
-				appId: 'windowstest',
+				// Información básica del producto
+				appId: `com.${packageJson.author?.name?.toLowerCase().replace(/\s+/g, '') || 'randysuarez'}.${packageJson.name}`,
+				productName: packageJson.productName,
+				copyright: packageJson.copyright || `Copyright © ${new Date().getFullYear()} ${packageJson.author?.name || 'Randy Suarez'}`,
+				buildVersion: packageJson.buildVersion || packageJson.version,
+				
+				// Configuración para Windows 
 				win: {
 					certificateFile: 'local_signature.pfx',
-					certificatePassword: 'V3n3zu3l@#'
+					certificatePassword: 'V3n3zu3l@#',
+					
+					// Generar las versiones según configuración
+					target: [
+						{
+							target: 'portable',
+							arch: ['x64']
+						},
+						{
+							target: 'dir',
+							arch: ['x64']
+						}
+					],
+					
+					// Información desde package.json
+					publisherName: packageJson.publisherName || packageJson.author?.name || 'Randy Suarez',
+					legalTrademarks: packageJson.legalTrademarks || packageJson.companyName || packageJson.author?.name || 'Randy Suarez',
+					
+					// Solicitar privilegios de administrador según package.json
+					requestedExecutionLevel: packageJson.requestAdminPrivileges ? 
+						'requireAdministrator' : 'asInvoker',
+					
+					// Icono de la aplicación
+					icon: 'src-electron/icons/icon.ico',
 				},
+				
+				// Configuración específica para portable
+				portable: {
+					artifactName: `${packageJson.productName.replace(/\s+/g, '-')}-Portable-${packageJson.version}.exe`,
+					unicode: false
+				},
+				
+				// Otras configuraciones para optimizar el empaquetado
+				asar: true,
+				compression: 'maximum',
+				
+				// IMPORTANTE: Copiar los archivos de public/ a la raíz del directorio de salida
+				extraFiles: [
+					{
+						from: "public",
+						to: "public"
+					}
+				],
+				
+				// Esta configuración generará el archivo versioninfo.rc dinámicamente
+				beforeBuild: (context) => {
+					const fs = require('fs');
+					const path = require('path');
+					
+					// Convertir versión con formato 1.1.9 a 1,1,9,0
+					const fileVersionParts = (packageJson.fileVersion || packageJson.version).split('.');
+					while (fileVersionParts.length < 4) fileVersionParts.push('0');
+					const fileVersionFormatted = fileVersionParts.join(',');
+					
+					const productVersionParts = (packageJson.productVersion || packageJson.version).split('.');
+					while (productVersionParts.length < 4) productVersionParts.push('0');
+					const productVersionFormatted = productVersionParts.join(',');
+					
+					// Crear el contenido del archivo versioninfo.rc dinámicamente
+					const versionInfoContent = `1 VERSIONINFO
+FILEVERSION ${fileVersionFormatted}
+PRODUCTVERSION ${productVersionFormatted}
+FILEOS 0x40004
+FILETYPE 0x1
+{
+BLOCK "StringFileInfo"
+{
+	BLOCK "040904b0"
+	{
+		VALUE "CompanyName", "${packageJson.companyName || packageJson.author?.name || 'Randy Suarez'}"
+		VALUE "FileDescription", "${packageJson.description || 'Windows Test Application'}"
+		VALUE "FileVersion", "${packageJson.version}"
+		VALUE "InternalName", "${packageJson.name}"
+		VALUE "LegalCopyright", "${packageJson.copyright || `Copyright © ${new Date().getFullYear()} ${packageJson.author?.name || 'Randy Suarez'}`}"
+		VALUE "OriginalFilename", "${packageJson.productName || 'Windows Test'}.exe"
+		VALUE "ProductName", "${packageJson.productName || 'Windows Test'}"
+		VALUE "ProductVersion", "${packageJson.version}"
+		VALUE "Developer", "${packageJson.author?.name || 'Randy Suarez'}"
+		VALUE "DeveloperContact", "${packageJson.author?.email || 'suarez9ster@gmail.com'}"
+	}
+}
+
+BLOCK "VarFileInfo"
+{
+	VALUE "Translation", 0x0409 0x04B0
+}
+}`;
+					
+					// Crear la carpeta resources si no existe
+					const resourcesDir = path.join(__dirname, 'resources');
+					if (!fs.existsSync(resourcesDir)) {
+						fs.mkdirSync(resourcesDir, { recursive: true });
+					}
+					
+					// Escribir el archivo versioninfo.rc
+					fs.writeFileSync(
+						path.join(resourcesDir, 'versioninfo.rc'),
+						versionInfoContent
+					);
+					
+					console.log('Archivo versioninfo.rc generado dinámicamente');
+					
+					// Verificar que el directorio public existe y contiene las imágenes
+					const publicDir = path.join(__dirname, 'public');
+					if (fs.existsSync(publicDir)) {
+						console.log('Directorio public encontrado - se copiará al paquete final');
+					} else {
+						console.warn('ADVERTENCIA: El directorio public no existe. Las imágenes pueden no estar disponibles en la aplicación empaquetada.');
+					}
+					
+					return true;
+				},
+				
+				// Incluir el archivo de recursos generado
+				extraResources: [
+					{
+						from: "resources/versioninfo.rc",
+						to: "versioninfo.rc"
+					}
+				],
+				
+				// Excluir archivos no necesarios pero manteniendo los recursos en public
+				files: [
+					"**/*",
+					"!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+					"!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+					"!**/node_modules/*.d.ts",
+					"!**/node_modules/.bin",
+					"!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+					"!.editorconfig",
+					"!**/._*",
+					"!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+					"!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+					"!**/{appveyor.yml,.travis.yml,circle.yml}",
+					"!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+				]
 			},
-
-			// More info: https://v1.quasar.dev/quasar-cli/developing-electron-apps/node-integration
+			
+			// Habilitar la integración de Node.js
 			nodeIntegration: true,
-
-			extendWebpack(/* cfg */) {
-				// do something with Electron main process Webpack cfg
-				// chainWebpack also available besides this extendWebpack
+			
+			// Archivos principales para Electron
+			mainProcessFile: '.quasar/electron/electron-main.js',
+			preloadFile: 'src-electron/main-process/electron-preload.js',
+			
+			extendWebpack(cfg) {
+				cfg.target = 'electron-renderer';
+				
+				// Asegurarse de que los archivos estáticos se copien correctamente
+				cfg.plugins = cfg.plugins || [];
 			},
 		},
 	}
