@@ -8,14 +8,53 @@
 					>Windows Test - Close the Loop V{{ version }}</q-toolbar-title
 				>
 
-				<!-- Botón de cierre con animación -->
-				<q-btn flat dense round icon="logout" @click="cerrarSesion" style="color: red" />
+				<!-- Menu button with dropdown -->
+				<q-btn flat dense round icon="more_vert" color="grey">
+					<q-menu>
+						<q-list style="min-width: 200px">
+							<q-item clickable v-close-popup @click="checkForUpdates">
+								<q-item-section avatar>
+									<q-icon name="system_update" />
+								</q-item-section>
+								<q-item-section>Check for Updates</q-item-section>
+							</q-item>
+
+							<q-item clickable v-close-popup @click="showUpdateSettings">
+								<q-item-section avatar>
+									<q-icon name="settings" />
+								</q-item-section>
+								<q-item-section>Update Settings</q-item-section>
+							</q-item>
+
+							<q-separator />
+
+							<q-item clickable v-close-popup @click="myFunction">
+								<q-item-section avatar>
+									<q-icon name="dns" />
+								</q-item-section>
+								<q-item-section>Select Server</q-item-section>
+							</q-item>
+
+							<q-separator />
+
+							<q-item clickable v-close-popup @click="cerrarSesion">
+								<q-item-section avatar>
+									<q-icon name="logout" color="red" />
+								</q-item-section>
+								<q-item-section>Logout</q-item-section>
+							</q-item>
+						</q-list>
+					</q-menu>
+				</q-btn>
+
+				<!-- Close button -->
 				<div class="close-button" @click="cerrarVentana">
 					<q-icon name="close" size="24px" color="black" />
 				</div>
 			</q-toolbar>
 		</q-header>
 
+		<!-- Internet Connection Dialog -->
 		<q-dialog v-model="isDialogVisible" class="login-card" persistent>
 			<q-card>
 				<q-card-section>
@@ -24,46 +63,20 @@
 
 				<q-card-section>
 					<div class="q-pa-md text-h6">
-						There is no Internet conection. Please verify your connection.
+						There is no Internet connection. Please verify your connection.
 					</div>
 				</q-card-section>
 
-				<!-- Puedes personalizar los botones según tus necesidades -->
 				<q-card-actions align="right">
-					<!-- <q-btn label="Cerrar" color="primary" @click="closeDialog" /> -->
+					<!-- <q-btn label="Close" color="primary" @click="closeDialog" /> -->
 				</q-card-actions>
 			</q-card>
 		</q-dialog>
-		<q-dialog v-model="updt" persistent>
-			<q-card>
-				<q-card-section>
-					<div class="text-h6">Update</div>
-				</q-card-section>
 
-				<q-separator />
-
-				<q-card-section style="max-height: 50vh">
-					<p>
-						New version available! its current version is: {{ v.current }} and the new version is:
-						{{ v.new }}
-					</p>
-				</q-card-section>
-				<q-separator />
-
-				<q-card-section style="max-height: 50vh" class="scroll">
-					<h4>Changes</h4>
-					<p>
-						{{ v.body }}
-					</p>
-				</q-card-section>
-
-				<q-separator />
-
-				<q-card-actions align="right">
-					<q-btn flat label="Accept" color="primary" @click="update" v-close-popup />
-				</q-card-actions>
-			</q-card>
-		</q-dialog>
+		<!-- Update Dialog Component -->
+		<update-dialog 
+			ref="updateDialog"
+			:update-service="updateService" />
 
 		<q-page-container>
 			<router-view />
@@ -73,26 +86,26 @@
 
 <style scoped>
 	.main-layout {
-		background: linear-gradient(45deg, #ffffff, #87cefa); /* Degradado entre blanco y azul pastel */
-		transition: background 0.5s ease-in-out; /* Animación de cambio de fondo */
+		background: linear-gradient(45deg, #ffffff, #87cefa); /* Gradient from white to pastel blue */
+		transition: background 0.5s ease-in-out; /* Background transition animation */
 	}
 
 	.main-header {
-		background: rgba(255, 255, 255, 0.1); /* Fondo translúcido para el efecto de vidrio */
+		background: rgba(255, 255, 255, 0.1); /* Translucent background for glass effect */
 		backdrop-filter: blur(10px);
-		transition: background 0.5s ease-in-out; /* Animación de cambio de fondo */
-		border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Borde en la parte inferior */
+		transition: background 0.5s ease-in-out; /* Background transition animation */
+		border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Bottom border */
 	}
 
 	.close-button {
 		cursor: pointer;
 		margin-left: auto;
 		padding: 10px;
-		transition: transform 0.3s ease-in-out; /* Animación de escala */
+		transition: transform 0.3s ease-in-out; /* Scale animation */
 	}
 
 	.close-button:hover {
-		transform: scale(1.2); /* Efecto de escala al pasar el mouse */
+		transform: scale(1.2); /* Scale effect on hover */
 	}
 </style>
 
@@ -100,6 +113,7 @@
 	import { mapState, mapMutations } from 'vuex'
 	import EssentialLink from 'components/EssentialLink.vue'
 	import UpdateService from '../utils/updateService'
+	import UpdateDialog from 'components/UpdateDialog.vue'
 	import env from '../utils/env'
 	const electron = require('electron')
 
@@ -122,26 +136,27 @@
 		name: 'MainLayout',
 		components: {
 			EssentialLink,
+			UpdateDialog
 		},
 		data() {
 			return {
-				//myHeader: true,
 				leftDrawerOpen: false,
 				essentialLinks: linksData,
 				test: { result: false },
 				hasInternet: navigator.onLine,
 				isDialogVisible: false,
 				checkInterval: null,
-				intervalId: null,
-				updt: false,
-				v: {},
 				version: '',
-				updateService: '',
+				updateService: null,
 			}
 		},
 		async created() {
 			this.version = env.version
 			this.startInternetCheckInterval()
+			
+			// Initialize update service with env config
+			this.updateService = new UpdateService(env);
+			
 			let credencialesGuardadas = await this.$rsNeDB('credenciales').findOne({})
 			if (credencialesGuardadas == null) {
 				this.$q.loading.hide()
@@ -154,10 +169,26 @@
 		computed: {
 			...mapState('information', ['token', 'user', 'userID']),
 		},
+
 		methods: {
 			...mapMutations('information', ['SET_TOKEN', 'SET_USER', 'SET_USERID']),
+			
+			// Check for updates
+			async checkForUpdates() {
+				if (this.$refs.updateDialog) {
+					await this.$refs.updateDialog.checkForUpdates(true);
+				}
+			},
+			
+			// Show update settings
+			showUpdateSettings() {
+				if (this.$refs.updateDialog) {
+					this.$refs.updateDialog.showSettings();
+				}
+			},
+			
 			myFunction() {
-				// Aquí puedes ejecutar tu función
+				// Server selection function
 				this.$q
 					.dialog({
 						title: 'Select Server',
@@ -179,8 +210,6 @@
 					.onOk((data) => {
 						this.$q.localStorage.set('api', data)
 						location.reload()
-
-						//location.reload()
 					})
 					.onCancel(() => {
 						// console.log('>>>> Cancel')
@@ -189,44 +218,54 @@
 						// console.log('I am triggered on both OK and Cancel')
 					})
 			},
+			
 			handleKeyDown(event) {
 				if (event.altKey && event.ctrlKey && event.code == 'KeyS') {
 					this.myFunction()
 				}
 			},
+			
 			checkInternetConnection() {
 				this.hasInternet = navigator.onLine
 
 				if (!this.hasInternet && !this.isDialogVisible) {
-					// Si no hay conexión y el diálogo no está visible, muestra el diálogo
+					// If no connection and dialog not visible, show dialog
 					this.isDialogVisible = true
 				} else if (this.hasInternet && this.isDialogVisible) {
-					// Si hay conexión y el diálogo está visible, cierra el diálogo
+					// If connection restored and dialog visible, close dialog
 					this.isDialogVisible = false
 				}
 			},
+			
 			closeDialog() {
-				// Método para cerrar el diálogo manualmente
+				// Method to manually close the dialog
 				this.isDialogVisible = false
 			},
+			
 			startInternetCheckInterval() {
-				// Inicia el intervalo para verificar la conexión cada 5 segundos (puedes ajustar el valor)
+				// Start interval to check connection every 5 seconds (you can adjust the value)
 				this.checkInterval = setInterval(this.checkInternetConnection, 5000)
 			},
+			
 			stopInternetCheckInterval() {
-				// Detiene el intervalo cuando ya no es necesario
+				// Stop the interval when no longer needed
 				clearInterval(this.checkInterval)
 			},
+			
 			async comprobarToken() {
 				let respuesta = await this.checkToken()
 				if (respuesta && respuesta.status === 'OK') {
-					console.log('Usuario autenticado')
+					console.log('User authenticated')
+					
+					// Check for updates after authentication
+					this.scheduleUpdateCheck();
 				} else {
-					console.error('Token no válido, redirigiendo al LoginLayout')
+					console.error('Invalid token, redirecting to LoginLayout')
 					this.$q.loading.hide()
 					this.$router.push('/login')
 				}
 			},
+			
 			async checkToken() {
 				try {
 					let info = (await this.$rsNeDB('credenciales').find())[0]
@@ -239,63 +278,69 @@
 						this.SET_USERID(info.id)
 						return { status: 'OK' }
 					} else return { status: 'FAIL' }
-					/* const options = {
-							method: 'GET',
-							headers: {
-								Authorization: info.AuthToken,
-							},
-						}
-
-						const response = await fetch(`${s.url}/APP/Projects/ObtainProjects`, options)
-						const data = await response.json()
-
-						if (data.length) {
-							//console.log(data)
-							return { estado: 'OK' }
-						} else {
-							//throw new Error('Invalid response')
-						} */
 				} catch (err) {
-					//console.error(err)
 					throw err
 				}
-				return Promise.all(checkTokenPromises)
 			},
+			
+			// Schedule update check based on settings
+			scheduleUpdateCheck() {
+				try {
+					// Load update settings from localStorage
+					const savedSettings = localStorage.getItem('updateSettings');
+					let settings = {
+						checkAutomatically: true,
+						checkIntervalHours: 24
+					};
+					
+					if (savedSettings) {
+						settings = { ...settings, ...JSON.parse(savedSettings) };
+					}
+					
+					// If automatic checking is enabled
+					if (settings.checkAutomatically) {
+						// Get last check time
+						const lastCheckTime = localStorage.getItem('lastUpdateCheck');
+						const now = Date.now();
+						
+						if (!lastCheckTime || (now - parseInt(lastCheckTime)) > (settings.checkIntervalHours * 60 * 60 * 1000)) {
+							// Check for updates silently (no notification if none available)
+							setTimeout(() => {
+								this.checkForUpdatesQuietly();
+							}, 10000); // Delay for 10 seconds after login
+							
+							// Update last check time
+							localStorage.setItem('lastUpdateCheck', now.toString());
+						}
+					}
+				} catch (error) {
+					console.error('Error scheduling update check:', error);
+				}
+			},
+			
+			// Check for updates without notification
+			async checkForUpdatesQuietly() {
+				if (this.$refs.updateDialog) {
+					await this.$refs.updateDialog.checkForUpdates(false);
+				}
+			},
+			
 			cerrarVentana() {
-				// Cerrar la ventana en Electron
+				// Close the window in Electron
 				const { remote } = require('electron')
 				const ventanaActual = remote.getCurrentWindow()
 				ventanaActual.close()
 			},
+			
 			cerrarSesion() {
 				this.$cmd.logout()
 				this.$router.push('/login')
 			},
-			async update() {
-				this.$q.loading.show({
-					message: 'Downloading and updating...',
-				})
-				const exito = await this.updateService.descargarYDescomprimir(this.v.new)
-
-				if (exito) {
-					// Actualización exitosa, puedes realizar acciones adicionales si es necesario
-					this.$q.loading.hide()
-					//await this.$cmd.change()
-					await this.$cmd.update()
-					//await updateService.program()
-
-					//window.location.reload(true) // Recargar la aplicación después de la actualización
-				} else {
-					this.$q.loading.hide()
-					this.$q.notify({
-						color: 'negative',
-						message: 'Error downloading or unzipping the update.',
-					})
-				}
-			},
+			
 			minimizeWindow() {
 				electron.remote.getCurrentWindow().minimize()
 			},
+			
 			maximizeWindow() {
 				const currentWindow = electron.remote.getCurrentWindow()
 
@@ -307,16 +352,7 @@
 					this.isMaximized = true
 				}
 			},
-			startDrag(event) {
-				if (event.button === 0) {
-					this.dragging = true
-					this.offsetX = event.clientX
-					this.offsetY = event.clientY
-
-					window.addEventListener('mousemove', this.dragWindow)
-					window.addEventListener('mouseup', this.stopDrag)
-				}
-			},
+			
 			startDrag(event) {
 				if (event.button === 0) {
 					this.dragging = true
@@ -327,6 +363,7 @@
 					window.addEventListener('mouseup', this.stopDrag)
 				}
 			},
+			
 			dragWindow(event) {
 				if (this.dragging) {
 					const currentWindow = electron.remote.getCurrentWindow()
@@ -342,38 +379,22 @@
 					this.offsetY = event.screenY
 				}
 			},
+			
 			stopDrag() {
 				this.dragging = false
 				window.removeEventListener('mousemove', this.dragWindow)
 				window.removeEventListener('mouseup', this.stopDrag)
 			},
-			async updSystem() {
-				this.updateService = new UpdateService(
-					env.github.user,
-					env.github.repository,
-					env.version,
-					env.token,
-				)
-
-				const actualizacionDisponible = await this.updateService.verificarActualizacion()
-
-				if (actualizacionDisponible.result) {
-					clearInterval(this.intervalId)
-					this.v['current'] = env.version
-					this.v['new'] = actualizacionDisponible.version
-					this.v['body'] = actualizacionDisponible.body
-					this.updt = actualizacionDisponible.result
-				}
-			},
 		},
+		
 		async mounted() {
 			if (!this.$q.localStorage.getItem('api')) this.$q.localStorage.set('api', 'server')
 			document.addEventListener('keydown', this.handleKeyDown)
-			let d = await this.$db.collection('updateSystem').all_data().get()
-			if (d[0].activated && env.version < d[0].Version) await this.updSystem()
 		},
+		
 		beforeDestroy() {
 			document.removeEventListener('keydown', this.handleKeyDown)
+			this.stopInternetCheckInterval()
 		},
 	}
 </script>
