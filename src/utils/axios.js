@@ -1,105 +1,105 @@
-import axios from 'axios'
-import { Notify } from 'quasar'
-import { LocalStorage } from 'quasar'
-import env from '../utils/env'
+import axios from 'axios';
+import { Notify } from 'quasar';
+import { LocalStorage } from 'quasar';
+import { getCurrentEnvironment, getEnvironmentConfig } from '../utils/envHelper';
 
+// Obtener la configuración actual del entorno
+const currentEnvironment = getCurrentEnvironment();
+const envConfig = getEnvironmentConfig();
+
+// Instancia principal para la API interna
 let instance = axios.create({
-	// baseURL: 'http://localhost:3000/api/',
-	baseURL:
-		LocalStorage.getItem('api') == 'public'
-			? env.mongodb.public
-			: LocalStorage.getItem('api') == 'dev'
-			? env.mongodb.dev
-			: LocalStorage.getItem('api') == 'local'
-			? env.mongodb.local
-			: env.mongodb.server,
-	//baseURL: env.dev,
-	// timeout: 1000,
-	// headers: {'X-Custom-Header': 'foobar'}
-})
+    baseURL: envConfig.api,
+    headers: {
+        'X-Environment': currentEnvironment,
+        'X-DB-Name': envConfig.db
+    }
+});
 
+// Instancia secundaria para la API externa
+export const externalApi = axios.create({
+    baseURL: envConfig.external,
+    headers: {
+        'X-Environment': currentEnvironment,
+        'X-DB-Name': envConfig.db
+    }
+});
+
+// Configurar interceptores para instancia principal
 instance.interceptors.response.use(
-	function (response) {
-		// Do something with response data
-		// console.log(response)
-		return response.data
-	},
-	function (error) {
-		// Do something with response error
-		//
+    function (response) {
+        return response.data;
+    },
+    function (error) {
+        var data = error;
 
-		var token = LocalStorage.getItem('token')
-		if (token) {
-			if (!config.headers) config.headers = {}
-			if (token) config.headers['access-token'] = token
-		}
+        if (error.response) {
+            if (error.response.status == 401) {
+                return Promise.reject(data.response.data);
+            }
 
-		var data = error
+            data = error.response.data;
+        }
 
-		// if(error.response.status == 422)
-		// data = error.response.data.error
-
-		if (error.response) {
-			//console.log(data)
-			// The request was made and the server responded with a status code
-			// that falls out of the range of 2xx
-			//console.log(error.response.data);
-
-			if (error.response.status == 401) {
-				// LocalStorage.remove('user')
-				// LocalStorage.remove('token')
-				// window.location.reload()
-				return Promise.reject(data.response.data)
-			}
-
-			data = error.response.data
-			//Notify.create(error.response.data)
-			//console.log(error.response.status);
-			//console.log(error.response.headers);
-		} else if (error.request) {
-			// The request was made but no response was received
-			// `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-			// http.ClientRequest in node.js
-			//console.log(error.request);
-		} else {
-			// Something happened in setting up the request that triggered an Error
-			//console.log('Error', error.message);
-		}
-		//console.log(error.config);
-
-		return Promise.reject(data)
-	},
-)
+        return Promise.reject(data);
+    }
+);
 
 instance.interceptors.request.use(
-	function (config) {
-		var token = LocalStorage.getItem('token')
-		if (token) {
-			if (!config.params) config.params = {}
-			config.params.access_token = token
-		}
-		let conf = LocalStorage.getItem('empresa')
-		if (conf) config.params['conf'] = conf
+    function (config) {
+        var token = LocalStorage.getItem('token');
+        if (token) {
+            if (!config.params) config.params = {};
+            config.params.access_token = token;
+        }
+        
+        let conf = LocalStorage.getItem('empresa');
+        if (conf) config.params['conf'] = conf;
 
-		/* var selected = LocalStorage.getItem('selected')
-		if (selected) {
-			if (!config.params.conf) config.params.conf = {}
-			config.params.conf['company'] = selected
-		}
+        // Actualizar la información del entorno en cada solicitud
+        // en caso de que haya cambiado
+        const currentEnv = getCurrentEnvironment();
+        const currentConfig = getEnvironmentConfig();
+        
+        config.headers['X-Environment'] = currentEnv;
+        config.headers['X-DB-Name'] = currentConfig.db;
+        
+        return config;
+    },
+    function (error) {
+        return Promise.reject(error);
+    }
+);
 
-		var user = LocalStorage.getItem('user')
-		if (user) {
-			if (!config.params.conf) config.params.conf = {}
-			//config.params.conf.company = user.__company__
-			config.params.conf['parent_company'] = user.parent_company
-		} */
+// Configurar interceptores similares para externalApi
+externalApi.interceptors.response.use(
+    function (response) {
+        return response.data;
+    },
+    function (error) {
+        return Promise.reject(error.response?.data || error);
+    }
+);
 
-		return config
-	},
-	function (error) {
-		// Do something with request error
-		return Promise.reject(error)
-	},
-)
+externalApi.interceptors.request.use(
+    function (config) {
+        var token = LocalStorage.getItem('token');
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        // Actualizar la información del entorno en cada solicitud
+        const currentEnv = getCurrentEnvironment();
+        const currentConfig = getEnvironmentConfig();
+        
+        config.headers['X-Environment'] = currentEnv;
+        config.headers['X-DB-Name'] = currentConfig.db;
+        
+        return config;
+    },
+    function (error) {
+        return Promise.reject(error);
+    }
+);
 
-export default instance
+export default instance;

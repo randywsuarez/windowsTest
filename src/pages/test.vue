@@ -199,10 +199,11 @@
 					this.scrappingPromise = (async () => {
 						try {
 							const driversCode = await this.$db.funcAdmin('modules/powershell/drivers')
-							const enrrolmentCode = await this.$db.funcAdmin('modules/powershell/enrrolment')
+							const enrrolmentCode = await this.$db.funcAdmin('modules/powershell/enrolment')
+							console.log(enrrolmentCode)
 
 							// Ejecutar las consultas asincrónicas concurrentemente
-							let [info, battery, drivers] = await Promise.all([
+							let [info, battery, driversResult, enrolmentResult] = await Promise.all([
 								this.$hardwareInfo(),
 								this.type === 'LAPTOP' || this.type === 'TABLET'
 									? this.$getSpecificInfo('battery')
@@ -210,9 +211,23 @@
 								this.$cmd.executeScriptCode(driversCode),
 								this.$cmd.executeScriptCode(enrrolmentCode),
 							])
+							
+							// Handle potential errors from PowerShell execution
+							const drivers = driversResult && driversResult.error 
+								? { error: driversResult.error } 
+								: driversResult && driversResult.output 
+									? { output: driversResult.output }
+									: driversResult;
+									
+							const enrolment = enrolmentResult && enrolmentResult.error
+								? { error: enrolmentResult.error }
+								: enrolmentResult && enrolmentResult.output
+									? { output: enrolmentResult.output }
+									: enrolmentResult;
+									console.log(enrolment)
 
 							// 🔥 Corrección: Usar mutaciones en lugar de modificar `state` directamente
-							this.SET_HARDWARE_INFO({ ...info, battery, drivers, enrrolmentCode })
+							this.SET_HARDWARE_INFO({ ...info, battery, drivers, enrolment })
 						} catch (error) {
 							this.$q
 								.dialog({

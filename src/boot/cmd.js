@@ -163,34 +163,118 @@ const CmdHelper = {
 
 	executeScriptCode: async (code) => {
 		return new Promise(async (resolve) => {
-			let ps = new PowerShell([[code]])
-			let outputData = ''
-			//console.log(code)
+			// Create a temporary file for the PowerShell script to avoid ENAMETOOLONG error
+			const tempFileName = `temp_script_${Date.now()}.ps1`;
+			const tempFilePath = path.join(scriptsDirectory, tempFileName);
+			
+			try {
+				// Simplify the approach - just run the original script directly
+				// We'll add a try-catch wrapper but keep the original structure
+				const modifiedCode = `
+# Error handling wrapper
+try {
+    # Suppress non-terminating errors
+    $ErrorActionPreference = "SilentlyContinue"
+    
+    # Original script code - execute directly
+${code}
 
-			ps.on('output', (data) => {
-				outputData += data
-			})
-
-			ps.on('error-output', (data) => {
-				console.error(data)
-				resolve(false)
-			})
-
-			ps.on('end', (code) => {
-				try {
-					const result = outputData.includes('{') ? JSON.parse(outputData) : outputData
-					resolve(result)
-				} catch (parseError) {
-					console.error('Error parsing output as JSON:', parseError.message)
-					resolve(false)
+    # If we get here, it means the script executed successfully
+    Write-Output "{ \"success\": true }"
+} catch {
+    # Output error as JSON
+    Write-Output "{ \"error\": \"PowerShell error: $($_.Exception.Message)\" }"
+}
+`;
+				
+				// Write the PowerShell script
+				fs.writeFileSync(tempFilePath, modifiedCode);
+				
+				// Create a batch file that will run PowerShell as admin
+				const batchFileName = `elevate_${Date.now()}.bat`;
+				const batchFilePath = path.join(scriptsDirectory, batchFileName);
+				
+				// Simple batch file that uses runas to elevate
+				const batchContent = `
+@echo off
+powershell -ExecutionPolicy Bypass -Command "& {Start-Process PowerShell.exe -ArgumentList '-ExecutionPolicy Bypass -File \\"${tempFilePath.replace(/\\/g, "\\\\")}"\\"' -Verb RunAs}"
+`;
+				
+				// Write the batch file
+				fs.writeFileSync(batchFilePath, batchContent);
+				
+				// First try running the batch file to get elevation
+				console.log("Attempting to run PowerShell with elevation via batch file");
+				exec(`"${batchFilePath}"`, (error, stdout, stderr) => {
+					// Clean up the batch file regardless of outcome
+					try {
+						fs.unlinkSync(batchFilePath);
+					} catch (cleanupError) {
+						console.error('Error cleaning up batch file:', cleanupError);
+					}
+					
+					if (error) {
+						console.error(`Batch execution error: ${error.message}`);
+					}
+					
+					// Always fall back to regular execution - the batch file just attempts elevation
+					// but doesn't provide us with output directly
+					console.log("Running PowerShell script directly (may not have admin rights)");
+					exec(`powershell -ExecutionPolicy Bypass -File "${tempFilePath}"`, (fallbackError, fallbackStdout, fallbackStderr) => {
+						// Clean up the temporary script file
+						try {
+							fs.unlinkSync(tempFilePath);
+						} catch (cleanupError) {
+							console.error('Error cleaning up temporary script file:', cleanupError);
+						}
+						
+						if (fallbackError) {
+							console.error(`PowerShell execution error: ${fallbackError.message}`);
+							
+							// If there's an error but we have some output, try to use it
+							if (fallbackStdout && fallbackStdout.trim()) {
+								processOutput(fallbackStdout, resolve);
+							} else {
+								resolve({ error: fallbackError.message });
+							}
+							return;
+						}
+						
+						if (fallbackStderr) {
+							console.error(`PowerShell stderr: ${fallbackStderr}`);
+						}
+						
+						processOutput(fallbackStdout, resolve);
+					});
+				});
+				
+				// Helper function to process output
+				function processOutput(output, resolveCallback) {
+					try {
+						// Check if output looks like JSON before trying to parse it
+						const trimmedOutput = output.trim();
+						if (trimmedOutput.startsWith('{') && trimmedOutput.endsWith('}')) {
+							try {
+								const result = JSON.parse(trimmedOutput);
+								resolveCallback(result);
+							} catch (jsonError) {
+								console.error('Error parsing output as JSON:', jsonError.message);
+								resolveCallback({ output: trimmedOutput, parseError: true });
+							}
+						} else {
+							// Return raw output if it doesn't look like JSON
+							resolveCallback({ output: trimmedOutput });
+						}
+					} catch (parseError) {
+						console.error('Error handling output:', parseError.message);
+						resolveCallback({ output: output });
+					}
 				}
-			})
-
-			ps.on('error', (err) => {
-				console.error(err)
-				resolve(false)
-			})
-		})
+			} catch (fileError) {
+				console.error('Error creating temporary script file:', fileError);
+				resolve({ error: fileError.message });
+			}
+		});
 	},
 	savePS: async (params) => {
 		return new Promise(async (resolve) => {
@@ -257,8 +341,8 @@ if (Test-Path $filePath -PathType Leaf) {
 
 			ps.on('end', (code) => {
 				try {
-					const result = JSON.parse(outputData)
-					resolve(result._isSuccess)
+					const result = outputData.includes('{') ? JSON.parse(outputData) : outputData
+					resolve(result)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
 					resolve(false)

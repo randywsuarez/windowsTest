@@ -8,6 +8,13 @@
 					>Windows Test - Close the Loop V{{ version }}</q-toolbar-title
 				>
 
+                <!-- Environment Selector -->
+                <environment-selector 
+                    ref="environmentSelector"
+                    class="q-mr-md" 
+                    @environment-changed="onEnvironmentChanged" 
+                />
+
 				<!-- Menu button with dropdown -->
 				<q-btn flat dense round icon="more_vert" color="grey">
 					<q-menu>
@@ -17,22 +24,6 @@
 									<q-icon name="system_update" />
 								</q-item-section>
 								<q-item-section>Check for Updates</q-item-section>
-							</q-item>
-
-							<q-item clickable v-close-popup @click="showUpdateSettings">
-								<q-item-section avatar>
-									<q-icon name="settings" />
-								</q-item-section>
-								<q-item-section>Update Settings</q-item-section>
-							</q-item>
-
-							<q-separator />
-
-							<q-item clickable v-close-popup @click="myFunction">
-								<q-item-section avatar>
-									<q-icon name="dns" />
-								</q-item-section>
-								<q-item-section>Select Server</q-item-section>
 							</q-item>
 
 							<q-separator />
@@ -112,10 +103,11 @@
 <script>
 	import { mapState, mapMutations } from 'vuex'
 	import EssentialLink from 'components/EssentialLink.vue'
+	import EnvironmentSelector from 'components/EnvironmentSelector.vue'
 	import UpdateService from '../utils/updateService'
 	import UpdateDialog from 'components/UpdateDialog.vue'
 	import env from '../utils/env'
-	const electron = require('electron')
+	const { remote } = require('electron')
 
 	const linksData = [
 		{
@@ -136,6 +128,7 @@
 		name: 'MainLayout',
 		components: {
 			EssentialLink,
+			EnvironmentSelector,
 			UpdateDialog
 		},
 		data() {
@@ -173,6 +166,13 @@
 		methods: {
 			...mapMutations('information', ['SET_TOKEN', 'SET_USER', 'SET_USERID']),
 			
+			// Handle environment change
+			onEnvironmentChanged(newEnvironment) {
+				console.log('Environment changed to:', newEnvironment);
+				// You might want to perform additional actions here
+				// For example, refreshing data based on the new environment
+			},
+			
 			// Check for updates
 			async checkForUpdates() {
 				if (this.$refs.updateDialog) {
@@ -180,48 +180,9 @@
 				}
 			},
 			
-			// Show update settings
-			showUpdateSettings() {
-				if (this.$refs.updateDialog) {
-					this.$refs.updateDialog.showSettings();
-				}
-			},
-			
-			myFunction() {
-				// Server selection function
-				this.$q
-					.dialog({
-						title: 'Select Server',
-						message: 'Choose your options:',
-						options: {
-							type: 'radio',
-							model: this.$q.localStorage.getItem('api'),
-							// inline: true,
-							items: [
-								{ label: 'Server', value: 'server', color: 'primary' },
-								{ label: 'Public', value: 'public', color: 'secondary' },
-								{ label: 'Dev', value: 'dev', color: 'red' },
-								{ label: 'Local', value: 'local', color: 'orange' },
-							],
-						},
-						cancel: true,
-						persistent: true,
-					})
-					.onOk((data) => {
-						this.$q.localStorage.set('api', data)
-						location.reload()
-					})
-					.onCancel(() => {
-						// console.log('>>>> Cancel')
-					})
-					.onDismiss(() => {
-						// console.log('I am triggered on both OK and Cancel')
-					})
-			},
-			
 			handleKeyDown(event) {
 				if (event.altKey && event.ctrlKey && event.code == 'KeyS') {
-					this.myFunction()
+					this.$refs.environmentSelector.openMenu();
 				}
 			},
 			
@@ -292,23 +253,31 @@
 						checkAutomatically: true,
 						checkIntervalHours: 24
 					};
-					
+
 					if (savedSettings) {
-						settings = { ...settings, ...JSON.parse(savedSettings) };
+						try {
+							const parsedSettings = JSON.parse(savedSettings);
+							if (typeof parsedSettings === 'object' && parsedSettings !== null) {
+								settings = { ...settings, ...parsedSettings };
+							}
+						} catch (e) {
+							console.warn('Invalid update settings in localStorage, using defaults');
+							localStorage.removeItem('updateSettings');
+						}
 					}
-					
+
 					// If automatic checking is enabled
 					if (settings.checkAutomatically) {
 						// Get last check time
 						const lastCheckTime = localStorage.getItem('lastUpdateCheck');
 						const now = Date.now();
-						
+
 						if (!lastCheckTime || (now - parseInt(lastCheckTime)) > (settings.checkIntervalHours * 60 * 60 * 1000)) {
 							// Check for updates silently (no notification if none available)
 							setTimeout(() => {
 								this.checkForUpdatesQuietly();
 							}, 10000); // Delay for 10 seconds after login
-							
+
 							// Update last check time
 							localStorage.setItem('lastUpdateCheck', now.toString());
 						}
@@ -327,7 +296,6 @@
 			
 			cerrarVentana() {
 				// Close the window in Electron
-				const { remote } = require('electron')
 				const ventanaActual = remote.getCurrentWindow()
 				ventanaActual.close()
 			},
@@ -366,7 +334,7 @@
 			
 			dragWindow(event) {
 				if (this.dragging) {
-					const currentWindow = electron.remote.getCurrentWindow()
+					const currentWindow = remote.getCurrentWindow()
 
 					const newX = event.screenX - this.offsetX
 					const newY = event.screenY - this.offsetY
@@ -388,7 +356,6 @@
 		},
 		
 		async mounted() {
-			if (!this.$q.localStorage.getItem('api')) this.$q.localStorage.set('api', 'server')
 			document.addEventListener('keydown', this.handleKeyDown)
 		},
 		

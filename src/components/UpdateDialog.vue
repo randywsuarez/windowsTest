@@ -15,6 +15,9 @@
             <div class="q-mb-md">
               <span class="text-subtitle1">Current version: {{ updateInfo.currentVersion }}</span><br>
               <span class="text-subtitle1 text-primary">New version: {{ updateInfo.version }}</span>
+              <q-badge color="purple" class="q-ml-md" v-if="updateInfo.source">
+                {{ updateInfo.source === 'github' ? 'GitHub' : 'Local Server' }}
+              </q-badge>
             </div>
             
             <div v-if="updateInfo.releaseNotes" class="q-pa-sm">
@@ -119,7 +122,6 @@
   
   <script>
   import { mapState } from 'vuex';
-  // Removed marked import
   
   export default {
     name: 'UpdateDialog',
@@ -139,7 +141,8 @@
           currentVersion: '',
           version: '',
           releaseNotes: '',
-          releaseDate: null
+          releaseDate: null,
+          source: ''
         },
         downloading: false,
         downloadProgress: {
@@ -178,7 +181,8 @@
           .replace(/#{3}(.*?)(?=\n|$)/g, '<h3>$1</h3>') // h3
           .replace(/#{2}(.*?)(?=\n|$)/g, '<h2>$1</h2>') // h2
           .replace(/#{1}(.*?)(?=\n|$)/g, '<h1>$1</h1>') // h1
-          .replace(/- (.*?)(?=\n|$)/g, '• $1<br>'); // Lists
+          .replace(/- (.*?)(?=\n|$)/g, '• $1<br>') // Lists
+          .replace(/`(.*?)`/g, '<code>$1</code>'); // Inline code
       }
     },
     
@@ -192,6 +196,9 @@
       this.updateService.onDownloadProgress = this.onDownloadProgress;
       this.updateService.onDownloadError = this.onDownloadError;
       this.updateService.onUpdateDownloaded = this.onUpdateDownloaded;
+      this.updateService.onServerUnavailable = this.onServerUnavailable;
+      this.updateService.onServerError = this.onServerError;
+      this.updateService.onServerInvalidResponse = this.onServerInvalidResponse;
     },
     
     methods: {
@@ -322,6 +329,51 @@
               caption: error.toString()
             });
           }
+        });
+      },
+      
+      // Manejador para servidor no disponible
+      onServerUnavailable(serverUrl) {
+        // Mostrar notificación de advertencia
+        this.$q.notify({
+          type: 'warning',
+          message: 'Local update server unavailable',
+          caption: `Could not connect to ${serverUrl}. Checking GitHub instead.`,
+          position: 'top',
+          timeout: 5000,
+          actions: [
+            { label: 'Dismiss', color: 'white' }
+          ]
+        });
+      },
+  
+      // Manejador para error del servidor
+      onServerError(error) {
+        // Mostrar notificación de error
+        this.$q.notify({
+          type: 'negative',
+          message: 'Error connecting to update server',
+          caption: `Error: ${error.toString()}. Checking GitHub instead.`,
+          position: 'top',
+          timeout: 5000,
+          actions: [
+            { label: 'Dismiss', color: 'white' }
+          ]
+        });
+      },
+      
+      // Manejador para respuesta inválida del servidor
+      onServerInvalidResponse(response) {
+        // Mostrar notificación de advertencia
+        this.$q.notify({
+          type: 'warning',
+          message: 'Invalid response from update server',
+          caption: `The server returned an invalid response. Checking GitHub instead.`,
+          position: 'top',
+          timeout: 5000,
+          actions: [
+            { label: 'Dismiss', color: 'white' }
+          ]
         });
       },
       
