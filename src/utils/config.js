@@ -3,37 +3,37 @@ const { LocalStorage } = require('quasar');
 
 const environments = {
   production: {
-    apiUrl: process.env.PROD_API_URL,
-    externalUrl: process.env.PROD_EXTERNAL_URL,
-    dbName: process.env.PROD_DB_NAME,
-    updateConfig: {
+    api: process.env.PROD_API_URL,
+    external: process.env.PROD_EXTERNAL_URL,
+    db: process.env.PROD_DB_NAME,
+    update: {
       enabled: process.env.PROD_UPDATE_ENABLED === 'true',
       url: process.env.PROD_UPDATE_URL
     }
   },
   testing: {
-    apiUrl: process.env.TEST_API_URL,
-    externalUrl: process.env.TEST_EXTERNAL_URL,
-    dbName: process.env.TEST_DB_NAME,
-    updateConfig: {
+    api: process.env.TEST_API_URL,
+    external: process.env.TEST_EXTERNAL_URL,
+    db: process.env.TEST_DB_NAME,
+    update: {
       enabled: process.env.TEST_UPDATE_ENABLED === 'true',
       url: process.env.TEST_UPDATE_URL
     }
   },
   development: {
-    apiUrl: process.env.DEV_API_URL,
-    externalUrl: process.env.DEV_EXTERNAL_URL,
-    dbName: process.env.DEV_DB_NAME,
-    updateConfig: {
+    api: process.env.DEV_API_URL,
+    external: process.env.DEV_EXTERNAL_URL,
+    db: process.env.DEV_DB_NAME,
+    update: {
       enabled: process.env.DEV_UPDATE_ENABLED === 'true',
       url: process.env.DEV_UPDATE_URL
     }
   },
   local: {
-    apiUrl: process.env.LOCAL_API_URL,
-    externalUrl: process.env.LOCAL_EXTERNAL_URL,
-    dbName: process.env.LOCAL_DB_NAME,
-    updateConfig: {
+    api: process.env.LOCAL_API_URL,
+    external: process.env.LOCAL_EXTERNAL_URL,
+    db: process.env.LOCAL_DB_NAME,
+    update: {
       enabled: process.env.LOCAL_UPDATE_ENABLED === 'true',
       url: process.env.LOCAL_UPDATE_URL
     }
@@ -70,26 +70,44 @@ const github = {
 const compatibilityGetters = {
   get project() {
     const env = LocalStorage.getItem('environment') || 'development';
+    const envConfig = environments[env] || environments.development;
     return {
-      db: environments[env]?.dbName || environments.development.dbName,
-      url: environments[env]?.externalUrl || environments.development.externalUrl
+      db: envConfig.db,
+      url: envConfig.external
     };
   },
   
   get mongodb() {
     return {
-      server: environments.production?.apiUrl,
-      public: environments.testing?.apiUrl,
-      dev: environments.development?.apiUrl,
-      local: environments.local?.apiUrl
+      server: environments.production.api,
+      public: environments.testing.api,
+      dev: environments.development.api,
+      local: environments.local.api
     };
   }
 };
 
-module.exports = {
+// Exportar el módulo con la misma estructura que env.js
+const config = {
   environments,
   version,
   githubToken: process.env.API_KEY,
   github,
   ...compatibilityGetters
 };
+
+// Asegurarnos de que el objeto tenga los mismos métodos que el original
+Object.defineProperties(config, {
+  project: {
+    get: function() {
+      return compatibilityGetters.project;
+    }
+  },
+  mongodb: {
+    get: function() {
+      return compatibilityGetters.mongodb;
+    }
+  }
+});
+
+module.exports = config;
