@@ -39,9 +39,56 @@ const environments = {
   }
 };
 
+const version = '2.0.0';
+
+const github = {
+  user: process.env.GITHUB_USER || 'randywsuarez',
+  repository: process.env.GITHUB_REPO || 'windowsTest',
+  
+  // Canales de actualización
+  updateChannels: {
+    stable: {
+      name: 'Stable',
+      description: 'Production-ready releases',
+      default: true
+    },
+    beta: {
+      name: 'Beta',
+      description: 'Preview releases with new features',
+      default: false
+    },
+    dev: {
+      name: 'Development',
+      description: 'Latest development builds',
+      default: false
+    }
+  }
+};
+
+// Getters para mantener compatibilidad con código existente
+const compatibilityGetters = {
+  get project() {
+    const env = localStorage.getItem('environment') || 'production';
+    return {
+      db: environments[env].dbName,
+      url: environments[env].externalUrl
+    };
+  },
+  
+  get mongodb() {
+    return {
+      server: environments.production.apiUrl,
+      public: environments.testing.apiUrl,
+      dev: environments.development.apiUrl,
+      local: environments.local.apiUrl
+    };
+  }
+};
+
 module.exports = {
   environments,
-  apiKey: process.env.API_KEY,
-  apiSecret: process.env.API_SECRET,
-  databaseUrl: process.env.DATABASE_URL,
+  version,
+  githubToken: process.env.API_KEY, // Token de GitHub
+  github,
+  ...compatibilityGetters
 };
