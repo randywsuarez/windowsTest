@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { LocalStorage } = require('quasar');
 
 const environments = {
   production: {
@@ -68,19 +69,19 @@ const github = {
 // Getters para mantener compatibilidad con código existente
 const compatibilityGetters = {
   get project() {
-    const env = localStorage.getItem('environment') || 'production';
+    const env = LocalStorage.getItem('environment') || 'development';
     return {
-      db: environments[env].dbName,
-      url: environments[env].externalUrl
+      db: environments[env]?.dbName || environments.development.dbName,
+      url: environments[env]?.externalUrl || environments.development.externalUrl
     };
   },
   
   get mongodb() {
     return {
-      server: environments.production.apiUrl,
-      public: environments.testing.apiUrl,
-      dev: environments.development.apiUrl,
-      local: environments.local.apiUrl
+      server: environments.production?.apiUrl,
+      public: environments.testing?.apiUrl,
+      dev: environments.development?.apiUrl,
+      local: environments.local?.apiUrl
     };
   }
 };
@@ -88,7 +89,7 @@ const compatibilityGetters = {
 module.exports = {
   environments,
   version,
-  githubToken: process.env.API_KEY, // Token de GitHub
+  githubToken: process.env.API_KEY,
   github,
   ...compatibilityGetters
 };
