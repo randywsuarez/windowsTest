@@ -251,18 +251,31 @@ powershell -ExecutionPolicy Bypass -Command "& {Start-Process PowerShell.exe -Ar
 				// Helper function to process output
 				function processOutput(output, resolveCallback) {
 					try {
+						// Agregar logging detallado
+						console.log('Raw output received:', output);
+						console.log('Output length:', output.length);
+						console.log('First 100 characters:', output.substring(0, 100));
+						console.log('Last 100 characters:', output.substring(output.length - 100));
+
 						// Check if output looks like JSON before trying to parse it
 						const trimmedOutput = output.trim();
+						console.log('Trimmed output length:', trimmedOutput.length);
+						console.log('First character:', trimmedOutput[0]);
+						console.log('Last character:', trimmedOutput[trimmedOutput.length - 1]);
+
 						if (trimmedOutput.startsWith('{') && trimmedOutput.endsWith('}')) {
 							try {
+								console.log('Attempting to parse JSON...');
 								const result = JSON.parse(trimmedOutput);
+								console.log('JSON parse successful');
 								resolveCallback(result);
 							} catch (jsonError) {
 								console.error('Error parsing output as JSON:', jsonError.message);
+								console.log('Failed JSON content:', trimmedOutput);
 								resolveCallback({ output: trimmedOutput, parseError: true });
 							}
 						} else {
-							// Return raw output if it doesn't look like JSON
+							console.log('Output does not appear to be JSON format');
 							resolveCallback({ output: trimmedOutput });
 						}
 					} catch (parseError) {
