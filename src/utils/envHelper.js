@@ -1,5 +1,5 @@
 // utils/envHelper.js
-import env from './env';
+import config from './config';
 import { LocalStorage } from 'quasar';
 
 // Mapeo entre los valores antiguos de 'api' y los nuevos entornos
@@ -29,9 +29,8 @@ export function getCurrentEnvironment() {
   if (!environment) {
     // Si no existe, intentar convertir desde el formato antiguo
     const oldApiSetting = LocalStorage.getItem('api');
-    environment = oldApiSetting ? API_TO_ENV_MAP[oldApiSetting] : 'production';
-    
-    // Guardar en el nuevo formato para futuras referencias
+    environment = oldApiSetting ? API_TO_ENV_MAP[oldApiSetting] : 'development';
+    // Guardar en el nuevo formato
     LocalStorage.set('environment', environment);
   }
   
@@ -43,16 +42,12 @@ export function getCurrentEnvironment() {
  * @param {string} environment - Nombre del entorno a establecer
  */
 export function setEnvironment(environment) {
-  if (env.environments[environment]) {
-    // Guardar en nuevo formato
-    LocalStorage.set('environment', environment);
-    
-    // También actualizar el formato antiguo para compatibilidad
-    LocalStorage.set('api', ENV_TO_API_MAP[environment] || 'server');
-    
-    return true;
+  if (!config.environments[environment]) {
+    throw new Error(`Entorno inválido: ${environment}`);
   }
-  return false;
+  LocalStorage.set('environment', environment);
+  // Mantener retrocompatibilidad
+  LocalStorage.set('api', ENV_TO_API_MAP[environment]);
 }
 
 /**
@@ -61,7 +56,7 @@ export function setEnvironment(environment) {
  */
 export function getEnvironmentConfig() {
   const environment = getCurrentEnvironment();
-  return env.environments[environment] || env.environments.production;
+  return config.environments[environment];
 }
 
 /**
@@ -69,7 +64,7 @@ export function getEnvironmentConfig() {
  * @returns {string} - URL de la API
  */
 export function getApiUrl() {
-  return getEnvironmentConfig().api;
+  return getEnvironmentConfig().apiUrl;
 }
 
 /**
@@ -77,7 +72,7 @@ export function getApiUrl() {
  * @returns {string} - URL externa
  */
 export function getExternalUrl() {
-  return getEnvironmentConfig().external;
+  return getEnvironmentConfig().externalUrl;
 }
 
 /**
@@ -85,7 +80,7 @@ export function getExternalUrl() {
  * @returns {string} - Nombre de la base de datos
  */
 export function getDbName() {
-  return getEnvironmentConfig().db;
+  return getEnvironmentConfig().dbName;
 }
 
 /**
@@ -93,7 +88,7 @@ export function getDbName() {
  * @returns {Object} - Configuración de actualización
  */
 export function getUpdateConfig() {
-  return getEnvironmentConfig().update;
+  return getEnvironmentConfig().updateConfig;
 }
 
 /**
@@ -101,12 +96,10 @@ export function getUpdateConfig() {
  * @returns {Array} - Lista de objetos con información de los entornos
  */
 export function getAvailableEnvironments() {
-  return Object.keys(env.environments).map(key => ({
-    value: key,
-    label: key.charAt(0).toUpperCase() + key.slice(1),
-    api: env.environments[key].api,
-    external: env.environments[key].external,
-    db: env.environments[key].db
+  return Object.keys(config.environments).map(env => ({
+    id: env,
+    name: env.charAt(0).toUpperCase() + env.slice(1),
+    apiValue: ENV_TO_API_MAP[env]
   }));
 }
 
