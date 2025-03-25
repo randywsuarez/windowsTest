@@ -6,6 +6,7 @@ node_modules
 .quasar
 /dist
 /build
+/src/utils/env.js
 
 # Cordova related directories and files
 /src-cordova/node_modules
