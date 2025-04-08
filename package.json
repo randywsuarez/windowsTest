@@ -1,13 +1,13 @@
 {
 	"name": "windowstest",
-	"version": "1.2.1",
+	"version": "1.2.3",
 	"description": "Unit Test",
 	"productName": "Windows Test - Close the Loop",
 	"author": "Randy Suarez <suarez9ster@gmail.com>",
 	"private": true,
 	"scripts": {
 		"dev": "set NODE_OPTIONS=--max-old-space-size=8192 && npx quasar dev -m electron",
-		"build": "set NODE_OPTIONS=--max-old-space-size=8192 && npx quasar build -m electron"
+		"build": "set NODE_OPTIONS=--max-old-space-size=8192 && set CERTIFICATE_PASSWORD=isp@2022 && npx quasar build -m electron"
 	},
 	"dependencies": {
 		"@quasar/cli": "^2.4.1",

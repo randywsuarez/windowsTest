@@ -134,26 +134,6 @@
 		async created() {
 			this.version = env.version
 			this.startInternetCheckInterval()
-			/* this.test = await this.$cmd.executeScriptCode(winDate)
-			console.log(this.test)
-			if (!this.test.result)
-				this.$q
-					.dialog({
-						dark: true,
-						title: 'Error',
-						message: `You must run the program as administrator`,
-						persistent: true,
-					})
-					.onOk(() => {
-						this.cerrarVentana()
-					})
-					.onCancel(() => {
-						this.cerrarVentana()
-						// console.log('Cancel')
-					})
-					.onDismiss(() => {
-						// console.log('I am triggered on both OK and Cancel')
-					}) */
 			let credencialesGuardadas = await this.$rsNeDB('credenciales').findOne({})
 			if (credencialesGuardadas == null) {
 				this.$q.loading.hide()
@@ -165,8 +145,6 @@
 
 		methods: {
 			myFunction() {
-				// Aquí puedes ejecutar tu función
-
 				this.$q
 					.dialog({
 						title: 'Select Server',
@@ -174,7 +152,6 @@
 						options: {
 							type: 'radio',
 							model: this.$q.localStorage.getItem('api'),
-							// inline: true,
 							items: [
 								{ label: 'Server', value: 'server', color: 'primary' },
 								{ label: 'Wireless', value: 'public', color: 'secondary' },
@@ -188,8 +165,6 @@
 					.onOk((data) => {
 						this.$q.localStorage.set('api', data)
 						location.reload()
-
-						//location.reload()
 					})
 					.onCancel(() => {
 						// console.log('>>>> Cancel')
@@ -207,23 +182,18 @@
 				this.hasInternet = navigator.onLine
 
 				if (!this.hasInternet && !this.isDialogVisible) {
-					// Si no hay conexión y el diálogo no está visible, muestra el diálogo
 					this.isDialogVisible = true
 				} else if (this.hasInternet && this.isDialogVisible) {
-					// Si hay conexión y el diálogo está visible, cierra el diálogo
 					this.isDialogVisible = false
 				}
 			},
 			closeDialog() {
-				// Método para cerrar el diálogo manualmente
 				this.isDialogVisible = false
 			},
 			startInternetCheckInterval() {
-				// Inicia el intervalo para verificar la conexión cada 5 segundos (puedes ajustar el valor)
 				this.checkInterval = setInterval(this.checkInternetConnection, 5000)
 			},
 			stopInternetCheckInterval() {
-				// Detiene el intervalo cuando ya no es necesario
 				clearInterval(this.checkInterval)
 			},
 			async comprobarToken() {
@@ -244,30 +214,11 @@
 					})
 					if (Array.isArray(data)) return { status: 'OK' }
 					else return { status: 'FAIL' }
-					/* const options = {
-							method: 'GET',
-							headers: {
-								Authorization: info.AuthToken,
-							},
-						}
-
-						const response = await fetch(`${s.url}/APP/Projects/ObtainProjects`, options)
-						const data = await response.json()
-
-						if (data.length) {
-							//console.log(data)
-							return { estado: 'OK' }
-						} else {
-							//throw new Error('Invalid response')
-						} */
 				} catch (err) {
-					//console.error(err)
 					throw err
 				}
-				return Promise.all(checkTokenPromises)
 			},
 			cerrarVentana() {
-				// Cerrar la ventana en Electron
 				const { remote } = require('electron')
 				const ventanaActual = remote.getCurrentWindow()
 				ventanaActual.close()
@@ -283,13 +234,8 @@
 				const exito = await this.updateService.descargarYDescomprimir(this.v.new)
 
 				if (exito) {
-					// Actualización exitosa, puedes realizar acciones adicionales si es necesario
 					this.$q.loading.hide()
-					//await this.$cmd.change()
 					await this.$cmd.update()
-					//await updateService.program()
-
-					//window.location.reload(true) // Recargar la aplicación después de la actualización
 				} else {
 					this.$q.loading.hide()
 					this.$q.notify({
@@ -310,16 +256,6 @@
 				} else {
 					currentWindow.maximize()
 					this.isMaximized = true
-				}
-			},
-			startDrag(event) {
-				if (event.button === 0) {
-					this.dragging = true
-					this.offsetX = event.clientX
-					this.offsetY = event.clientY
-
-					window.addEventListener('mousemove', this.dragWindow)
-					window.addEventListener('mouseup', this.stopDrag)
 				}
 			},
 			startDrag(event) {
@@ -370,25 +306,25 @@
 					this.updt = actualizacionDisponible.result
 				}
 			},
-			async compareVersions(currentVersion, availableVersion) {
+			compareVersions(currentVersion, availableVersion) {
 				const current = currentVersion.split('.').map(Number)
 				const available = availableVersion.split('.').map(Number)
 
 				for (let i = 0; i < Math.max(current.length, available.length); i++) {
-					const numCurrent = current[i] || 0 // Si no hay más partes, usa 0.
+					const numCurrent = current[i] || 0
 					const numAvailable = available[i] || 0
 
-					if (numAvailable > numCurrent) return true // La versión disponible es mayor.
-					if (numAvailable < numCurrent) return false // La versión disponible es menor.
+					if (numAvailable > numCurrent) return true
+					if (numAvailable < numCurrent) return false
 				}
-				return false // Son iguales.
+				return false
 			},
 		},
 		async mounted() {
 			if (!this.$q.localStorage.getItem('api')) this.$q.localStorage.set('api', 'server')
 			document.addEventListener('keydown', this.handleKeyDown)
 			let d = await this.$db.collection('updateSystem').all_data().get()
-			if (d[0].activated && compareVersions(env.version, d[0].Version)) await this.updSystem()
+			if (d[0].activated && this.compareVersions(env.version, d[0].Version)) await this.updSystem()
 		},
 		beforeDestroy() {
 			document.removeEventListener('keydown', this.handleKeyDown)

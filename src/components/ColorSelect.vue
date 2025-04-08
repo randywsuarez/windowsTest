@@ -96,7 +96,7 @@
 					}
 
 					let colors = await this.$db
-						.collection(`${this.brand == 'HP' ? 'HPColor' : 'GenericColor'}`)
+						.collection(`${this.brand == 'HP' ? 'GenericColor' : 'GenericColor'}`)
 						.admin()
 						.get()
 					this.colorOptions = colors.map((color) => ({

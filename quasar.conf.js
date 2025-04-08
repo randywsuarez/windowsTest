@@ -180,23 +180,56 @@ module.exports = function (/* ctx */) {
 
 		// Full list of options: https://v1.quasar.dev/quasar-cli/developing-electron-apps/configuring-electron
 		electron: {
-			bundler: 'packager', // 'packager' or 'builder'
+			bundler: 'packager',
 
 			packager: {
-				// https://github.com/electron-userland/electron-packager/blob/master/docs/api.md#options
-				// OS X / Mac App Store
-				// appBundleId: '',
-				// appCategoryType: '',
-				// osxSign: '',
-				// protocol: 'myapp://path',
-				// Windows only
-				// win32metadata: { ... }
+				win32metadata: {
+					CompanyName: 'ISPT Services',
+					FileDescription: 'Windows Test Application',
+					OriginalFilename: 'WindowsTest.exe',
+					ProductName: 'Windows Test',
+					InternalName: 'WindowsTest',
+					LegalCopyright: '© 2024 ISPT Services. All rights reserved.',
+					LegalTrademarks: 'ISPT Services™',
+					ProductVersion: '1.2.2',
+					FileVersion: '1.2.2',
+					Comments: 'Windows Test Application for ISPT Services',
+					CompanyShortName: 'ISPT',
+					ProductShortName: 'WindowsTest',
+					'requested-execution-level': 'requireAdministrator'  // Add this line here
+				},
+				win32: {
+					certificateFile: './cert.pfx',
+					certificatePassword: process.env.CERTIFICATE_PASSWORD,
+					icon: './src-electron/icons/icon.ico',
+					asar: true,
+					prune: true,
+					ignore: [
+						'node_modules/.cache',
+						'node_modules/.bin',
+						'node_modules/.package-lock.json',
+						'node_modules/.yarn-integrity',
+						'node_modules/.yarn-metadata.json',
+					]
+				},
+				asar: true,
+				prune: true,
+				ignore: [
+					'node_modules/.cache',
+					'node_modules/.bin',
+					'node_modules/.package-lock.json',
+					'node_modules/.yarn-integrity',
+					'node_modules/.yarn-metadata.json',
+				],
 			},
 
 			builder: {
 				// https://www.electron.build/configuration/configuration
-
 				appId: 'windowstest',
+				// Add win configuration for admin rights
+				win: {
+					requestedExecutionLevel: 'requireAdministrator'
+				}
 			},
 
 			// More info: https://v1.quasar.dev/quasar-cli/developing-electron-apps/node-integration

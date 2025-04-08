@@ -163,31 +163,54 @@ const CmdHelper = {
 
 	executeScriptCode: async (code) => {
 		return new Promise(async (resolve) => {
-			let ps = new PowerShell([[code]])
+			// Envolver el código en un script que solicite elevación de privilegios
+			const elevatedCode = `
+# Verificar si el script se está ejecutando como administrador
+$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if (-not $isAdmin) {
+    # Si no es administrador, relanzar el script con privilegios elevados
+    $tempFile = [System.IO.Path]::GetTempFileName() + '.ps1'
+    $code | Out-File -FilePath $tempFile -Encoding UTF8
+    $arguments = '-NoProfile -ExecutionPolicy Bypass -File "' + $tempFile + '"'
+    Start-Process powershell -Verb RunAs -ArgumentList $arguments
+    Remove-Item $tempFile -Force
+    exit
+}
+
+# Si ya es administrador, ejecutar el código original
+${code}
+`
+			let ps = new PowerShell([elevatedCode])
 			let outputData = ''
-			//console.log(code)
+			let errorData = ''
 
 			ps.on('output', (data) => {
 				outputData += data
 			})
 
 			ps.on('error-output', (data) => {
-				console.error(data)
-				resolve(false)
+				errorData += data
+				console.error('PowerShell Error Output:', data)
 			})
 
 			ps.on('end', (code) => {
 				try {
+					if (errorData) {
+						console.error('PowerShell execution completed with errors:', errorData)
+					}
 					const result = outputData.includes('{') ? JSON.parse(outputData) : outputData
 					resolve(result)
 				} catch (parseError) {
-					console.error('Error parsing output as JSON:', parseError.message)
+					console.error('Error parsing PowerShell output as JSON:', parseError.message)
+					console.error('Raw output:', outputData)
 					resolve(false)
 				}
 			})
 
 			ps.on('error', (err) => {
-				console.error(err)
+				console.error('PowerShell execution error:', err)
+				console.error('Error details:', err.message)
 				resolve(false)
 			})
 		})

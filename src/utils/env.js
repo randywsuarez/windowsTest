@@ -22,7 +22,7 @@ export default {
 		dev: 'http://192.168.0.7:4400/api',
 		local: 'http://localhost:4400/api',
 	},
-	version: '1.2.1',
+	version: '1.2.3',
 	token: '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',
 	github: {
 		user: 'randywsuarez',
