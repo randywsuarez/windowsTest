@@ -1027,7 +1027,7 @@
 				if (si.length)
 					await this.$db
 						.doc(`systemInformation/${si[0]._id}`)
-						.update({ Serial: this.device.Serial, ...this.infoSystem, ...this.si })
+						.update({ Serial: this.device.Serial, ...this.infoSystem, ...this.si, Bios: this.bios })
 				else
 					await this.$db
 						.doc('systemInformation')

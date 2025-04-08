@@ -567,34 +567,23 @@ if (Test-Path $archivoDestino) {
 	},
 	biosData: async () => {
 		return new Promise(async (resolve, reject) => {
-			// Construir la ruta hacia la herramienta y el archivo de configuración
 			const toolsPath = path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'Tools')
 			const myApp = path.join(toolsPath, 'Bios.exe')
 			const configFile = path.join(toolsPath, 'config.txt')
-
-			// Argumento para el comando Bios.exe, incluyendo la ruta completa al archivo de configuración
 			const argument = `/GetConfig:"${configFile}"`
-
-			// Comando completo para PowerShell
 			const psCommand = `& '${myApp}' ${argument}`
-
-			// Crear una nueva instancia de PowerShell
 			let ps = new PowerShell(psCommand)
 
-			// Escuchar los outputs de la consola
 			ps.on('output', (data) => {
 				//console.log(data)
 			})
 
-			// Escuchar si hay errores
 			ps.on('error', (err) => {
 				console.error('Error en PowerShell:', err)
 			})
 
-			// Escuchar cuando el proceso termina
 			ps.on('end', async (code) => {
 				try {
-					// Esperar a que se cree el archivo antes de leerlo
 					let checkInterval = setInterval(() => {
 						if (fs.existsSync(configFile)) {
 							clearInterval(checkInterval)
@@ -605,12 +594,15 @@ if (Test-Path $archivoDestino) {
 								}
 								let re = await checkItems(items, data)
 								let comp = await checkComponentsPresence(data)
-								re = { ...re, components: comp }
+								re = { 
+									...re, 
+									components: comp,
+									txt: data // Adding the raw text content
+								}
 								resolve(re)
-								//console.log('Contenido de config.txt:', data);
 							})
 						}
-					}, 1000) // Revisa cada segundo si el archivo ya está disponible
+					}, 1000)
 				} catch (parseError) {
 					console.error('Error parsing output as JSON:', parseError.message)
 					resolve(false)
