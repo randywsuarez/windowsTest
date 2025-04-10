@@ -1210,7 +1210,7 @@
 				this.myDb.DateStart = lastdate.start
 
 				return `
-		       CTL Windows Test - ${this.$env.version} - ${this.select.TenantName}
+		       CTL Windows ${this.audit ? 'Audit': 'Test'} - ${this.$env.version} - ${this.select.TenantName} 
 		       Operator ID: ${this.select.operator}
 		       Operator Name:${this.select.user}
 		       Start Date: ${this.test.Date}
@@ -1619,7 +1619,7 @@
 					HDD: this.intDev.HDD,
 				}
 				console.log('Before Create: ', this.componentes)
-
+				if(!this.audit){					
 				await this.$db.funcAdmin('modules/bypass/createModel', this.componentes).then(async (v) => {
 					this.myDb['CODE'] = v.Code
 					this.myDb.Description = v.Description
@@ -1627,12 +1627,15 @@
 					this.test.color = v.Color
 					this.myDb['COLOR'] = v.Color
 				})
+				}
 				this.txt = await this.report()
-				this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
+				this.file = await this.$uploadTextFile(this.device.Serial, this.txt)				
 				if (this.file) await this.saveFile(this.file)
-				if (this.image && this.type != 'desktop') await this.saveFile(this.image)
+				if (!this.audit){
+				if (this.image && this.type != 'desktop') await this.saveFile(this.image)}
 
 				this.info = { ...this.info, report: this.txt }
+				if (!this.audit)
 				await this.rsSave()
 				await this.saveMng()
 				this.activate.scan = await this.passImaging()
@@ -1820,165 +1823,6 @@
 						})
 				} else {
 					console.log('La API de MediaDevices no es compatible con tu navegador.')
-				}
-			},
-			async testWindows() {
-				try {
-					console.log('--- Starting Windows Activation Test ---')
-
-					// Iniciando el proceso con loading
-					this.$q.loading.show({
-						message:
-							'Obtaining <b>DPK</b> status.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
-					})
-					this.activate.windows = true
-
-					console.log('Initial state: ', {
-						win: this.win,
-						infoTest: this.infoTest,
-					})
-
-					this.$q.loading.hide()
-					if (!this.win.hasOwnProperty('keyWindows') || this.win.keyWindows == 'Key not found') {
-						this.$db.funcAdmin('modules/ispt/issueReport', {
-							title: 'No DPK',
-							message: `DPK for ${this.device.Serial} is not available.`,
-						})
-						this.$q
-							.dialog({
-								title: 'Alert<em>!</em>',
-								message: `<em>Error: </em> <span class="text-red">the device needs DPK.</span> <strong> Talk to your supervisor.</strong>`,
-								html: true,
-								persistent: true,
-							})
-							.onOk(async () => {
-								await this.testWindows()
-							})
-					}
-
-					// Verificar si hay DPK
-					if (this.infoTest.DPK) {
-						console.log('DPK Found: ', this.infoTest.DPK)
-
-						let nDPK = this.win.hasOwnProperty('fail') ? this.win.fail : await this.verifyDPK()
-						console.log('DPK Verification Result: ', nDPK)
-
-						// Manejo de errores
-						if (nDPK.error) {
-							console.error('DPK Error: ', nDPK.errorMessage)
-							setTimeout(() => {
-								this.$q.notify({
-									type: 'negative',
-									message: nDPK.errorMessage,
-								})
-							}, 3000)
-							return
-						}
-
-						// Si necesita una nueva clave de producto
-						if (nDPK.needsNewProductKey) {
-							console.log('DPK requires replacement product key.')
-
-							this.$q.loading.show({
-								message:
-									'Deactivating the active <b>DPK</b><br/><span class="text-orange text-weight-bold">Hang on...</span>',
-							})
-							await this.$cmd.executeScriptCode(dWin)
-
-							let ndpk = aWin
-								.replace('$dpk', nDPK.replacementProductKey)
-								.replace('$mode', this.infoTest.DPKMode)
-							console.log('New DPK Command: ', ndpk)
-
-							this.$q.loading.hide()
-							this.$q.loading.show({
-								message:
-									'Activating <b>Windows</b><br/><span class="text-orange text-weight-bold">Hang on...</span>',
-							})
-
-							let iny = await this.$cmd.executeScriptCode(ndpk)
-							console.log('Activation Result: ', iny)
-
-							this.$q.loading.hide()
-
-							// Si hay error al activar
-							if (iny.error) {
-								console.error('Activation Error: ', iny.message)
-
-								this.$q
-									.dialog({
-										title: 'Alert<em>!</em>',
-										message: `<em>The following DPK </em> <span class="text-red">${nDPK.replacementProductKey}</span> <strong> is invalid</strong>`,
-										html: true,
-									})
-									.onOk(async () => {
-										this.$q.loading.show()
-										let retryKey =
-											this.win.keyWindows != 'No license found'
-												? this.win.keyWindows
-												: localStorage.getItem('dpk')
-
-										let retryNdpk = aWin
-											.replace('$dpk', retryKey)
-											.replace('$mode', this.infoTest.DPKMode)
-
-										console.log('Retry Activation Command: ', retryNdpk)
-
-										await this.$cmd.executeScriptCode(retryNdpk)
-										this.$q.loading.hide()
-
-										this.testWindows()
-										this.win.actived = true
-
-										if (this.infoTest.DPKRetry) {
-											this.win.fail = await this.failDPK()
-											console.log('Failed DPK Retry: ', this.win.fail)
-										}
-									})
-							} else {
-								console.log('Activation Successful: ', iny.message)
-								this.win.actived = true
-								this.win.oldKeyWin = this.win.keyWindows
-								this.win.keyWindows = iny.productKeyUsed
-								this.win.licenseDetails = iny.message
-								console.log(
-									'[windows_test] this.win actualizado tras activación exitosa (nueva clave):',
-									JSON.stringify(this.win),
-								)
-							}
-						}
-					}
-
-					this.win.actived = true
-
-					console.log('Final Activation State: ', this.win)
-
-					// Ejecutar configuraciones finales
-					await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`)
-					await this.espera('actionWindows')
-
-					// Actualizar información
-					this.info = { ...this.info, ...this.win }
-					this.activate.windows = false
-
-					this.test['windows'] =
-						this.action == 'PASS' && this.win.activate
-							? 'Windows Activation Test PASS'
-							: 'Windows Activation Test FAIL'
-					this.test['OS'] = this.win.edition
-					this.myDb.OS = this.win.edition
-					this.test['keyWindows'] = this.win.keyWindows
-					this.test['oldKeyWin'] = this.win.oldKeyWin
-
-					console.log('Test Results: ', this.test)
-					console.log('--- Windows Activation Test Completed ---')
-				} catch (error) {
-					console.error('Unexpected Error in testWindows: ', error)
-					this.$q.notify({
-						type: 'negative',
-						message: 'An unexpected error occurred during Windows activation.',
-					})
-					this.$q.loading.hide()
 				}
 			},
 			async testDisk() {
@@ -2499,438 +2343,6 @@
 					})
 				}
 			},
-			async windows_test() {
-				this.win.oldKeyWin = this.win.keyWindows
-				this.activate.windows = true
-				console.log('[windows_test] --- Iniciando ---')
-				this.$q.loading.show({
-					message: 'Starting Windows activation verification...',
-				})
-				let activationSuccessful = false
-				let retryCount = 0 // Contador de reintentos de activación
-				const MAX_RETRIES = 3 // Máximo número de reintentos
-
-				try {
-					// 1. Verificación inicial de DPK existente
-					console.log('[windows_test] Verificando DPK local inicial:', JSON.stringify(this.win))
-					if (
-						!this.win ||
-						!this.win.hasOwnProperty('keyWindows') ||
-						this.win.keyWindows === 'Key not found' ||
-						this.win.keyWindows === 'Error'
-					) {
-						console.error('[windows_test] Error: No se encontró DPK inicial válido en this.win.')
-						this.$db.funcAdmin('modules/ispt/issueReport', {
-							title: 'No DPK Found Locally',
-							message: `No se encontró DPK inicial en el objeto 'win' para ${this.device.Serial}.`,
-						})
-						this.$q.loading.hide()
-						await this.$q.dialog({
-							title: 'Alerta<em>!</em>',
-							message: `<em>Error: </em> <span class="text-red">Could not read the product key from the system.</span> <strong> Please contact your supervisor.</strong> You may need to restart the test.`,
-							html: true,
-							persistent: true,
-						})
-						this.activate.windows = false
-						console.log('[windows_test] --- Finalizando temprano por DPK local inválido ---')
-						return
-					}
-
-					// 2. Determinar forceInject basado en this.project.id
-					const projectIdUpper = (this.project.id || '').toUpperCase()
-					const forceInject = projectIdUpper.includes('REVENUE')
-					console.log(
-						'[windows_test] forceInject determinado:',
-						forceInject,
-						'basado en project.id:',
-						this.project.id,
-					)
-
-					// 3. Llamar a verifyDPK con el forceInject calculado
-					this.$q.loading.show({ message: 'Verifying DPK with the system...' })
-					console.log(
-						`[windows_test] Llamando a verifyDPK para Serial: ${this.device.Serial}, Key: ${this.win.keyWindows}, Edition: ${this.win.edition}, Force: ${forceInject}`,
-					)
-					const dkpVerificationResult = await this.verifyDPK(forceInject)
-					console.log(
-						'[windows_test] Resultado de verifyDPK:',
-						JSON.stringify(dkpVerificationResult),
-					)
-
-					// 4. Manejar errores de verifyDPK
-					if (dkpVerificationResult.error) {
-						console.error('[windows_test] Error de verifyDPK:', dkpVerificationResult.errorMessage)
-						if (dkpVerificationResult.errorMessage === 'No available replacement keys') {
-							console.log('[windows_test] Reportando error "No available replacement keys"...')
-							this.$db.funcAdmin('modules/ispt/issueReport', {
-								title: dkpVerificationResult.errorMessage,
-								message: `No hay DPKs de reemplazo disponibles para ${this.win.edition} en el sistema. Serial: ${this.device.Serial}`,
-							})
-						}
-						this.$q.loading.hide()
-						await this.$q.dialog({
-							title: 'Alert<em>!</em>',
-							message: `<em>Error during DPK verification: </em> <span class="text-red">${dkpVerificationResult.errorMessage}.</span> <strong> Please contact your supervisor.</strong>`,
-							html: true,
-							persistent: true,
-						})
-						this.activate.windows = false
-						console.log('[windows_test] --- Finalizando temprano por error en verifyDPK ---')
-						return
-					}
-
-					// 5. Lógica principal: ¿Necesita nueva clave?
-					if (dkpVerificationResult.needsNewProductKey) {
-						// --- Escenario: SÍ necesita nueva clave ---
-						console.log(
-							'[windows_test] Decisión: Se necesita nueva DPK. Iniciando proceso de reemplazo.',
-						)
-						const oldKey = this.win.keyWindows
-						console.log('[windows_test] Clave antigua guardada:', oldKey)
-
-						// 5a. Desactivar clave actual
-						this.$q.loading.show({ message: 'Deactivating current Windows key...' })
-						console.log('[windows_test] Ejecutando dWin (desactivación)...')
-						const deactivateResult = await this.$cmd.executeScriptCode(dWin)
-						console.log(
-							'[windows_test] Resultado de desactivación (dWin):',
-							JSON.stringify(deactivateResult),
-						)
-
-						// 5b. Preparar y ejecutar activación con nueva clave
-						const newKey = dkpVerificationResult.replacementProductKey
-						const activationMode = this.infoTest.DPKMode || 'offline'
-						console.log(
-							`[windows_test] Preparando activación con nueva clave: ${newKey}, Modo: ${activationMode}`,
-						)
-						const activationCommand = aWin
-							.replace('$dpk', newKey)
-							.replace('$mode', activationMode)
-						this.$q.loading.show({
-							message: `Activating Windows with ${
-								activationMode === 'online' ? 'new DPK' : 'DPK (offline mode)'
-							}...`,
-						})
-						console.log(activationCommand)
-						const activationResult = await this.$cmd.executeScriptCode(activationCommand)
-						console.log(
-							`[windows_test] Resultado de activación ${activationMode} (aWin - nueva clave):`,
-							JSON.stringify(activationResult),
-						)
-							// Actualizar this.win con la info post-activación
-							this.win.oldKeyWin = oldKey
-							this.win.keyWindows = activationResult.productKeyUsed
-							this.win.licenseDetails = activationResult.message
-
-						// 5c. Verificar resultado y actualizar estado
-						if (activationResult && activationResult.activated === 1 && !activationResult.error) {
-							console.log('[windows_test] Activación con nueva clave exitosa.')
-							activationSuccessful = true
-							this.win.activated = activationSuccessful
-							this.$q.notify({ type: 'positive', message: 'Activation with new key successful.' })
-
-							// Informar al backend - Solo si la activación fue exitosa
-							console.log('[windows_test] Llamando a statusDPK...')
-							const statusResult = await this.statusDPK()
-							console.log('[windows_test] Resultado de statusDPK:', JSON.stringify(statusResult))
-
-							console.log(
-								'[windows_test] this.win actualizado tras activación exitosa (nueva clave):',
-								JSON.stringify(this.win),
-							)
-						} else {
-							console.error(
-								'[windows_test] Falló la activación con la nueva clave:',
-								(activationResult && activationResult.message) || 'Resultado inesperado.',
-							)
-							activationSuccessful = false
-							this.$q.loading.hide()
-
-							await this.$q.dialog({
-								title: 'Alert<em>!</em>',
-								message: `<em>Failed to activate with new DPK </em> <span class="text-red">${newKey}</span>. Reason: ${
-									(activationResult && activationResult.message) || 'Unknown'
-								}. <strong>Please contact your supervisor.</strong>`,
-								html: true,
-								persistent: true,
-							})
-							console.log(
-								'[windows_test] this.win NO se actualiza por fallo en activación (nueva clave).',
-							)
-						}
-					} else {
-						// --- Escenario: NO necesita nueva clave ---
-						console.log(
-							'[windows_test] Decisión: No se necesita nueva DPK. Intentando activar con la clave actual.',
-						)
-						const currentKey = this.win.keyWindows
-						const activationMode = this.infoTest.DPKMode || 'offline'
-						console.log(
-							`[windows_test] Preparando activación con clave actual: ${currentKey}, Modo: ${activationMode}`,
-						)
-						const activationCommand = aWin
-							.replace('$dpk', currentKey)
-							.replace('$mode', activationMode)
-						console.log(activationCommand)
-						this.$q.loading.show({
-							message: `Attempting to activate Windows with ${
-								activationMode === 'online' ? 'existing key' : 'key (offline mode)'
-							}...`,
-						})
-
-						const activationResult = await this.$cmd.executeScriptCode(activationCommand)
-						console.log(
-							`[windows_test] Resultado de activación ${activationMode} (aWin - clave actual):`,
-							JSON.stringify(activationResult),
-						)
-
-						if (activationResult && activationResult.activated === 1 && !activationResult.error) {
-							console.log('[windows_test] Activación con clave actual exitosa.')
-							activationSuccessful = true
-							this.$q.notify({
-								type: 'positive',
-								message: 'Activación with existing key successful.',
-							})
-							// Actualizar this.win por si el mensaje cambió
-							this.win.keyWindows = activationResult.productKeyUsed
-							this.win.licenseDetails = activationResult.message
-							this.win.oldKeyWin = null // No hubo cambio de clave
-							console.log(
-								'[windows_test] this.win actualizado tras activación exitosa (clave actual):',
-								JSON.stringify(this.win),
-							)
-						} else {
-							console.warn(
-								'[windows_test] Activación con clave actual no resultó en "activado online" o hubo un error/offline:',
-								(activationResult && activationResult.message) || 'Resultado inesperado.',
-							)
-							activationSuccessful = !(activationResult && activationResult.error) // Éxito si no hubo error explícito (incluye offline)
-							this.win.keyWindows =
-								(activationResult && activationResult.productKeyUsed) || currentKey // Mantener la clave si no se devolvió
-							this.win.licenseDetails =
-								(activationResult && activationResult.message) ||
-								'Estado desconocido tras intento con clave actual.'
-							this.win.oldKeyWin = null
-							if (activationResult && activationResult.error) {
-								this.$q.notify({
-									type: 'negative',
-									message: `Error durante activación con clave actual: ${activationResult.message}`,
-								})
-							} else {
-								// Incluye el caso offline
-								this.$q.notify({
-									type: 'info',
-									message: `Estado de activación reportado: ${
-										(activationResult && activationResult.message) || 'Sin detalles'
-									}`,
-								})
-							}
-							console.log(
-								'[windows_test] this.win actualizado tras intento con clave actual (sin éxito online):',
-								JSON.stringify(this.win),
-							)
-
-							// Si la activación falla, solicitar una nueva DPK a verifyDPK
-							console.log(
-								'[windows_test] Activación fallida con clave actual. Solicitando nueva DPK a verifyDPK...',
-							)
-							const newDkpVerificationResult = await this.verifyDPK(true) // Forzar la solicitud de una nueva DPK
-							console.log(
-								'[windows_test] Resultado de verifyDPK (nueva solicitud):',
-								JSON.stringify(newDkpVerificationResult),
-							)
-
-							if (newDkpVerificationResult.error) {
-								console.error(
-									'[windows_test] Error al solicitar nueva DPK:',
-									newDkpVerificationResult.errorMessage,
-								)
-								this.$q.loading.hide()
-								await this.$q.dialog({
-									title: 'Alert<em>!</em>',
-									message: `<em>Error requesting new DPK: </em> <span class="text-red">${newDkpVerificationResult.errorMessage}.</span> <strong> Please contact your supervisor.</strong>`,
-									html: true,
-									persistent: true,
-								})
-								this.activate.windows = false
-								console.log(
-									'[windows_test] --- Finalizando temprano por error en verifyDPK (nueva solicitud) ---',
-								)
-								return
-							}
-
-							if (newDkpVerificationResult.needsNewProductKey) {
-								console.log(
-									'[windows_test] Nueva DPK disponible. Iniciando proceso de reemplazo...',
-								)
-								const oldKey = this.win.keyWindows
-								console.log('[windows_test] Clave antigua guardada:', oldKey)
-
-								// Desactivar clave actual
-								this.$q.loading.show({ message: 'Deactivating current Windows key...' })
-								console.log('[windows_test] Ejecutando dWin (desactivación)...')
-								const deactivateResult = await this.$cmd.executeScriptCode(dWin)
-								console.log(
-									'[windows_test] Resultado de desactivación (dWin):',
-									JSON.stringify(deactivateResult),
-								)
-
-								// Preparar y ejecutar activación con nueva clave
-								const newKey = newDkpVerificationResult.replacementProductKey
-								const activationMode = this.infoTest.DPKMode || 'offline'
-								console.log(
-									`[windows_test] Preparando activación con nueva clave: ${newKey}, Modo: ${activationMode}`,
-								)
-								const activationCommand = aWin
-									.replace('$dpk', newKey)
-									.replace('$mode', activationMode)
-								this.$q.loading.show({
-									message: `Activating Windows with ${
-										activationMode === 'online' ? 'new DPK' : 'DPK (offline mode)'
-									}...`,
-								})
-
-								// Bucle de reintentos de activación
-								while (retryCount < MAX_RETRIES) {
-									retryCount++
-									console.log(
-										`[windows_test] Intento de activación ${retryCount} de ${MAX_RETRIES}...`,
-									)
-									const activationResult = await this.$cmd.executeScriptCode(activationCommand)
-									console.log(
-										`[windows_test] Resultado de activación ${activationMode} (aWin - nueva clave):`,
-										JSON.stringify(activationResult),
-									)
-
-									if (
-										activationResult &&
-										activationResult.activated === 1 &&
-										!activationResult.error
-									) {
-										console.log('[windows_test] Activación con nueva clave exitosa.')
-										activationSuccessful = true
-										this.$q.notify({
-											type: 'positive',
-											message: 'Activation with new key successful.',
-										})
-
-										// Informar al backend - Solo si la activación fue exitosa
-										console.log('[windows_test] Llamando a statusDPK...')
-										const statusResult = await this.statusDPK()
-										console.log(
-											'[windows_test] Resultado de statusDPK:',
-											JSON.stringify(statusResult),
-										)
-
-										// Actualizar this.win con la info post-activación
-										this.win.oldKeyWin = oldKey
-										this.win.keyWindows = activationResult.productKeyUsed
-										this.win.licenseDetails = activationResult.message
-										console.log(
-											'[windows_test] this.win actualizado tras activación exitosa (nueva clave):',
-											JSON.stringify(this.win),
-										)
-										break // Salir del bucle si la activación es exitosa
-									} else {
-										console.error(
-											`[windows_test] Falló la activación con la nueva clave (Intento ${retryCount}):`,
-											(activationResult && activationResult.message) || 'Resultado inesperado.',
-										)
-										if (retryCount < MAX_RETRIES) {
-											this.$q.notify({
-												type: 'warning',
-												message: `Intento ${retryCount} fallido. Reintentando...`,
-											})
-											await new Promise((resolve) => setTimeout(resolve, 5000)) // Esperar 5 segundos antes del siguiente intento
-										} else {
-											this.$q.loading.hide()
-											await this.$q.dialog({
-												title: 'Alert<em>!</em>',
-												message: `<em>Failed to activate with new DPK </em> <span class="text-red">${newKey}</span> after ${MAX_RETRIES} attempts. Reason: ${
-													(activationResult && activationResult.message) || 'Unknown'
-												}. <strong>Please contact your supervisor.</strong>`,
-												html: true,
-												persistent: true,
-											})
-											console.log(
-												'[windows_test] this.win NO se actualiza por fallo en activación (nueva clave) después de todos los reintentos.',
-											)
-										}
-									}
-								}
-							} else {
-								console.error(
-									'[windows_test] No se pudo obtener una nueva DPK después del fallo de activación.',
-								)
-								this.$q.loading.hide()
-								await this.$q.dialog({
-									title: 'Alert<em>!</em>',
-									message: `<em>Could not obtain a new DPK after activation failure.</em> <strong> Please contact your supervisor.</strong>`,
-									html: true,
-									persistent: true,
-								})
-							}
-						}
-					}
-
-					// 6. Pasos finales comunes
-					this.win.actived = true // Marca que se intentó el proceso y requiere confirmación visual
-					console.log('[windows_test] Marcado this.win.actived = true')
-
-					console.log(
-						'[windows_test] Abriendo configuración de activación (ms-settings:activation)...',
-					)
-					this.$q.loading.hide()
-					await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`)
-
-					console.log('[windows_test] Esperando confirmación del usuario (PASS/FAIL) en la UI...')
-					await this.espera('actionWindows') // this.action se setea aquí (PASS o FAIL)
-					console.log('[windows_test] Usuario seleccionó:', this.action)
-
-					// 7. Actualizar estado final basado en el resultado y la acción del usuario
-					console.log(
-						'[windows_test] Actualizando estado final en this.info, this.test, this.myDb...',
-					)
-					this.info = { ...this.info, ...this.win }
-					const finalTestStatus =
-						this.action === 'PASS' && activationSuccessful
-							? 'Windows Activation Test PASS'
-							: `Windows Activation Test FAIL (Acción Usuario: ${this.action}, Éxito Script Online: ${activationSuccessful})`
-					this.test['windows'] = finalTestStatus
-					this.test['OS'] = this.win.edition
-					this.test['keyWindows'] = this.win.keyWindows
-					this.test['oldKeyWin'] = this.win.oldKeyWin
-					this.myDb.OS = this.win.edition
-
-					console.log('[windows_test] Resultados finales:', {
-						testWindows: this.test['windows'],
-						os: this.test['OS'],
-						key: this.test['keyWindows'],
-						oldKey: this.test['oldKeyWin'],
-					})
-				} catch (error) {
-					console.error('[windows_test] --- Error Inesperado Capturado ---:', error)
-					this.$q.notify({
-						type: 'negative',
-						message: `Ocurrió un error inesperado durante el proceso de activación: ${error.message}`,
-					})
-					this.test['windows'] = 'Windows Activation Test FAIL (Error Inesperado)'
-					this.win.actived = false
-				} finally {
-					this.activate.windows = false // Ocultar la tarjeta de UI
-					this.$q.loading.hide()
-					console.log('[windows_test] --- Fin del método ---')
-				}
-			},
-		},
-		async beforeCreate() {
-			try {
-				this.user = await this.$rsNeDB('credenciales').findOne({})
-				this.si = this.$si()
-			} catch (error) {
-				console.error('Error during beforeCreate:', error)
-			}
-		},
 		clearLocalStorage() {
 			localStorage.removeItem('infoSystem')
 			localStorage.removeItem('iTest')
@@ -2940,6 +2352,150 @@
 			localStorage.removeItem('driver')
 			localStorage.removeItem('winDPK')
 			return true
+		},
+			async windows_test() {
+    this.win.oldKeyWin = this.win.keyWindows
+    this.activate.windows = true
+    console.log('[CASE-0] Iniciando proceso de verificación de Windows')
+    this.$q.loading.show({
+        message: 'Starting Windows activation verification...',
+    })
+
+    try {
+        // CASE 1: Verificación inicial de DPK existente
+        console.log('[CASE-1] Verificando DPK local inicial:', JSON.stringify(this.win))
+        if (!this.win || !this.win.hasOwnProperty('keyWindows') || 
+            this.win.keyWindows === 'Key not found' || 
+            this.win.keyWindows === 'Error') {
+            console.error('[CASE-1-ERROR] DPK inicial no válido o no encontrado')
+            await this.handleDPKError('No DPK Found Locally')
+            return
+        }
+
+        // CASE 2: Verificación de activación existente
+        console.log('[CASE-2] Verificando activación existente')
+        if (this.win.activate === 1 || this.win.licenseStatus === 1) {
+            console.log('[CASE-2-SUCCESS] Windows ya está activado correctamente')
+            this.win.activated = true
+            this.$q.notify({ 
+                type: 'positive', 
+                message: 'Windows activation verified successfully.' 
+            })
+            //this.activate.windows = false
+            this.$q.loading.hide()
+            
+            // Add these lines to set the test variables
+            this.test.keyWindows = this.win.keyWindows
+            this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+            this.test.windows = 'Windows Activation Test PASS'
+            
+            return
+        }
+
+        // CASE 3: Determinación de forceInject
+        const projectIdUpper = (this.project.id || '').toUpperCase()
+        const forceInject = projectIdUpper.includes('REVENUE')
+        console.log('[CASE-3] Determinación forceInject:', { projectId: projectIdUpper, forceInject })
+
+        // CASE 4: Verificación DPK con sistema
+        console.log('[CASE-4] Iniciando verificación DPK con sistema')
+        this.$q.loading.show({ message: 'Verifying DPK with the system...' })
+        const dkpVerificationResult = await this.verifyDPK(forceInject)
+        console.log('[CASE-4] Resultado verificación:', JSON.stringify(dkpVerificationResult))
+
+        if (dkpVerificationResult.error) {
+            console.error('[CASE-4-ERROR] Error en verificación DPK:', dkpVerificationResult.errorMessage)
+            await this.handleDPKError(dkpVerificationResult.errorMessage)
+            return
+        }
+
+        // CASE 5: Proceso de activación
+        if (dkpVerificationResult.needsNewProductKey) {
+            console.log('[CASE-5] Iniciando reemplazo de clave')
+            await this.handleKeyReplacement(dkpVerificationResult.replacementProductKey)
+        }
+
+        // CASE 6: Verificación final
+        console.log('[CASE-6] Realizando verificación final de activación')
+        
+        // Verificar el estado de activación nuevamente después de posibles cambios
+        const currentWinStatus = await this.$cmd.executeScriptCode(sWin)
+        console.log('[CASE-6-CHECK] Estado actual de Windows:', JSON.stringify(currentWinStatus))
+        
+        // Actualizar this.win con los datos más recientes
+        if (currentWinStatus) {
+            this.win = {...this.win, ...currentWinStatus}
+        }
+        
+        // Verificar si Windows está activado basado en los datos actualizados o en la licenseDetails
+        if (this.win.activate === 1 || this.win.licenseStatus === 1 || 
+            (this.win.licenseDetails && this.win.licenseDetails.includes("successfully activated"))) {
+            console.log('[CASE-6-SUCCESS] Activación completada exitosamente')
+            this.win.activated = true
+            this.$q.notify({ 
+                type: 'positive', 
+                message: 'Windows activation completed successfully.' 
+            })
+            
+            // Add these lines to set the test variables when activation is successful
+            this.test.keyWindows = this.win.keyWindows
+            this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+            this.test.windows = 'Windows Activation Test PASS'
+            
+        } else {
+            console.log('[CASE-6-FAIL] La verificación final indica que Windows no está activado')
+            // Verificación adicional basada en el texto de licenseDetails
+            if (this.win.licenseDetails && 
+                (this.win.licenseDetails.toLowerCase().includes("successfully activated") || 
+                 this.win.licenseDetails.toLowerCase().includes("activation successful"))) {
+                console.log('[CASE-6-RECOVERY] Detectada activación en licenseDetails')
+                this.win.activated = true
+                this.$q.notify({ 
+                    type: 'positive', 
+                    message: 'Windows activation detected in license details.' 
+                })
+                
+                // Add these lines to set the test variables when activation is detected in license details
+                this.test.keyWindows = this.win.keyWindows
+                this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+                this.test.windows = 'Windows Activation Test PASS'
+                
+            } else {
+                // Add these lines to set the test variables when activation fails
+                this.test.keyWindows = this.win.keyWindows
+                this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+                this.test.windows = 'Windows Activation Test FAIL'
+            }
+        }
+
+    } catch (error) {
+        console.error('[CASE-ERROR] Error inesperado en windows_test:', error)
+        this.$q.notify({
+            type: 'negative',
+            message: 'An unexpected error occurred during Windows activation.'
+        })
+        
+        // Add these lines to set the test variables when there's an error
+        this.test.keyWindows = this.win ? this.win.keyWindows : 'Error'
+        this.test.oldKeyWin = this.win && this.win.oldKeyWin ? this.win.oldKeyWin : 'N/A'
+        this.test.windows = 'Windows Activation Test FAIL'
+        
+    } finally {
+		this.test.OS = this.win.edition
+        console.log('[CASE-END] Finalizando proceso de windows_test')
+        this.$q.loading.hide()
+		await this.espera('actionWindows')
+        this.activate.windows = false
+    }
+},
+		},
+		async beforeCreate() {
+			try {
+				this.user = await this.$rsNeDB('credenciales').findOne({})
+				this.si = this.$si()
+			} catch (error) {
+				console.error('Error during beforeCreate:', error)
+			}
 		},
 		async mounted() {
 			try {
