@@ -1,5 +1,5 @@
-import env from "../utils/env";
+import env from '../utils/env'
 
 export default ({ Vue }) => {
-  Vue.prototype.$env = env;
-};
+	Vue.prototype.$env = env
+}

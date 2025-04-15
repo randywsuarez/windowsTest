@@ -1,10 +1,18 @@
 <template>
-		<div class="camera-container">
+	<div class="camera-container">
 		<div v-if="showVideo" class="camera">
 			<video ref="video" playsinline autoplay></video>
 		</div>
 		<canvas ref="canvas" style="display: none"></canvas>
-    <div class="flex flex-center"><img v-if="showCapturedImage" :src="capturedImage" alt="Captured Image" class="captured-image" center /></div>
+		<div class="flex flex-center">
+			<img
+				v-if="showCapturedImage"
+				:src="capturedImage"
+				alt="Captured Image"
+				class="captured-image"
+				center
+			/>
+		</div>
 		<input type="hidden" ref="txtPhoto" />
 	</div>
 </template>
@@ -166,7 +174,8 @@
 
 	.captured-image {
 		max-height: 200px; /* Establece la altura máxima en 200px */
-            overflow-y: auto; /* Añade una barra de desplazamiento vertical si el contenido excede la altura máxima */
-            background-color: lightblue;
-            padding: 10px;
-  }
+		overflow-y: auto; /* Añade una barra de desplazamiento vertical si el contenido excede la altura máxima */
+		background-color: lightblue;
+		padding: 10px;
+	}
+</style>

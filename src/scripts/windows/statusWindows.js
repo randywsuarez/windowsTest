@@ -273,9 +273,9 @@ function Get-SimplifiedWindowsKey {
 }
 
 # Execute and return the result in the desired format
-Write-Log "Starting script execution"
+# Write-Log "Starting script execution"
 Get-SimplifiedWindowsKey
-Write-Log "Script execution completed"
+# Write-Log "Script execution completed"
 `
 
 // Example usage:

@@ -176,9 +176,12 @@
 					<q-card-section> <div class="text-h6">Keyboard Test</div> </q-card-section><q-separator />
 				</q-card-section>
 				<q-card-section class="center" style="min-height: 200px">
-					<virtual-keyboard @allKeysPressed="handleAllKeysPressed"></virtual-keyboard>
+					<virtual-keyboard
+						@allKeysPressed="handleAllKeysPressed"
+						v-model="rKeyboard"
+					></virtual-keyboard>
 				</q-card-section>
-				<q-card-actions align="right" v-show="activate.keyboard" id="actionKeyboard">
+				<q-card-actions align="right" v-show="rKeyboard.status" id="actionKeyboard">
 					<q-btn
 						flat
 						color="negative"
@@ -796,6 +799,9 @@
 		},
 		data() {
 			return {
+				rKeyboard: {
+					status: false,
+				},
 				color: [],
 				optionsColors: [],
 				rcolor: '',
@@ -1210,7 +1216,9 @@
 				this.myDb.DateStart = lastdate.start
 
 				return `
-		       CTL Windows ${this.audit ? 'Audit': 'Test'} - ${this.$env.version} - ${this.select.TenantName} 
+		       CTL Windows ${this.audit ? 'Audit' : 'Test'} - ${this.$env.version} - ${
+					this.select.TenantName
+				} 
 		       Operator ID: ${this.select.operator}
 		       Operator Name:${this.select.user}
 		       Start Date: ${this.test.Date}
@@ -1255,6 +1263,7 @@
 		       ${this.type != 'desktop' ? this.test.audio : ''}
 		       ${this.type != 'desktop' ? this.test.camera : ''}
 		       ${this.test.drivers}
+			   ${this.driver.missingDrivers.join('\n')}
 		       ${this.test.display}
 		       ${this.type == 'laptop' ? this.test.battery : ''}
 		       ${this.type == 'laptop' ? this.test.keyboard : ''}
@@ -1462,7 +1471,7 @@
 				this.setTypeUnit()
 				this.$q.loading.show()
 				if (this.device.brand == 'HP') {
-					this.bios = JSON.parse(JSON.stringify(await this.$cmd.biosData()))
+					this.bios = JSON.parse(JSON.stringify(await this.$cmd.biosData(this.device.Serial)))
 					console.log('BIOS: ', this.bios.components)
 					console.log('Select: ', this.select)
 					await this.infoHP()
@@ -1619,24 +1628,26 @@
 					HDD: this.intDev.HDD,
 				}
 				console.log('Before Create: ', this.componentes)
-				if(!this.audit){					
-				await this.$db.funcAdmin('modules/bypass/createModel', this.componentes).then(async (v) => {
-					this.myDb['CODE'] = v.Code
-					this.myDb.Description = v.Description
-					this.myDb['InternalDescription'] = this.device.Description
-					this.test.color = v.Color
-					this.myDb['COLOR'] = v.Color
-				})
+				if (!this.audit) {
+					await this.$db
+						.funcAdmin('modules/bypass/createModel', this.componentes)
+						.then(async (v) => {
+							this.myDb['CODE'] = v.Code
+							this.myDb.Description = v.Description
+							this.myDb['InternalDescription'] = this.device.Description
+							this.test.color = v.Color
+							this.myDb['COLOR'] = v.Color
+						})
 				}
 				this.txt = await this.report()
-				this.file = await this.$uploadTextFile(this.device.Serial, this.txt)				
+				this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
 				if (this.file) await this.saveFile(this.file)
-				if (!this.audit){
-				if (this.image && this.type != 'desktop') await this.saveFile(this.image)}
+				if (!this.audit) {
+					if (this.image && this.type != 'desktop') await this.saveFile(this.image)
+				}
 
 				this.info = { ...this.info, report: this.txt }
-				if (!this.audit)
-				await this.rsSave()
+				if (!this.audit) await this.rsSave()
 				await this.saveMng()
 				this.activate.scan = await this.passImaging()
 				this.$q.loading.hide()
@@ -1803,7 +1814,11 @@
 				/*  */
 				if (this.type == 'laptop') {
 					await this.simpleTest('Mic')
-					await this.simpleTest('Keyboard')
+					//await this.simpleTest('Keyboard')
+
+					this.activate.keyboard = true
+					await this.espera('actionKeyboard')
+					this.activate.keyboard = false
 				}
 				this.test['spotLights'] =
 					(await this.$cmd.executeScriptCode(spotLights)).result == 'PASS'
@@ -2089,50 +2104,25 @@
 				this.$refs.reproductorRef.detenerReproduccion(r)
 			},
 			DateTime() {
-				let options = { method: 'GET' }
-				return fetch('https://timeapi.io/api/Time/current/zone?timeZone=America/Chicago', options)
-					.then((response) => response.json())
-					.then((r) => {
-						let comp = new Date(r.dateTime)
-						let fechaInicialMoment = moment(r.dateTime)
-						let minutosAleatorios1 = Math.floor(Math.random() * 10) + 1
-						let fecha1 = fechaInicialMoment.clone().subtract(minutosAleatorios1, 'minutes')
-						let minutosAleatorios2 = Math.floor(Math.random() * 11) + 25
-						let fecha2 = fecha1.clone().subtract(minutosAleatorios2, 'minutes')
-						let fechaFormateadaInicial = fechaInicialMoment.format('YYYY-MM-DD HH:mm:ss.SSS')
-						let fechaFormateada1 = fecha1.format('YYYY-MM-DD HH:mm:ss.SSS')
-						let fechaFormateada2 = fecha2.format('YYYY-MM-DD HH:mm:ss.SSS')
+				// Usar directamente la lógica local en lugar de hacer la solicitud al endpoint
+				let comp = new Date()
+				let fechaInicialMoment = moment(comp)
+				let minutosAleatorios1 = Math.floor(Math.random() * 10) + 1
+				let fecha1 = fechaInicialMoment.clone().subtract(minutosAleatorios1, 'minutes')
+				let minutosAleatorios2 = Math.floor(Math.random() * 11) + 25
+				let fecha2 = fecha1.clone().subtract(minutosAleatorios2, 'minutes')
+				let fechaFormateadaInicial = fechaInicialMoment.format('YYYY-MM-DD HH:mm:ss.SSS')
+				let fechaFormateada1 = fecha1.format('YYYY-MM-DD HH:mm:ss.SSS')
+				let fechaFormateada2 = fecha2.format('YYYY-MM-DD HH:mm:ss.SSS')
 
-						return {
-							date: r.date, // Formato "MM/DD/YYYY"
-							time: r.time, // Formato "HH:mm"
-							complete: comp, // Objeto Date
-							start: fechaFormateada1, // Fecha restada con minutos aleatorios
-							end: fechaFormateada2, // Otra fecha restada
-							wipe: fechaFormateadaInicial, // Fecha original en el formato deseado
-						}
-					})
-					.catch((err) => {
-						console.error(err)
-						let comp = new Date()
-						let fechaInicialMoment = moment(comp)
-						let minutosAleatorios1 = Math.floor(Math.random() * 10) + 1
-						let fecha1 = fechaInicialMoment.clone().subtract(minutosAleatorios1, 'minutes')
-						let minutosAleatorios2 = Math.floor(Math.random() * 11) + 25
-						let fecha2 = fecha1.clone().subtract(minutosAleatorios2, 'minutes')
-						let fechaFormateadaInicial = fechaInicialMoment.format('YYYY-MM-DD HH:mm:ss.SSS')
-						let fechaFormateada1 = fecha1.format('YYYY-MM-DD HH:mm:ss.SSS')
-						let fechaFormateada2 = fecha2.format('YYYY-MM-DD HH:mm:ss.SSS')
-
-						return {
-							date: fechaInicialMoment.format('MM/DD/YYYY'), // Formato "MM/DD/YYYY"
-							time: fechaInicialMoment.format('HH:mm'), // Formato "HH:mm"
-							complete: comp, // Objeto Date
-							start: fechaFormateada1, // Fecha restada con minutos aleatorios
-							end: fechaFormateada2, // Otra fecha restada
-							wipe: fechaFormateadaInicial, // Fecha original en el formato deseado
-						}
-					})
+				return {
+					date: fechaInicialMoment.format('MM/DD/YYYY'), // Formato "MM/DD/YYYY"
+					time: fechaInicialMoment.format('HH:mm'), // Formato "HH:mm"
+					complete: comp, // Objeto Date
+					start: fechaFormateada1, // Fecha restada con minutos aleatorios
+					end: fechaFormateada2, // Otra fecha restada
+					wipe: fechaFormateadaInicial, // Fecha original en el formato deseado
+				}
 			},
 			handleColorSelected(color) {
 				if (color) {
@@ -2343,150 +2333,403 @@
 					})
 				}
 			},
-		clearLocalStorage() {
-			localStorage.removeItem('infoSystem')
-			localStorage.removeItem('iTest')
-			localStorage.removeItem('intDev')
-			localStorage.removeItem('componentes')
-			localStorage.removeItem('datetime')
-			localStorage.removeItem('driver')
-			localStorage.removeItem('winDPK')
-			return true
-		},
+			clearLocalStorage() {
+				localStorage.removeItem('infoSystem')
+				localStorage.removeItem('iTest')
+				localStorage.removeItem('intDev')
+				localStorage.removeItem('componentes')
+				localStorage.removeItem('datetime')
+				localStorage.removeItem('driver')
+				localStorage.removeItem('winDPK')
+				return true
+			},
 			async windows_test() {
-    this.win.oldKeyWin = this.win.keyWindows
-    this.activate.windows = true
-    console.log('[CASE-0] Iniciando proceso de verificación de Windows')
-    this.$q.loading.show({
-        message: 'Starting Windows activation verification...',
-    })
+	this.win.oldKeyWin = this.win.keyWindows
+	this.activate.windows = true
+	console.log('[CASE-0] Starting Windows verification process')
+	this.$q.loading.show({
+		message: 'Starting Windows activation verification...',
+	})
 
-    try {
-        // CASE 1: Verificación inicial de DPK existente
-        console.log('[CASE-1] Verificando DPK local inicial:', JSON.stringify(this.win))
-        if (!this.win || !this.win.hasOwnProperty('keyWindows') || 
-            this.win.keyWindows === 'Key not found' || 
-            this.win.keyWindows === 'Error') {
-            console.error('[CASE-1-ERROR] DPK inicial no válido o no encontrado')
-            await this.handleDPKError('No DPK Found Locally')
-            return
-        }
+	try {
+		// CASE 1: Initial verification of existing DPK
+		console.log('[CASE-1] Verifying initial local DPK:', JSON.stringify(this.win))
+		if (
+			!this.win ||
+			!this.win.hasOwnProperty('keyWindows') ||
+			this.win.keyWindows === 'Key not found' ||
+			this.win.keyWindows === 'Error'
+		) {
+			console.error('[CASE-1-ERROR] Initial DPK invalid or not found')
+			// Handle DPK not found error
+			console.error('[DPK-ERROR] Error with DPK: No DPK Found Locally')
+			this.$q.notify({
+				type: 'negative',
+				message: `DPK Error: No DPK Found Locally`,
+			})
+			this.test.keyWindows = this.win.keyWindows
+			this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+			this.test.windows = 'Windows Activation Test FAIL'
+		}
+		// CASE 2: Verification of existing activation
+		else if (this.win.activate === 1 || this.win.licenseStatus === 1) {
+			console.log('[CASE-2-SUCCESS] Windows is already properly activated')
+			
+			// Check if the project is REVENUE to force injection of a new DPK
+			const projectIdUpper = (this.project.id || '').toUpperCase()
+			const isRevenueProject = projectIdUpper.includes('REVENUE')
+			
+			if (isRevenueProject || this.forceInject) {
+				console.log('[CASE-2-REVENUE] REVENUE project detected. Forcing new DPK acquisition despite being activated.')
+				this.$q.loading.show({ message: 'REVENUE Project: Getting new DPK...' })
+				
+				// Get new DPK by forcing the request
+				const dkpVerificationResult = await this.verifyDPK(true)
+				console.log('[CASE-2-REVENUE] verifyDPK result:', JSON.stringify(dkpVerificationResult))
+				
+				if (!dkpVerificationResult.error && dkpVerificationResult.needsNewProductKey) {
+					// Save the old key
+					const oldKey = this.win.keyWindows
+					this.win.oldKeyWin = oldKey
+					
+					// Deactivate current key
+					console.log('[CASE-2-REVENUE] Deactivating current key...')
+					this.$q.loading.show({ message: 'Deactivating current Windows key...' })
+					const deactivateResult = await this.$cmd.executeScriptCode(dWin)
+					console.log('[CASE-2-REVENUE] Deactivation result:', deactivateResult)
+					
+					// Activate with new key
+					const replacementKey = dkpVerificationResult.replacementProductKey
+					const activationMode = (this.infoTest && this.infoTest.DPKMode) || 'online'
+					console.log(`[CASE-2-REVENUE] Activating with new key: ${replacementKey}, Mode: ${activationMode}`)
+					
+					this.$q.loading.show({
+						message: `Activating Windows with new DPK (REVENUE project)...`,
+					})
+					
+					const activateScript = aWin.replace('$dpk', replacementKey).replace('$mode', activationMode)
+					const activateResult = await this.$cmd.executeScriptCode(activateScript)
+					console.log('[CASE-2-REVENUE] Activation result:', activateResult)
+					
+					// Update information
+					this.win.keyWindows = activateResult.productKeyUsed ? activateResult.productKeyUsed : replacementKey
+					this.win.licenseDetails = activateResult.message ? activateResult.message : ''
+					
+					if (activateResult && activateResult.activated === 1 && !activateResult.error) {
+						console.log('[CASE-2-REVENUE] Activation with new key successful')
+						this.win.activated = true
+						this.$q.notify({
+							type: 'positive',
+							message: 'REVENUE Project: Windows reactivated with new DPK successfully.',
+						})
+						
+						// Report to backend
+						await this.statusDPK({
+							SerialNumber: this.device.Serial,
+							NewProductKey: replacementKey,
+							Status: true,
+							Message: activateResult.message || 'Successful reactivation (REVENUE)'
+						})
+					} else {
+						console.error('[CASE-2-REVENUE] Error in reactivation:', activateResult.message || 'Unknown error')
+						this.$q.notify({
+							type: 'negative',
+							message: 'Error reactivating Windows with new DPK: ' + (activateResult.message || 'Unknown error'),
+						})
+					}
+				} else if (dkpVerificationResult.error) {
+					console.error('[CASE-2-REVENUE] Error getting new DPK:', dkpVerificationResult.errorMessage)
+					this.$q.notify({
+						type: 'warning',
+						message: `Could not get new DPK: ${dkpVerificationResult.errorMessage}`,
+					})
+				}
+			} else {
+				// Original behavior for case 2 when not REVENUE
+				this.win.activated = true
+				this.$q.notify({
+					type: 'positive',
+					message: 'Windows activation verified successfully.',
+				})
+			}
 
-        // CASE 2: Verificación de activación existente
-        console.log('[CASE-2] Verificando activación existente')
-        if (this.win.activate === 1 || this.win.licenseStatus === 1) {
-            console.log('[CASE-2-SUCCESS] Windows ya está activado correctamente')
-            this.win.activated = true
-            this.$q.notify({ 
-                type: 'positive', 
-                message: 'Windows activation verified successfully.' 
-            })
-            //this.activate.windows = false
-            this.$q.loading.hide()
-            
-            // Add these lines to set the test variables
-            this.test.keyWindows = this.win.keyWindows
-            this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
-            this.test.windows = 'Windows Activation Test PASS'
-            
-            return
-        }
+			this.test.keyWindows = this.win.keyWindows
+			this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+			this.test.windows = 'Windows Activation Test PASS'
+		} else {
+			// CASE 3: Determine if force injection is needed
+			const projectIdUpper = (this.project.id || '').toUpperCase()
+			const forceInject = projectIdUpper.includes('REVENUE') || this.forceInject
+			console.log('[CASE-3] Force injection determination:', {
+				projectId: projectIdUpper,
+				forceInject,
+			})
 
-        // CASE 3: Determinación de forceInject
-        const projectIdUpper = (this.project.id || '').toUpperCase()
-        const forceInject = projectIdUpper.includes('REVENUE')
-        console.log('[CASE-3] Determinación forceInject:', { projectId: projectIdUpper, forceInject })
+			// CASE 4: Verify DPK with system
+			console.log('[CASE-4] Starting DPK verification with system')
+			this.$q.loading.show({ message: 'Verifying DPK with the system...' })
+			const dkpVerificationResult = await this.verifyDPK(forceInject)
+			console.log('[CASE-4] Verification result:', JSON.stringify(dkpVerificationResult))
 
-        // CASE 4: Verificación DPK con sistema
-        console.log('[CASE-4] Iniciando verificación DPK con sistema')
-        this.$q.loading.show({ message: 'Verifying DPK with the system...' })
-        const dkpVerificationResult = await this.verifyDPK(forceInject)
-        console.log('[CASE-4] Resultado verificación:', JSON.stringify(dkpVerificationResult))
+			if (dkpVerificationResult.error) {
+				console.error(
+					'[CASE-4-ERROR] Error in DPK verification:',
+					dkpVerificationResult.errorMessage,
+				)
 
-        if (dkpVerificationResult.error) {
-            console.error('[CASE-4-ERROR] Error en verificación DPK:', dkpVerificationResult.errorMessage)
-            await this.handleDPKError(dkpVerificationResult.errorMessage)
-            return
-        }
+				// Get updated Windows status using the enhanced script
+				const currentWinStatus = await this.$cmd.executeScriptCode(sWin)
 
-        // CASE 5: Proceso de activación
-        if (dkpVerificationResult.needsNewProductKey) {
-            console.log('[CASE-5] Iniciando reemplazo de clave')
-            await this.handleKeyReplacement(dkpVerificationResult.replacementProductKey)
-        }
+				// Check if Windows is activated with any type of license
+				if (
+					currentWinStatus &&
+					(currentWinStatus.activate === 1 ||
+						currentWinStatus.licenseStatus === 1 ||
+						(currentWinStatus.licenseType &&
+							currentWinStatus.licenseType !== 'None' &&
+							currentWinStatus.licenseType !== 'Error'))
+				) {
+					console.log('[CASE-4-RECOVERY] Windows is activated despite DPK error')
+					this.win = { ...this.win, ...currentWinStatus }
+					this.win.activated = true
 
-        // CASE 6: Verificación final
-        console.log('[CASE-6] Realizando verificación final de activación')
-        
-        // Verificar el estado de activación nuevamente después de posibles cambios
-        const currentWinStatus = await this.$cmd.executeScriptCode(sWin)
-        console.log('[CASE-6-CHECK] Estado actual de Windows:', JSON.stringify(currentWinStatus))
-        
-        // Actualizar this.win con los datos más recientes
-        if (currentWinStatus) {
-            this.win = {...this.win, ...currentWinStatus}
-        }
-        
-        // Verificar si Windows está activado basado en los datos actualizados o en la licenseDetails
-        if (this.win.activate === 1 || this.win.licenseStatus === 1 || 
-            (this.win.licenseDetails && this.win.licenseDetails.includes("successfully activated"))) {
-            console.log('[CASE-6-SUCCESS] Activación completada exitosamente')
-            this.win.activated = true
-            this.$q.notify({ 
-                type: 'positive', 
-                message: 'Windows activation completed successfully.' 
-            })
-            
-            // Add these lines to set the test variables when activation is successful
-            this.test.keyWindows = this.win.keyWindows
-            this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
-            this.test.windows = 'Windows Activation Test PASS'
-            
-        } else {
-            console.log('[CASE-6-FAIL] La verificación final indica que Windows no está activado')
-            // Verificación adicional basada en el texto de licenseDetails
-            if (this.win.licenseDetails && 
-                (this.win.licenseDetails.toLowerCase().includes("successfully activated") || 
-                 this.win.licenseDetails.toLowerCase().includes("activation successful"))) {
-                console.log('[CASE-6-RECOVERY] Detectada activación en licenseDetails')
-                this.win.activated = true
-                this.$q.notify({ 
-                    type: 'positive', 
-                    message: 'Windows activation detected in license details.' 
-                })
-                
-                // Add these lines to set the test variables when activation is detected in license details
-                this.test.keyWindows = this.win.keyWindows
-                this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
-                this.test.windows = 'Windows Activation Test PASS'
-                
-            } else {
-                // Add these lines to set the test variables when activation fails
-                this.test.keyWindows = this.win.keyWindows
-                this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
-                this.test.windows = 'Windows Activation Test FAIL'
-            }
-        }
+					// Enhanced notification with license type information
+					let activationMessage = 'Windows is already activated with a different key.'
+					if (currentWinStatus.licenseType) {
+						activationMessage += ` (${currentWinStatus.licenseType})`
 
-    } catch (error) {
-        console.error('[CASE-ERROR] Error inesperado en windows_test:', error)
-        this.$q.notify({
-            type: 'negative',
-            message: 'An unexpected error occurred during Windows activation.'
-        })
-        
-        // Add these lines to set the test variables when there's an error
-        this.test.keyWindows = this.win ? this.win.keyWindows : 'Error'
-        this.test.oldKeyWin = this.win && this.win.oldKeyWin ? this.win.oldKeyWin : 'N/A'
-        this.test.windows = 'Windows Activation Test FAIL'
-        
-    } finally {
+						// Special warning for KMS with few days remaining
+						if (
+							currentWinStatus.licenseType === 'KMS' &&
+							currentWinStatus.daysRemaining > 0 &&
+							currentWinStatus.daysRemaining < 15
+						) {
+							console.log(
+								`[CASE-4-WARNING] KMS activation with only ${currentWinStatus.daysRemaining} days remaining`,
+							)
+							activationMessage += ` - Warning: Only ${currentWinStatus.daysRemaining} days remaining`
+						}
+					}
+
+					this.$q.notify({
+						type: 'positive',
+						message: activationMessage,
+					})
+
+					this.test.keyWindows = this.win.keyWindows
+					this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+					this.test.windows = 'Windows Activation Test PASS'
+				} else {
+					// Handle DPK verification error
+					console.error('[DPK-ERROR] Error with DPK:', dkpVerificationResult.errorMessage)
+					this.$q.notify({
+						type: 'negative',
+						message: `DPK Error: ${dkpVerificationResult.errorMessage}`,
+					})
+					this.test.keyWindows = this.win.keyWindows
+					this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+					this.test.windows = 'Windows Activation Test FAIL'
+				}
+			} else if (dkpVerificationResult.needsNewProductKey) {
+				// CASE 5: Activation process - Replace the key directly here
+				console.log('[CASE-5] Starting key replacement')
+				
+				try {
+					const replacementKey = dkpVerificationResult.replacementProductKey;
+					const activationMode = (this.infoTest && this.infoTest.DPKMode) || 'online';
+					
+					// Save the old key before replacing it
+					const oldKey = this.win.keyWindows;
+					this.win.oldKeyWin = oldKey;
+					
+					// 1. First deactivate the current key using dWin
+					console.log('[KEY-REPLACEMENT] Deactivating current product key...');
+					this.$q.loading.show({ message: 'Deactivating current Windows key...' });
+					const deactivateResult = await this.$cmd.executeScriptCode(dWin);
+					console.log('[KEY-REPLACEMENT] Deactivation result:', deactivateResult);
+					
+					// 2. Then inject the new key using aWin
+					console.log('[KEY-REPLACEMENT] Injecting new product key:', replacementKey);
+					this.$q.loading.show({
+						message: `Activating Windows with ${
+							activationMode === 'online' ? 'new DPK' : 'DPK (offline mode)'
+						}...`,
+					});
+					
+					// Prepare parameters for aWin (replace the $dpk variable with the new key)
+					const activateScript = aWin.replace('$dpk', replacementKey).replace('$mode', activationMode);
+					
+					// Implement retry system as in the previous version
+					let activationSuccessful = false;
+					let retryCount = 0;
+					const MAX_RETRIES = 3;
+					
+					while (retryCount < MAX_RETRIES && !activationSuccessful) {
+						retryCount++;
+						console.log(`[KEY-REPLACEMENT] Activation attempt ${retryCount} of ${MAX_RETRIES}...`);
+						
+						const activateResult = await this.$cmd.executeScriptCode(activateScript);
+						console.log(`[KEY-REPLACEMENT] Activation result (attempt ${retryCount}):`, activateResult);
+						
+						// Update Windows key in the win object
+						this.win.keyWindows = activateResult.productKeyUsed ? activateResult.productKeyUsed : replacementKey;
+						this.win.licenseDetails = activateResult.message ? activateResult.message : '';
+						
+						// Verify activation result
+						if (activateResult && activateResult.activated === 1 && !activateResult.error) {
+							console.log('[KEY-REPLACEMENT] Activation successful on attempt', retryCount);
+							activationSuccessful = true;
+							this.win.activated = true;
+							this.$q.notify({
+								type: 'positive',
+								message: 'Windows product key replaced and activated successfully.',
+							});
+							
+							// Report to backend - Only if activation was successful
+							console.log('[KEY-REPLACEMENT] Calling statusDPK...');
+							await this.statusDPK({
+								SerialNumber: this.device.Serial,
+								NewProductKey: replacementKey,
+								Status: true,
+								Message: activateResult.message || 'Activation successful'
+							});
+							
+							break; // Exit the loop if activation is successful
+						} else {
+							// If activation failed, show error message
+							const errorMessage = activateResult.message ? activateResult.message : 'Unknown error during activation';
+							
+							if (retryCount < MAX_RETRIES) {
+								console.log(`[KEY-REPLACEMENT] Activation failed on attempt ${retryCount}. Retrying...`);
+								this.$q.notify({
+									type: 'warning',
+									message: `Activation attempt ${retryCount} failed. Retrying...`,
+								});
+								await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before next attempt
+							} else {
+								console.error('[KEY-REPLACEMENT] All activation attempts failed');
+								this.$q.notify({
+									type: 'negative',
+									message: `Windows product key replacement failed after ${MAX_RETRIES} attempts: ${errorMessage}`,
+								});
+								
+								// Update DPK status in the system
+								await this.statusDPK({
+									SerialNumber: this.device.Serial,
+									NewProductKey: replacementKey,
+									Status: false,
+									Message: errorMessage
+								});
+								
+								// Open activation settings for visual verification
+								console.log('[KEY-REPLACEMENT] Opening activation settings for visual verification...');
+								await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`);
+							}
+						}
+					}
+				} catch (error) {
+					console.error('[KEY-REPLACEMENT] Error:', error);
+					this.$q.notify({
+						type: 'negative',
+						message: 'Error replacing Windows product key: ' + (error.message || error),
+					});
+					
+					// Report DPK failure
+					await this.failDPK({
+						SerialNumber: this.device.Serial,
+						dpk: dkpVerificationResult.replacementProductKey
+					});
+					
+					// Open activation settings for visual verification
+					console.log('[KEY-REPLACEMENT] Opening activation settings for visual verification after error...');
+					await this.$cmd.executeScriptCode(`Start-Process "ms-settings:activation"`);
+				}
+			}
+
+			// CASE 6: Final verification
+			console.log('[CASE-6] Performing final activation verification')
+
+			// Get updated Windows status
+			const currentWinStatus = await this.$cmd.executeScriptCode(sWin)
+			console.log('[CASE-6-CHECK] Current Windows status:', JSON.stringify(currentWinStatus))
+
+			// Update this.win with the latest data
+			if (currentWinStatus) {
+				this.win = { ...this.win, ...currentWinStatus }
+			}
+
+			// Check if Windows is activated based on the updated data
+			if (
+				this.win.activate === 1 ||
+				this.win.licenseStatus === 1 ||
+				(this.win.licenseDetails &&
+					this.win.licenseDetails.includes('successfully activated')) ||
+				(this.win.licenseType &&
+					this.win.licenseType !== 'None' &&
+					this.win.licenseType !== 'Error')
+			) {
+				console.log('[CASE-6-SUCCESS] Activation completed successfully')
+				this.win.activated = true
+
+				// Enhanced notification with license type information
+				let activationMessage = 'Windows activation completed successfully.'
+				if (this.win.licenseType) {
+					activationMessage += ` (${this.win.licenseType})`
+
+					// Special warning for KMS with few days remaining
+					if (
+						this.win.licenseType === 'KMS' &&
+						this.win.daysRemaining > 0 &&
+						this.win.daysRemaining < 15
+					) {
+						console.log(
+							`[CASE-6-WARNING] KMS activation with only ${this.win.daysRemaining} days remaining`,
+						)
+						activationMessage += ` - Warning: Only ${this.win.daysRemaining} days remaining`
+					}
+				}
+
+				this.$q.notify({
+					type: 'positive',
+					message: activationMessage,
+				})
+
+				this.test.keyWindows = this.win.keyWindows
+				this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+				this.test.windows = 'Windows Activation Test PASS'
+			} else {
+				console.log('[CASE-6-FAIL] Final verification indicates Windows is not activated')
+
+				// Set test variables for failed activation
+				this.test.keyWindows = this.win.keyWindows
+				this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+				this.test.windows = 'Windows Activation Test FAIL'
+			}
+		}
+	} catch (error) {
+		console.error('[CASE-ERROR] Unexpected error in windows_test:', error)
+		this.$q.notify({
+			type: 'negative',
+			message: 'An unexpected error occurred during Windows activation.',
+		})
+
+		// Set test variables when there's an error
+		this.test.keyWindows = this.win ? this.win.keyWindows : 'Error'
+		this.test.oldKeyWin = this.win && this.win.oldKeyWin ? this.win.oldKeyWin : 'N/A'
+		this.test.windows = 'Windows Activation Test FAIL'
+	} finally {
 		this.test.OS = this.win.edition
-        console.log('[CASE-END] Finalizando proceso de windows_test')
-        this.$q.loading.hide()
+		console.log('[CASE-END] Finishing windows_test process')
+		this.$q.loading.hide()
+
+		// IMPORTANT: Always execute espera('actionWindows') before finishing
+		console.log('[CASE-END] Waiting for user action in actionWindows')
 		await this.espera('actionWindows')
-        this.activate.windows = false
-    }
+		console.log('[CASE-END] User completed action in actionWindows')
+
+		this.activate.windows = false
+		console.log('[CASE-END] windows_test method completely finished')
+	}
 },
 		},
 		async beforeCreate() {
@@ -2603,6 +2846,7 @@
 		display: flex;
 		justify-content: center;
 	}
+
 	.card {
 		border-radius: 15px;
 		overflow: hidden;
@@ -2612,19 +2856,23 @@
 		width: 90%;
 		margin-top: 25px;
 	}
+
 	.q-card-section {
 		border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 	}
+
 	.glow:hover {
 		animation-name: glowEffect;
 		animation-duration: 0.5s;
 		animation-timing-function: ease-in-out;
 		animation-iteration-count: infinite;
 	}
+
 	.disk-list {
 		width: 400px;
 		margin: 0 auto;
 	}
+
 	.q-linear-progress {
 		margin-top: 10px;
 	}
@@ -2633,9 +2881,11 @@
 		0% {
 			box-shadow: 0 0 10px rgba(0, 102, 255, 0.8);
 		}
+
 		50% {
 			box-shadow: 0 0 20px rgba(0, 102, 255, 0.6);
 		}
+
 		100% {
 			box-shadow: 0 0 10px rgba(0, 102, 255, 0.8);
 		}

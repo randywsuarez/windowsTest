@@ -26,7 +26,14 @@
 									<p class="info-project">{{ project }}</p>
 								</div>
 							</div>
-							<q-checkbox size="150px" v-model="localAudit" val="80px" label="Audit" class="col" right />
+							<q-checkbox
+								size="150px"
+								v-model="localAudit"
+								val="80px"
+								label="Audit"
+								class="col"
+								right
+							/>
 						</div>
 					</div>
 				</div>

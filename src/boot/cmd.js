@@ -5,6 +5,19 @@ const PowerShell = require('powershell')
 const path = require('path')
 const fs = require('fs')
 
+// Función para obtener la ruta base de forma dinámica
+function obtenerRutaBase() {
+  // Obtener la ruta de ejecución actual
+  const rutaEjecucion = process.cwd();
+  console.log('Ejecutando desde:', rutaEjecucion);
+  
+  // Obtener la unidad (X:\, Z:\, etc.)
+  const unidad = rutaEjecucion.split(path.sep)[0] + path.sep;
+  return unidad;
+}
+
+// Obtener la ruta base dinámicamente
+const rutaBase = obtenerRutaBase();
 const currentDirectory = __dirname
 const scriptsDirectory = path.join(currentDirectory, '..', 'scripts')
 async function checkComponentsPresence(fileContent) {
@@ -164,7 +177,7 @@ const CmdHelper = {
 	executeScriptCode: async (code) => {
 		return new Promise(async (resolve) => {
 			// Envolver el código en un script que solicite elevación de privilegios
-			const elevatedCode = `
+			/* const elevatedCode = `
 # Verificar si el script se está ejecutando como administrador
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
@@ -180,7 +193,8 @@ if (-not $isAdmin) {
 
 # Si ya es administrador, ejecutar el código original
 ${code}
-`
+` */
+			const elevatedCode = code
 			let ps = new PowerShell([elevatedCode])
 			let outputData = ''
 			let errorData = ''
@@ -413,56 +427,57 @@ if (Test-Path $filePath -PathType Leaf) {
 
 				return graphicsInfoArray
 			}
-			var textFilePath = path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'LogDesktops')
+			// Usar la ruta base dinámica en lugar de hardcodear la unidad
+			var textFilePath = path.join(rutaBase, 'LogDesktops')
 			if (!fs.existsSync(textFilePath)) {
-				// La carpeta no existe, la creamos
-				fs.mkdirSync(textFilePath, { recursive: true })
+			// La carpeta no existe, la creamos
+			fs.mkdirSync(textFilePath, { recursive: true })
 			}
-
+			
 			textFilePath = path.join(textFilePath, params.Serial)
 			const code = `
-      $fileName = "${textFilePath}.txt"
-dxdiag /t $fileName
-
-# Esperar hasta que el archivo exista
-while (-not (Test-Path $fileName)) {
-    Start-Sleep -Seconds 1
-}
-$contenido = Get-Content -Path $fileName -Raw
-
-# Mostrar el contenido en formato JSON en la consola
-$contenido
-`
+			$fileName = "${textFilePath}.txt"
+			dxdiag /t $fileName
+			
+			# Esperar hasta que el archivo exista
+			while (-not (Test-Path $fileName)) {
+			Start-Sleep -Seconds 1
+			}
+			$contenido = Get-Content -Path $fileName -Raw
+			
+			# Mostrar el contenido en formato JSON en la consola
+			$contenido
+			`
 			//console.log(code)
-
+			
 			let ps = new PowerShell([code])
 			let outputData = ''
-
+			
 			ps.on('output', (data) => {
-				//console.log(outputData.length)
-				outputData += data
+			//console.log(outputData.length)
+			outputData += data
 			})
-
+			
 			ps.on('error-output', (data) => {
-				console.error(data)
-				resolve(false)
+			console.error(data)
+			resolve(false)
 			})
-
+			
 			ps.on('end', (code) => {
-				try {
-					//console.log(outputData.length)
-					let result = getGraphicsInfo(outputData)
-					//console.log(result)
-					resolve(result)
-				} catch (parseError) {
-					console.error('Error parsing output as JSON:', parseError.message)
-					resolve(false)
-				}
+			try {
+			//console.log(outputData.length)
+			let result = getGraphicsInfo(outputData)
+			//console.log(result)
+			resolve(result)
+			} catch (parseError) {
+			console.error('Error parsing output as JSON:', parseError.message)
+			resolve(false)
+			}
 			})
-
+			
 			ps.on('error', (err) => {
-				console.error(err)
-				resolve(false)
+			console.error(err)
+			resolve(false)
 			})
 		})
 	},
@@ -470,8 +485,8 @@ $contenido
 		return new Promise(async (resolve) => {
 			const code = `
 $nombreProceso = "update"
-$rutaOrigen = "${path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'update')}"
-$rutaDestino = "${path.join(process.cwd().split(path.sep)[0] + path.sep)}"
+$rutaOrigen = "${path.join(rutaBase, 'update')}"
+$rutaDestino = "${rutaBase}"
 $archivoDestino = Join-Path -Path $rutaDestino -ChildPath "$nombreProceso.exe"
 
 # Verificar si el archivo de destino ya existe y eliminarlo si es así
@@ -565,11 +580,13 @@ if (Test-Path $archivoDestino) {
 			})
 		})
 	},
-	biosData: async () => {
+	biosData: async (serial) => {
 		return new Promise(async (resolve, reject) => {
 			const toolsPath = path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'Tools')
 			const myApp = path.join(toolsPath, 'Bios.exe')
-			const configFile = path.join(toolsPath, 'config.txt')
+			// Generar un nombre de archivo único con el serial y un timestamp
+			const timestamp = new Date().getTime()
+			const configFile = path.join(toolsPath, `${serial}-bios-${timestamp}.txt`)
 			const argument = `/GetConfig:"${configFile}"`
 			const psCommand = `& '${myApp}' ${argument}`
 			let ps = new PowerShell(psCommand)
@@ -594,11 +611,17 @@ if (Test-Path $archivoDestino) {
 								}
 								let re = await checkItems(items, data)
 								let comp = await checkComponentsPresence(data)
-								re = { 
-									...re, 
+								re = {
+									...re,
 									components: comp,
-									txt: data // Adding the raw text content
+									txt: data, // Adding the raw text content
 								}
+								
+								// Eliminar el archivo temporal después de leerlo
+								fs.unlink(configFile, (unlinkErr) => {
+									if (unlinkErr) console.error('Error al eliminar archivo temporal:', unlinkErr)
+								})
+								
 								resolve(re)
 							})
 						}
