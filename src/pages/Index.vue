@@ -35,12 +35,37 @@
 						ref="all-in-one"><img src="all-in-one.png" /></q-btn>
 					<!-- <q-btn color="positive" :label="audit ? 'Shut Down' : 'SysPrep'" @click="sdDevice" /> -->
 				</q-card-section>
+				<q-separator />
+				<q-card-section class="center col row" id="actionType" style="justify-content: center">
+					<div class="text-center q-mt-md">
+							<div>Start: {{ infDateStart }}</div>
+							<div>End: {{ infDateEnd }}</div>
+							<div>Duration: {{ (() => {
+          // Parseamos las fechas (si ya son Date no hace falta el new Date)
+          const start = new Date(infDateStart)
+          const end   = new Date(infDateEnd)
+          const diff  = end - start            // diferencia en milisegundos
+
+          // Calculamos horas, minutos y segundos
+          const hours   = Math.floor(diff / 3600000)
+          const minutes = Math.floor((diff % 3600000) / 60000)
+          const seconds = Math.floor((diff % 60000) / 1000)
+
+          // Devolvemos un string formateado
+          return `${hours}h ${minutes}m ${seconds}s`
+        })() }}</div>
+						</div>
+				</q-card-section>
 			</q-card>
 			<q-card class="card" v-show="activate.logo">
-				<q-card-section class="row justify-center" id="actionType"
-					style="padding: 0; height: 40vh; width: 100%">
-					<q-img src="Logo.png" spinner-color="primary" spinner-size="120px"
-						style="height: auto; width: 50%; max-height: 100%; max-width: 100%; object-fit: contain" />
+				<q-card-section class="row justify-center" id="actionType" style="padding: 0; width: 100%">
+					<div class="column items-center full-width">
+						<q-img src="Logo.png" 
+							spinner-color="primary" 
+							spinner-size="120px"
+							style="width: 150px; height: 200px"
+							fit="contain" />
+					</div>
 				</q-card-section>
 			</q-card>
 
@@ -546,6 +571,20 @@ export default {
 	},
 	data() {
 		return {
+			// Cronómetro de actividad
+			activityResult: '',
+			activityTimer: {
+				active: false,
+				startTime: null,
+				totalTime: 0,
+				inactiveTime: 0,
+				isInactive: false,
+				currentTimer: null,
+				inactivityTimeout: null,
+				inactivityCounter: null,
+				graceTime: 10000, // 10 segundos de gracia después de la última actividad
+			},
+			dateStartAll: '',
 			rKeyboard: {
 				status: false,
 			},
@@ -591,6 +630,9 @@ export default {
 					WLAN: 'NO',
 				},
 			},
+			infDateStart: '',
+			infDateEnd: '',
+			stepsDate: [],
 			check: {},
 			Authorization: '',
 			itDG: {},
@@ -770,6 +812,7 @@ export default {
 				this.device.Description = await getValueByPath(this.infoSystem, info.description)
 				this.device.brand = this.infoSystem.system.manufacturer.split(' ')[0].toUpperCase()
 			}
+			
 		},
 		async siSave() {
 			let si = await this.$db
@@ -977,6 +1020,8 @@ export default {
 			this.activate.touch = value
 		},
 		async report() {
+			// Detener el cronómetro de actividad al finalizar la prueba
+			this.activityResult = this.stopActivityTimer()
 			let res = Object.values(this.test).includes('fail') ? 'FAIL' : 'PASS'
 			let lastdate = await this.DateTime()
 			this.myDb.DATE = lastdate.wipe
@@ -996,6 +1041,9 @@ export default {
 		       Start Time: ${this.test.startTime}
 		       End Date: ${lastdate.date}
 		       End Time: ${lastdate.time}
+		       Activity Time: ${this.activityResult.formatted}
+		       Inactive Time: ${this.activityResult.inactiveFormatted}
+		       Total Process Time: ${this.formatTime(this.activityResult.seconds + this.activityResult.inactiveSeconds)}
 		        Program: ${this.infoTest.ProgramType}
 		        Battery Program: ${this.infoTest.batteryProgram}
 		        BOL: ${this.infoTest.BOL}
@@ -1275,6 +1323,8 @@ export default {
 
 			this.activate.logo = false
 			this.activate.type = true
+			this.startActivityTimer()
+			//this.stepsDate['']
 			await this.espera2('actionType')
 			this.activate.type = false
 			//if (this.device.brand == 'HP') await this.simpleTest('Comparation')
@@ -1413,7 +1463,27 @@ export default {
 			}
 
 			this.info = { ...this.info, report: this.txt }
-			if (!this.audit) await this.rsSave()
+			if (!this.audit) await this.rsSave()	
+				
+			await this.$db.collection('logTest').add({
+				Serial: this.device.Serial,
+				sku: this.device.SKU,
+				Model: this.device.Description,
+				Brand: this.device.brand,
+				systemInformation:{
+					start: this.infDateStart,
+					end: this.infDateEnd
+				},
+				ActivityTime: this.activityResult ? this.activityResult.formatted : '00:00:00',
+				InactiveTime: this.activityResult ? this.activityResult.inactiveFormatted : '00:00:00',
+				TotalProcessTime: this.activityResult ? this.formatTime(this.activityResult.seconds + this.activityResult.inactiveSeconds) : '00:00:00',
+				timeAllProcess: {
+					start: this.dateStartAll,
+					end: new Date()
+				},
+				Status: 'Completed',
+			})
+
 			await this.saveMng()
 			this.activate.scan = await this.passImaging()
 			this.$q.loading.hide()
@@ -2110,11 +2180,140 @@ export default {
 			return true
 		},
 
+		
+		// Inicia el cronómetro de actividad
+		startActivityTimer() {
+			if (this.activityTimer.active) return; // Evitar iniciar múltiples veces
+
+			this.activityTimer.active = true;
+			this.activityTimer.startTime = new Date();
+			this.activityTimer.totalTime = 0;
+			this.activityTimer.inactiveTime = 0;
+			this.activityTimer.isInactive = false;
+			this.activityTimer.graceTime = 10000; // Aumentado a 10 segundos
+
+			// Iniciar el contador de segundos
+			this.activityTimer.currentTimer = setInterval(() => {
+				if (!this.activityTimer.isInactive) {
+					this.activityTimer.totalTime++;
+					console.log(`Tiempo de actividad: ${this.activityTimer.totalTime} segundos`);
+				}
+			}, 1000);
+
+			// Agregar eventos para detectar actividad
+			document.addEventListener('mousemove', this.resetInactivityTimer);
+			document.addEventListener('mousedown', this.resetInactivityTimer);
+			document.addEventListener('keydown', this.resetInactivityTimer);
+
+			// Iniciar el temporizador de inactividad
+			this.resetInactivityTimer();
+
+			console.log('Cronómetro de actividad iniciado');
+		},
+
+		// Detiene el cronómetro de actividad
+		stopActivityTimer() {
+			if (!this.activityTimer.active) return;
+
+			// Limpiar temporizadores
+			clearInterval(this.activityTimer.currentTimer);
+			clearTimeout(this.activityTimer.inactivityTimeout);
+			
+			// Limpiar el contador de inactividad si está activo
+			if (this.activityTimer.inactivityCounter) {
+				clearInterval(this.activityTimer.inactivityCounter);
+				this.activityTimer.inactivityCounter = null;
+			}
+
+			// Calcular tiempo total
+			const endTime = new Date();
+			const totalTimeMs = endTime - this.activityTimer.startTime;
+			const activeTime = this.activityTimer.totalTime;
+			const inactiveTime = this.activityTimer.inactiveTime;
+			
+			// Tiempo total real (sin inactividad)
+			const realActiveTime = activeTime;
+			const totalTimeFormatted = this.formatTime(realActiveTime);
+			const inactiveTimeFormatted = this.formatTime(inactiveTime);
+
+			// Restablecer estado
+			this.activityTimer.active = false;
+
+			console.log(`Cronómetro de actividad detenido.`);
+			console.log(`Tiempo total activo: ${totalTimeFormatted}`);
+			console.log(`Tiempo total inactivo: ${inactiveTimeFormatted}`);
+			console.log(`Tiempo total del proceso: ${this.formatTime(activeTime + inactiveTime)}`);
+			
+			return {
+				seconds: realActiveTime,
+				formatted: totalTimeFormatted,
+				inactiveSeconds: inactiveTime,
+				inactiveFormatted: inactiveTimeFormatted
+			};
+		},
+
+		// Reinicia el temporizador de inactividad
+		resetInactivityTimer() {
+			if (!this.activityTimer.active) return;
+
+			// Si estaba inactivo, registrar que volvió a la actividad
+			if (this.activityTimer.isInactive) {
+				this.activityTimer.isInactive = false;
+				console.log('Actividad reanudada, cronómetro continuando');
+				
+				// Detener el contador de inactividad si estaba activo
+				if (this.activityTimer.inactivityCounter) {
+					clearInterval(this.activityTimer.inactivityCounter);
+					this.activityTimer.inactivityCounter = null;
+				}
+				
+				// Reiniciar el contador de segundos si estaba pausado
+				if (!this.activityTimer.currentTimer) {
+					this.activityTimer.currentTimer = setInterval(() => {
+						if (!this.activityTimer.isInactive) {
+							this.activityTimer.totalTime++;
+							console.log(`Tiempo de actividad: ${this.activityTimer.totalTime} segundos`);
+						}
+					}, 1000);
+				}
+			}
+
+			// Limpiar el temporizador de inactividad existente
+			clearTimeout(this.activityTimer.inactivityTimeout);
+
+			// Establecer un nuevo temporizador de inactividad
+			this.activityTimer.inactivityTimeout = setTimeout(() => {
+				// Marcar como inactivo y pausar el contador
+				this.activityTimer.isInactive = true;
+				clearInterval(this.activityTimer.currentTimer);
+				this.activityTimer.currentTimer = null;
+				
+				// Iniciar contador de tiempo inactivo
+				this.activityTimer.inactivityCounter = setInterval(() => {
+					this.activityTimer.inactiveTime++;
+				}, 1000);
+				
+				console.log('Inactividad detectada, cronómetro pausado');
+			}, this.activityTimer.graceTime);
+		},
+
+		// Formatea el tiempo en segundos a formato hh:mm:ss
+		formatTime(seconds) {
+			const hours = Math.floor(seconds / 3600);
+			const minutes = Math.floor((seconds % 3600) / 60);
+			const secs = seconds % 60;
+
+			return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+		},
+
 		async _handleKeyReplacement(replacementKey, activationMode, contextMessage = '') {
 			try {
 				// Save the old key before replacing it
 				const oldKey = this.win.keyWindows;
+				console.log(`[KEY-REPLACEMENT${contextMessage}] Before saving - keyWindows:`, this.win.keyWindows);
+				console.log(`[KEY-REPLACEMENT${contextMessage}] Before saving - oldKeyWin:`, this.win.oldKeyWin);
 				this.win.oldKeyWin = oldKey;
+				console.log(`[KEY-REPLACEMENT${contextMessage}] After saving - oldKeyWin:`, this.win.oldKeyWin);
 
 				// 1. Deactivate current key
 				console.log(`[KEY-REPLACEMENT${contextMessage}] Deactivating current product key...`);
@@ -2144,8 +2343,12 @@ export default {
 					console.log(`[KEY-REPLACEMENT${contextMessage}] Activation result (attempt ${retryCount}):`, activateResult);
 
 					// Update Windows key info immediately after attempt
+					console.log(`[KEY-REPLACEMENT${contextMessage}] Before key update - keyWindows:`, this.win.keyWindows);
+					console.log(`[KEY-REPLACEMENT${contextMessage}] Before key update - oldKeyWin:`, this.win.oldKeyWin);
 					this.win.keyWindows = activateResult.productKeyUsed ? activateResult.productKeyUsed : replacementKey;
 					this.win.licenseDetails = activateResult.message ? activateResult.message : '';
+					console.log(`[KEY-REPLACEMENT${contextMessage}] After key update - keyWindows:`, this.win.keyWindows);
+					console.log(`[KEY-REPLACEMENT${contextMessage}] After key update - oldKeyWin:`, this.win.oldKeyWin);
 
 					if (activateResult && activateResult.activated === 1 && !activateResult.error) {
 						console.log(`[KEY-REPLACEMENT${contextMessage}] Activation successful on attempt`, retryCount);
@@ -2216,6 +2419,8 @@ export default {
 			this.win.oldKeyWin = originalKey
 			this.activate.windows = true
 			console.log('[CASE-0] Starting Windows verification process')
+			console.log('[CASE-0] Initial keyWindows:', this.win.keyWindows)
+			console.log('[CASE-0] Initial oldKeyWin:', this.win.oldKeyWin)
 			this.$q.loading.show({
 				message: 'Starting Windows activation verification...',
 			})
@@ -2223,6 +2428,8 @@ export default {
 			try {
 				// CASE 1: Initial verification of existing DPK
 				console.log('[CASE-1] Verifying initial local DPK:', JSON.stringify(this.win))
+				console.log('[CASE-1] Current keyWindows:', this.win.keyWindows)
+				console.log('[CASE-1] Current oldKeyWin:', this.win.oldKeyWin)
 				if (
 					!this.win ||
 					!this.win.hasOwnProperty('keyWindows') ||
@@ -2338,12 +2545,24 @@ export default {
 
 				// Update this.win with the latest data from the OS check
 				if (currentWinStatus) {
-					// Guardamos la clave original antes de actualizar el objeto win
-					const originalKey = this.win.oldKeyWin
+					// Guardamos las claves originales antes de actualizar el objeto win
+					const originalOldKey = this.win.oldKeyWin
+					const originalCurrentKey = this.win.keyWindows
+					console.log('[CASE-6] Before update - keyWindows:', this.win.keyWindows)
+					console.log('[CASE-6] Before update - oldKeyWin:', originalOldKey)
+					
 					// Actualizamos el objeto win con los datos más recientes
 					this.win = { ...this.win, ...currentWinStatus }
-					// Restauramos la clave original, asegurándonos que no se sobrescriba con la nueva
-					this.win.oldKeyWin = originalKey
+					
+					console.log('[CASE-6] After update - keyWindows:', this.win.keyWindows)
+					console.log('[CASE-6] After update - oldKeyWin:', this.win.oldKeyWin)
+					
+					// Restauramos las claves originales, asegurándonos que no se sobrescriban
+					this.win.oldKeyWin = originalOldKey
+					this.win.keyWindows = originalCurrentKey
+					
+					console.log('[CASE-6] After restoration - keyWindows:', this.win.keyWindows)
+					console.log('[CASE-6] After restoration - oldKeyWin:', this.win.oldKeyWin)
 				}
 
 				// Check if Windows is activated based on the updated data
@@ -2357,6 +2576,8 @@ export default {
 						this.win.licenseType !== 'Error')
 				) {
 					console.log('[CASE-6-SUCCESS] Final verification confirms Windows is activated.')
+					console.log('[CASE-6-SUCCESS] Final keyWindows:', this.win.keyWindows)
+					console.log('[CASE-6-SUCCESS] Final oldKeyWin:', this.win.oldKeyWin)
 					this.win.activated = true // Ensure activated flag is set
 
 					// Enhanced notification with license type information
@@ -2387,6 +2608,8 @@ export default {
 					this.test.windows = 'Windows Activation Test PASS'
 				} else {
 					console.log('[CASE-6-FAIL] Final verification indicates Windows is not activated.')
+					console.log('[CASE-6-FAIL] Final keyWindows:', this.win.keyWindows)
+					console.log('[CASE-6-FAIL] Final oldKeyWin:', this.win.oldKeyWin)
 					this.win.activated = false // Ensure activated flag is false
 
 					// Notify about failure based on final check
@@ -2428,12 +2651,16 @@ export default {
 		},
 	},
 	async beforeCreate() {
+		this.dateStartAll = new Date()
+		this.$q.loading.show()
 		try {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
 			this.si = this.$si()
 		} catch (error) {
 			console.error('Error during beforeCreate:', error)
 		}
+		
+		this.$q.loading.hide()
 	},
 	async mounted() {
 		try {
@@ -2442,7 +2669,9 @@ export default {
 					'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
 			})
 
-			console.log('Begin System Information...')
+			
+			this.infDateStart = new Date()
+			console.log(this.infDateStart, 'Begin System Information...')
 
 			// Initialize the win variable
 			this.win = this.$cmd.executeScriptCode(sWin)
@@ -2459,8 +2688,6 @@ export default {
 						this.$cmd.executeScriptCode(drivers),
 						this.$cmd.executeScriptCode(sWin),
 					])
-
-					console.log('End System Information...')
 
 					// Assign results to variables
 					this.infoSystem = is
@@ -2504,6 +2731,8 @@ export default {
 			}
 
 			console.log('Drivers: ', this.driver)
+			this.infDateEnd = new Date()
+			console.log(this.infDateEnd, 'End System Information...')
 
 			// Final validation
 			this.validation()
@@ -2532,7 +2761,13 @@ export default {
 	},
 	beforeDestroy() {
 		window.removeEventListener('keydown', this.handleKeyPress)
+		// Limpiar los eventos del cronómetro de actividad
+		this.stopActivityTimer()
+		document.removeEventListener('mousemove', this.resetInactivityTimer)
+		document.removeEventListener('mousedown', this.resetInactivityTimer)
+		document.removeEventListener('keydown', this.resetInactivityTimer)
 	},
+
 }
 </script>
 

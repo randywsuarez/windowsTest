@@ -294,14 +294,79 @@
 			    // Obtener todas las teclas que deben ser presionadas
 			    const requiredKeys = this.getAllRequiredKeyIds()
 			    
-			    // Log para depuración
-			    console.log('Required keys:', requiredKeys.length, 'Keys in noTest:', this.noTest.length)
+			    // Log para depuración mejorado
+			    console.log('%c INFORMACIÓN DE TECLAS ', 'background: #2196F3; color: white; font-weight: bold; padding: 4px;')
+			    console.log('Total de teclas requeridas:', requiredKeys.length)
+			    console.log('Teclas excluidas (noTest):', this.noTest.length)
+			    
+			    // Mostrar las teclas excluidas si hay alguna
+			    if (this.noTest.length > 0) {
+			        console.log('%c TECLAS EXCLUIDAS DEL TEST ', 'background: #9C27B0; color: white; font-weight: bold; padding: 4px;')
+			        
+			        // Convertir IDs de teclas excluidas a nombres más legibles
+			        const readableExcludedKeys = this.noTest.map(keyId => {
+			            return {
+			                id: keyId,
+			                nombre: keyId.replace('kb_btn_', '')
+			            };
+			        });
+			        
+			        console.table(readableExcludedKeys);
+			    }
+			    
+			    // Encontrar las teclas que faltan por presionar (excluyendo las de noTest)
+			    const missingKeys = requiredKeys.filter(
+			        (keyId) =>
+			            !(this.keyState[keyId] && this.keyState[keyId].pressed) && !this.noTest.includes(keyId)
+			    )
+			    
+			    // Verificar si hay teclas en noTest que no están siendo presionadas
+			    const excludedUnpressedKeys = requiredKeys.filter(
+			        (keyId) =>
+			            !(this.keyState[keyId] && this.keyState[keyId].pressed) && this.noTest.includes(keyId)
+			    )
+			    
+			    if (excludedUnpressedKeys.length > 0) {
+			        console.log('%c TECLAS EXCLUIDAS NO PRESIONADAS ', 'background: #FF9800; color: white; font-weight: bold; padding: 4px;')
+			        console.log('Estas teclas están en noTest y no han sido presionadas (esto es normal):', excludedUnpressedKeys.length)
+			        
+			        // Mostrar detalles de las teclas excluidas no presionadas
+			        const readableExcludedUnpressedKeys = excludedUnpressedKeys.map(keyId => {
+			            return {
+			                id: keyId,
+			                nombre: keyId.replace('kb_btn_', '')
+			            };
+			        });
+			        
+			        console.table(readableExcludedUnpressedKeys);
+			    }
+			    
+			    // Mostrar en consola las teclas que faltan por presionar
+			    if (missingKeys.length > 0) {
+			        console.log('%c TECLAS FALTANTES ', 'background: #ff0000; color: white; font-weight: bold; padding: 4px;')
+			        console.log('%c Faltan ' + missingKeys.length + ' teclas por presionar:', 'color: #ff0000; font-weight: bold;')
+			        
+			        // Convertir IDs de teclas a nombres más legibles
+			        const readableKeys = missingKeys.map(keyId => {
+			            // Eliminar el prefijo kb_btn_
+			            const keyName = keyId.replace('kb_btn_', '');
+			            return keyName;
+			        });
+			        
+			        // Mostrar los IDs originales para referencia técnica
+			        console.log('IDs de teclas faltantes:', missingKeys);
+			        
+			        // Mostrar nombres legibles
+			        console.log('%c Nombres de teclas faltantes: ', 'color: #ff6600; font-weight: bold;');
+			        console.table(readableKeys);
+			        
+			        console.log('%c Presiona estas teclas para habilitar el botón PASS ', 'background: #4CAF50; color: white; font-weight: bold; padding: 4px;')
+			    } else {
+			        console.log('%c TODAS LAS TECLAS HAN SIDO PRESIONADAS ✓ ', 'background: #4CAF50; color: white; font-weight: bold; padding: 4px;')
+			    }
 			    
 			    // Verificar si todas las teclas requeridas han sido presionadas
-			    const allPressed = requiredKeys.every(
-			        (keyId) =>
-			            (this.keyState[keyId] && this.keyState[keyId].pressed) || this.noTest.includes(keyId),
-			    )
+			    const allPressed = missingKeys.length === 0
 			    
 			    // Log para depuración
 			    console.log('All keys pressed?', allPressed)
