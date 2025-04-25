@@ -165,7 +165,7 @@
 				})
 			},
 			emitColorSelected(color) {
-				this.$emit('color-selected', color.value)
+				this.$emit('color-selected', color.value || '')
 			},
 		},
 	}

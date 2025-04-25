@@ -37,10 +37,29 @@
 				</q-card-section>
 				<q-separator />
 				<q-card-section class="center col row" id="actionType" style="justify-content: center">
-					<div class="text-center q-mt-md">
-							<div>Start: {{ infDateStart }}</div>
-							<div>End: {{ infDateEnd }}</div>
-							<div>Duration: {{ (() => {
+					<div class="text-center q-mt-md q-pa-md" style="width: 100%; max-width: 350px; border-radius: 8px; box-shadow: 0 1px 5px rgba(0,0,0,0.2); background-color: rgba(255,255,255,0.7);">
+						<div class="row items-center q-mb-sm">
+							<q-icon name="schedule" color="primary" size="sm" class="q-mr-sm" />
+							<div class="text-subtitle1 text-weight-medium">Time Information</div>
+						</div>
+						<q-separator class="q-mb-sm" />
+						
+						<div class="row items-center q-mb-xs">
+							<q-icon name="play_arrow" color="green" size="xs" class="q-mr-sm" />
+							<div class="text-caption text-weight-medium">Start:</div>
+							<div class="text-caption q-ml-sm">{{ infDateStart }}</div>
+						</div>
+						
+						<div class="row items-center q-mb-xs">
+							<q-icon name="stop" color="red" size="xs" class="q-mr-sm" />
+							<div class="text-caption text-weight-medium">End:</div>
+							<div class="text-caption q-ml-sm">{{ infDateEnd }}</div>
+						</div>
+						
+						<div class="row items-center q-mb-xs">
+							<q-icon name="timer" color="primary" size="xs" class="q-mr-sm" />
+							<div class="text-caption text-weight-medium">Duration:</div>
+							<div class="text-caption q-ml-sm">{{ (() => {
           // Parseamos las fechas (si ya son Date no hace falta el new Date)
           const start = new Date(infDateStart)
           const end   = new Date(infDateEnd)
@@ -55,6 +74,7 @@
           return `${hours}h ${minutes}m ${seconds}s`
         })() }}</div>
 						</div>
+					</div>
 				</q-card-section>
 			</q-card>
 			<q-card class="card" v-show="activate.logo">
@@ -185,7 +205,7 @@
 							<div class="text-h6">Windows Test</div>
 						</div>
 						<div class="col-auto">
-							<q-btn round color="primary" icon="restart_alt" @click="windows_test" />
+							<q-btn round color="primary" icon="restart_alt" @click="windows_test(true)" />
 						</div>
 					</div>
 				</q-card-section>
@@ -476,8 +496,10 @@
 								<q-item-section avatar>
 									<q-icon name="windows" color="blue" size="40px" />
 								</q-item-section>
-								<q-item-label>{{ disk.name }}</q-item-label>
-								<q-item-label caption>{{ disk.description }}</q-item-label>
+								<q-item-section>
+									<q-item-label>{{ disk.name }}</q-item-label>
+									<q-item-label caption> {{ disk.description }}</q-item-label>
+								</q-item-section>
 							</q-item>
 						</q-list>
 					</div>
@@ -542,7 +564,7 @@ import Touch from '../components/Touch.vue'
 import ColorSelect from '../components/ColorSelect.vue'
 import {
 	drivers,
-	windows,
+	Enrollment,
 	intenalDevices,
 	GetMntBringhtness,
 	imaging,
@@ -551,7 +573,7 @@ import {
 	aWin,
 	sWin,
 	dWin,
-	Sysprep,
+	BitLocker,
 } from '../scripts'
 import moment from 'moment'
 import JsBarcode from 'jsbarcode'
@@ -599,6 +621,16 @@ export default {
 				privacy: false,
 			},
 			sectionEnabled: false,
+			enrollment: '',
+			bitLocker:'',
+			activate: {
+				Storage: false,
+				gpu: false,
+				done: false,
+				txt: false,
+				scan: '',
+				action: '',
+			},
 			selectedColor: null,
 			partsurfer: {},
 			si: {},
@@ -823,11 +855,11 @@ export default {
 			if (si.length)
 				await this.$db
 					.doc(`systemInformation/${si[0]._id}`)
-					.update({ Serial: this.device.Serial, ...this.infoSystem, ...this.si, Bios: this.bios })
+					.update({ Serial: this.device.Serial, ...this.infoSystem, ...this.si, infBios: this.bios, Drivers: this.driver, Enrollment: this.enrollment, BitLocker: this.bitLocker })
 			else
 				await this.$db
 					.doc('systemInformation')
-					.add({ Serial: this.device.Serial, ...this.infoSystem, ...this.si })
+					.add({ Serial: this.device.Serial, ...this.infoSystem, ...this.si, infBios: this.bios, Drivers: this.driver, Enrollment: this.enrollment, BitLocker: this.bitLocker })
 		},
 		handleAuditUpdate(newValue) {
 			this.audit = newValue
@@ -1057,6 +1089,10 @@ export default {
 		       Windows Product Key old: ${this.test.oldKeyWin}
 		       ${this.test.windows}
 		       ${this.test.color ? `Color: ${this.test.color}` : ''}
+			   BitLocker: ${this.bitLocker.status ? 'YES' : 'NO'}
+			   Enrollment: ${this.enrollment.status ? 'YES' : 'NO'}
+		       ${this.test.bitLocker? `BitLocker Key: ${this.test.bitLockerKey}` : ''}
+		       ${this.test.bitLocker? `BitLocker Key old: ${this.test.oldBitLockerKey}` : ''}
 		       Hard Drive: ${this.intDev.HDD.Total}
 		       ${this.disks.map((disk) => disk.specs).join('\n')}
 		       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
@@ -1157,7 +1193,9 @@ export default {
 			this.componentes.Keyboard['RGB'] = data.BacklitRGB
 
 			this.componentes.Keyboard['Privacy'] =
-				this.bios && this.bios.components.Privacy ? this.bios.components.Privacy : data.Privacy
+				this.bios && this.bios.components.Privacy ? this.bios.components.Privacy : data.hasOwnProperty('Privacy')
+					? data.Privacy
+					: 'NO'
 			this.test['WWAN'] =
 				this.bios && this.bios.components.WWAN ? this.bios.components.WWAN : 'NO'
 			this.test['WLAN'] =
@@ -1257,6 +1295,7 @@ export default {
 			this.myDb.CPU = this.intDev.cpuName.join(',')
 			await this.brands()
 			console.log('brands: ', this.device)
+			console.log('Device: ', this.device)
 
 			if (!this.device.SKU) {
 				this.test['SKU'] = `SKU ID Check FAIL`
@@ -1275,6 +1314,7 @@ export default {
 			this.myDb.Serial = this.device.Serial
 			this.myDb.Model = this.device.SKU
 			let projectInfo = await this.getProjectInfo(this.device.Serial)
+			console.log('projectInfo: ', projectInfo)
 			if (!projectInfo) {
 				this.$q.loading.hide()
 				this.winChange = true
@@ -1354,7 +1394,7 @@ export default {
 			).toFixed(0)
 			console.log('SI: ', this.si)
 			this.test.touchScreen =
-				this.device.brand == 'HP' ? this.partsurfer.Display.TouchScreen : 'NO'
+				this.device.brand == 'HP' && this.partsurfer.hasOwnProperty('Display') ? this.partsurfer.Display.TouchScreen : 'NO'
 			await this.$cmd.executeScriptCode(`Start-Process "devmgmt.msc"`)
 			await this.simpleTest('Information')
 			this.test['hotKey'] = 'HotKeys test PASS'
@@ -1529,6 +1569,29 @@ export default {
 		},
 		async getProjectInfo(Serial) {
 			let infoToken = (await this.$rsNeDB('credenciales').find())[0]
+			let result = this.$db.funcAdmin('modules/ispt/validateUnit', {
+					Serial,
+					sku: this.device.SKU,
+				})
+				.then((v) => {
+					v = v[0]
+					this.project = {
+						Station: v.StationTypeID,
+						TenantId: v.TenantId,
+						id: v.ProjectName,
+						db: v.DB,
+						operator: infoToken.id,
+					}
+					this.select = {...infoToken,...v,...this.project }
+					console.log('Select: ', this.select)
+					return v
+				})
+				.catch((e) => {
+					console.log('Error: ', e)
+					this.showNotification('Error', 'The unit has not passed through any previous station.')
+				})
+				return result
+				/* 
 			let infoUnit = (
 				await this.$db.funcAdmin('modules/ispt/validateUnit', {
 					Serial,
@@ -1545,7 +1608,7 @@ export default {
 			}
 			this.select = { ...infoToken, ...infoUnit, ...this.project }
 			console.log('Select: ', this.select)
-			return infoUnit
+			return infoUnit */
 		},
 		showNotification(title, message) {
 			this.msn = { title, message, active: true }
@@ -1654,6 +1717,7 @@ export default {
 
 				this.activate.keyboard = true
 				await this.espera('actionKeyboard')
+				console.log('Keyboard:', this.rKeyboard)
 				this.activate.keyboard = false
 			}
 			this.test['spotLights'] =
@@ -2177,6 +2241,11 @@ export default {
 			localStorage.removeItem('datetime')
 			localStorage.removeItem('driver')
 			localStorage.removeItem('winDPK')
+			localStorage.removeItem('enrollment')
+			localStorage.removeItem('bitLocker')
+			
+			this.enrollment = JSON.parse(localStorage.getItem('enrollment'))
+			this.bitLocker = JSON.parse(localStorage.getItem('bitLocker'))
 			return true
 		},
 
@@ -2414,351 +2483,415 @@ export default {
 			}
 		},
 		async windows_test() {
-			// Guardamos la clave original al inicio del proceso
-			const originalKey = this.win.keyWindows
-			this.win.oldKeyWin = originalKey
-			this.activate.windows = true
-			console.log('[CASE-0] Starting Windows verification process')
-			console.log('[CASE-0] Initial keyWindows:', this.win.keyWindows)
-			console.log('[CASE-0] Initial oldKeyWin:', this.win.oldKeyWin)
-			this.$q.loading.show({
-				message: 'Starting Windows activation verification...',
-			})
+    // Guardamos la clave original al inicio del proceso
+    const originalKey = this.win.keyWindows
+    this.win.oldKeyWin = originalKey
+    this.activate.windows = true
+    console.log('[CASE-0] Starting Windows verification process')
+    console.log('[CASE-0] Initial keyWindows:', this.win.keyWindows)
+    console.log('[CASE-0] Initial oldKeyWin:', this.win.oldKeyWin)
+    this.$q.loading.show({
+        message: 'Starting Windows activation verification...',
+    })
 
-			try {
-				// CASE 1: Initial verification of existing DPK
-				console.log('[CASE-1] Verifying initial local DPK:', JSON.stringify(this.win))
-				console.log('[CASE-1] Current keyWindows:', this.win.keyWindows)
-				console.log('[CASE-1] Current oldKeyWin:', this.win.oldKeyWin)
-				if (
-					!this.win ||
-					!this.win.hasOwnProperty('keyWindows') ||
-					this.win.keyWindows === 'Key not found' ||
-					this.win.keyWindows === 'Error'
-				) {
-					console.error('[CASE-1-ERROR] Initial DPK invalid or not found')
-					// Handle DPK not found error
-					console.error('[DPK-ERROR] Error with DPK: No DPK Found Locally')
-					this.$q.notify({
-						type: 'negative',
-						message: `DPK Error: No DPK Found Locally`,
-					})
-					this.test.keyWindows = this.win.keyWindows
-					this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
-					this.test.windows = 'Windows Activation Test FAIL'
-					// Skip directly to CASE 6 for final status check if CASE 1 fails
-				} else {
-					// CASE 2 (New Logic): Verify with backend and handle activation/replacement
-					console.log('[CASE-2] Verifying DPK with backend (initial check)...')
-					this.$q.loading.show({ message: 'Verifying DPK with the system...' })
-					const initialDkpResult = await this.verifyDPK(false) // Don't force initially
-					console.log('[CASE-2] Initial verification result:', JSON.stringify(initialDkpResult))
+    try {
+        // CASE 1: Initial verification of existing DPK
+        console.log('[CASE-1] Verifying initial local DPK:', JSON.stringify(this.win))
+        console.log('[CASE-1] Current keyWindows:', this.win.keyWindows)
+        console.log('[CASE-1] Current oldKeyWin:', this.win.oldKeyWin)
+        
+        // Verificar estado actual de activación
+        const initialActivationStatus = await this.$cmd.executeScriptCode(sWin)
+        console.log('[CASE-1] Initial activation status:', JSON.stringify(initialActivationStatus))
+        
+        // Actualizar win con los datos más recientes
+        if (initialActivationStatus) {
+            this.win = { ...this.win, ...initialActivationStatus }
+            // Asegurar que mantenemos las claves originales
+            this.win.oldKeyWin = originalKey
+        }
+        
+        const isCurrentlyActivated = 
+            this.win.activate === 1 || 
+            this.win.licenseStatus === 1 || 
+            (this.win.licenseType && 
+             this.win.licenseType !== 'None' && 
+             this.win.licenseType !== 'Error');
+        
+        if (
+            !this.win ||
+            !this.win.hasOwnProperty('keyWindows') ||
+            this.win.keyWindows === 'Key not found' ||
+            this.win.keyWindows === 'Error'
+        ) {
+            console.error('[CASE-1-ERROR] Initial DPK invalid or not found')
+            // Handle DPK not found error
+            console.error('[DPK-ERROR] Error with DPK: No DPK Found Locally')
+            this.$q.notify({
+                type: 'negative',
+                message: `DPK Error: No DPK Found Locally`,
+            })
+            this.test.keyWindows = this.win.keyWindows
+            this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+            this.test.windows = 'Windows Activation Test FAIL'
+            
+            // Si no hay clave, intentamos forzar una nueva siempre
+            console.log('[CASE-1-RECOVERY] No valid key found, forcing DPK request...')
+            const forcedDkpResult = await this.verifyDPK(true) // Force injection
+            
+            if (!forcedDkpResult.error && forcedDkpResult.needsNewProductKey) {
+                console.log('[CASE-1-RECOVERY] New DPK obtained via forced request. Starting replacement...')
+                const replacementKey = forcedDkpResult.replacementProductKey
+                const activationMode = (this.infoTest && this.infoTest.DPKMode) || 'online'
+                await this._handleKeyReplacement(replacementKey, activationMode, ' (Recovery Request)')
+            }
+            // Proceed to CASE 6 for final status check
+        } else {
+            // CASE 2: Verify with backend and handle activation/replacement
+            console.log('[CASE-2] Verifying DPK with backend (initial check)...')
+            this.$q.loading.show({ message: 'Verifying DPK with the system...' })
+            
+            // Si ya está activado, podríamos evitar forzar una clave
+            let shouldForceKeyRequest = !isCurrentlyActivated;
+            console.log('[CASE-2] Initial activation check - Activated:', isCurrentlyActivated);
+            console.log('[CASE-2] Should force key request:', shouldForceKeyRequest);
+            
+            // Verificación inicial - sin forzar primero
+            const initialDkpResult = await this.verifyDPK(false)
+            console.log('[CASE-2] Initial verification result:', JSON.stringify(initialDkpResult))
 
-					if (initialDkpResult.error) {
-						// Handle error during initial verification (similar to old CASE-4 error handling)
-						console.error(
-							'[CASE-2-ERROR] Error in initial DPK verification:',
-							initialDkpResult.errorMessage,
-						)
-						// Check current status directly from OS as a fallback
-						const currentWinStatusFallback = await this.$cmd.executeScriptCode(sWin)
-						if (
-							currentWinStatusFallback &&
-							(currentWinStatusFallback.activate === 1 ||
-								currentWinStatusFallback.licenseStatus === 1 ||
-								(currentWinStatusFallback.licenseType &&
-									currentWinStatusFallback.licenseType !== 'None' &&
-									currentWinStatusFallback.licenseType !== 'Error'))
-						) {
-							console.log('[CASE-2-RECOVERY] Windows is activated despite DPK verification error')
-							this.win = { ...this.win, ...currentWinStatusFallback } // Update win object
-							// Notify about recovery (optional, could rely on CASE 6)
-							this.$q.notify({
-								type: 'info',
-								message: 'DPK verification failed, but Windows appears activated.',
-							})
-						} else {
-							// If OS also shows not activated, notify about the DPK error
-							this.$q.notify({
-								type: 'negative',
-								message: `DPK Error: ${initialDkpResult.errorMessage}`,
-							})
-							// Test will likely fail in CASE 6
-						}
-						// Proceed to CASE 6 for final check
-					} else if (initialDkpResult.needsNewProductKey) {
-						// Backend says a new key is needed
-						console.log('[CASE-2] New DPK required by backend. Starting replacement...')
-						const replacementKey = initialDkpResult.replacementProductKey
-						const activationMode = (this.infoTest && this.infoTest.DPKMode) || 'online'
-						await this._handleKeyReplacement(replacementKey, activationMode, ' (Initial Request)')
-						// Proceed to CASE 6 for final check after replacement attempt
-					} else {
-						// Backend says current key is okay OR no new key needed
-						console.log('[CASE-2] Backend indicates no new DPK needed initially.')
-						// Now check if the system is *actually* activated locally
-						if (this.win.activate === 1 || this.win.licenseStatus === 1) {
-							console.log('[CASE-2] System is already activated locally. Proceeding to final check.')
-							// Proceed directly to CASE 6
-						} else {
-							// Not activated locally, but backend didn't require a new key initially.
-							// Try forcing a key request.
-							console.warn(
-								'[CASE-2] System not activated, but backend did not initially require a new key. Forcing request...',
-							)
-							this.$q.loading.show({ message: 'Forcing DPK request...' })
-							const forcedDkpResult = await this.verifyDPK(true) // Force injection
-							console.log('[CASE-2] Forced verification result:', JSON.stringify(forcedDkpResult))
+            if (initialDkpResult.error) {
+                // Error en verificación inicial
+                console.error(
+                    '[CASE-2-ERROR] Error in initial DPK verification:',
+                    initialDkpResult.errorMessage,
+                )
+                
+                // Verificar estado actual directamente del OS como fallback
+                const currentWinStatusFallback = await this.$cmd.executeScriptCode(sWin)
+                
+                // Actualizar estado actual y verificar activación
+                if (currentWinStatusFallback) {
+                    this.win = { ...this.win, ...currentWinStatusFallback }
+                    // Mantener claves originales
+                    this.win.oldKeyWin = originalKey 
+                }
+                
+                const isActivatedFallback = 
+                    currentWinStatusFallback && 
+                    (currentWinStatusFallback.activate === 1 ||
+                    currentWinStatusFallback.licenseStatus === 1 ||
+                    (currentWinStatusFallback.licenseType &&
+                    currentWinStatusFallback.licenseType !== 'None' &&
+                    currentWinStatusFallback.licenseType !== 'Error'));
+                
+                if (isActivatedFallback) {
+                    console.log('[CASE-2-RECOVERY] Windows is activated despite DPK verification error')
+                    this.$q.notify({
+                        type: 'info',
+                        message: 'DPK verification failed, but Windows appears activated.',
+                    })
+                    shouldForceKeyRequest = false;
+                } else {
+                    // Si el OS también muestra no activado, intentamos forzar una nueva clave
+                    console.log('[CASE-2-RECOVERY] Windows not activated and DPK verification failed. Forcing key request...')
+                    shouldForceKeyRequest = true;
+                }
+            } else if (initialDkpResult.needsNewProductKey) {
+                // Backend dice que se necesita una nueva clave
+                console.log('[CASE-2] New DPK required by backend. Starting replacement...')
+                const replacementKey = initialDkpResult.replacementProductKey
+                const activationMode = (this.infoTest && this.infoTest.DPKMode) || 'online'
+                await this._handleKeyReplacement(replacementKey, activationMode, ' (Initial Request)')
+                shouldForceKeyRequest = false; // Ya estamos reemplazando
+            } else {
+                // Backend dice que la clave actual está bien O no se necesita nueva clave
+                console.log('[CASE-2] Backend indicates no new DPK needed initially.')
+                
+                // Verificar si el sistema está realmente activado localmente
+                if (isCurrentlyActivated) {
+                    console.log('[CASE-2] System is already activated locally. Proceeding to final check.')
+                    shouldForceKeyRequest = false;
+                } else {
+                    // No activado localmente, pero el backend no requirió una nueva clave inicialmente.
+                    // **Este es exactamente tu caso problemático**
+                    console.warn(
+                        '[CASE-2] System not activated, but backend did not initially require a new key. Will force request...',
+                    )
+                    shouldForceKeyRequest = true;
+                }
+            }
+            
+            // Forzar solicitud de clave si es necesario después de todas las verificaciones
+            if (shouldForceKeyRequest) {
+                console.log('[CASE-2-FORCE] Forcing DPK request due to activation issues...')
+                this.$q.loading.show({ message: 'Forcing DPK request...' })
+                
+                // Siempre intentar forzar una nueva clave si no estamos activados
+                const forcedDkpResult = await this.verifyDPK(true) // Force injection
+                console.log('[CASE-2-FORCE] Forced verification result:', JSON.stringify(forcedDkpResult))
 
-							if (!forcedDkpResult.error && forcedDkpResult.needsNewProductKey) {
-								// Forced request yielded a new key
-								console.log('[CASE-2] New DPK obtained via forced request. Starting replacement...')
-								const replacementKey = forcedDkpResult.replacementProductKey
-								const activationMode = (this.infoTest && this.infoTest.DPKMode) || 'online'
-								await this._handleKeyReplacement(replacementKey, activationMode, ' (Forced Request)')
-								// Proceed to CASE 6 after replacement attempt
-							} else {
-								// Forced request failed or still didn't provide a key
-								console.error(
-									'[CASE-2] Forced DPK request failed or did not provide a new key. Activation may not be possible.',
-									forcedDkpResult.errorMessage || '',
-								)
-								this.$q.notify({
-									type: 'warning',
-									message:
-										'Could not obtain a required DPK even after forcing the request. ' +
-										(forcedDkpResult.errorMessage || ''),
-								})
-								// Proceed to CASE 6, likely resulting in FAIL
-							}
-						}
-					}
-				} // End of CASE 1 else (valid initial DPK)
+                if (!forcedDkpResult.error && forcedDkpResult.needsNewProductKey) {
+                    // Solicitud forzada produjo una nueva clave
+                    console.log('[CASE-2-FORCE] New DPK obtained via forced request. Starting replacement...')
+                    const replacementKey = forcedDkpResult.replacementProductKey
+                    const activationMode = (this.infoTest && this.infoTest.DPKMode) || 'online'
+                    await this._handleKeyReplacement(replacementKey, activationMode, ' (Forced Request)')
+                } else {
+                    // La solicitud forzada falló o no proporcionó una clave
+                    console.error(
+                        '[CASE-2-FORCE] Forced DPK request failed or did not provide a new key.',
+                        forcedDkpResult.errorMessage || '',
+                    )
+                    this.$q.notify({
+                        type: 'warning',
+                        message:
+                            'Could not obtain a required DPK even after forcing the request. ' +
+                            (forcedDkpResult.errorMessage || ''),
+                    })
+                }
+            }
+        }
 
-				// CASE 6: Final verification (Runs after CASE 1 or CASE 2 logic)
-				console.log('[CASE-6] Performing final activation verification')
-				this.$q.loading.show({ message: 'Verifying final activation status...' }) // Update loading message
+        // CASE 6: Final verification (Runs after all previous logic)
+        console.log('[CASE-6] Performing final activation verification')
+        this.$q.loading.show({ message: 'Verifying final activation status...' })
 
-				// Get updated Windows status directly from the OS
-				const currentWinStatus = await this.$cmd.executeScriptCode(sWin)
-				console.log('[CASE-6-CHECK] Current Windows status:', JSON.stringify(currentWinStatus))
+        // Get updated Windows status directly from the OS
+        const currentWinStatus = await this.$cmd.executeScriptCode(sWin)
+        console.log('[CASE-6-CHECK] Current Windows status:', JSON.stringify(currentWinStatus))
 
-				// Update this.win with the latest data from the OS check
-				if (currentWinStatus) {
-					// Guardamos las claves originales antes de actualizar el objeto win
-					const originalOldKey = this.win.oldKeyWin
-					const originalCurrentKey = this.win.keyWindows
-					console.log('[CASE-6] Before update - keyWindows:', this.win.keyWindows)
-					console.log('[CASE-6] Before update - oldKeyWin:', originalOldKey)
-					
-					// Actualizamos el objeto win con los datos más recientes
-					this.win = { ...this.win, ...currentWinStatus }
-					
-					console.log('[CASE-6] After update - keyWindows:', this.win.keyWindows)
-					console.log('[CASE-6] After update - oldKeyWin:', this.win.oldKeyWin)
-					
-					// Restauramos las claves originales, asegurándonos que no se sobrescriban
-					this.win.oldKeyWin = originalOldKey
-					this.win.keyWindows = originalCurrentKey
-					
-					console.log('[CASE-6] After restoration - keyWindows:', this.win.keyWindows)
-					console.log('[CASE-6] After restoration - oldKeyWin:', this.win.oldKeyWin)
-				}
+        // Update this.win with the latest data from the OS check
+        if (currentWinStatus) {
+            // Guardamos las claves originales antes de actualizar el objeto win
+            const originalOldKey = this.win.oldKeyWin
+            const originalCurrentKey = this.win.keyWindows
+            console.log('[CASE-6] Before update - keyWindows:', this.win.keyWindows)
+            console.log('[CASE-6] Before update - oldKeyWin:', originalOldKey)
+            
+            // Actualizamos el objeto win con los datos más recientes
+            this.win = { ...this.win, ...currentWinStatus }
+            
+            console.log('[CASE-6] After update - keyWindows:', this.win.keyWindows)
+            console.log('[CASE-6] After update - oldKeyWin:', this.win.oldKeyWin)
+            
+            // Restauramos las claves originales, asegurándonos que no se sobrescriban
+            this.win.oldKeyWin = originalOldKey
+            this.win.keyWindows = originalCurrentKey
+            
+            console.log('[CASE-6] After restoration - keyWindows:', this.win.keyWindows)
+            console.log('[CASE-6] After restoration - oldKeyWin:', this.win.oldKeyWin)
+        }
 
-				// Check if Windows is activated based on the updated data
-				if (
-					this.win.activate === 1 ||
-					this.win.licenseStatus === 1 ||
-					(this.win.licenseDetails &&
-						this.win.licenseDetails.toLowerCase().includes('successfully activated')) || // Case-insensitive check
-					(this.win.licenseType &&
-						this.win.licenseType !== 'None' &&
-						this.win.licenseType !== 'Error')
-				) {
-					console.log('[CASE-6-SUCCESS] Final verification confirms Windows is activated.')
-					console.log('[CASE-6-SUCCESS] Final keyWindows:', this.win.keyWindows)
-					console.log('[CASE-6-SUCCESS] Final oldKeyWin:', this.win.oldKeyWin)
-					this.win.activated = true // Ensure activated flag is set
+        // Check if Windows is activated based on the updated data
+        if (
+            this.win.activate === 1 ||
+            this.win.licenseStatus === 1 ||
+            (this.win.licenseDetails &&
+                this.win.licenseDetails.toLowerCase().includes('successfully activated')) ||
+            (this.win.licenseType &&
+                this.win.licenseType !== 'None' &&
+                this.win.licenseType !== 'Error')
+        ) {
+            console.log('[CASE-6-SUCCESS] Final verification confirms Windows is activated.')
+            console.log('[CASE-6-SUCCESS] Final keyWindows:', this.win.keyWindows)
+            console.log('[CASE-6-SUCCESS] Final oldKeyWin:', this.win.oldKeyWin)
+            this.win.activated = true // Ensure activated flag is set
 
-					// Enhanced notification with license type information
-					let activationMessage = 'Windows activation completed successfully.'
-					if (this.win.licenseType) {
-						activationMessage += ` (${this.win.licenseType})`
+            // Enhanced notification with license type information
+            let activationMessage = 'Windows activation completed successfully.'
+            if (this.win.licenseType) {
+                activationMessage += ` (${this.win.licenseType})`
 
-						// Special warning for KMS with few days remaining
-						if (
-							this.win.licenseType === 'KMS' &&
-							this.win.daysRemaining > 0 &&
-							this.win.daysRemaining < 15
-						) {
-							console.log(
-								`[CASE-6-WARNING] KMS activation with only ${this.win.daysRemaining} days remaining`,
-							)
-							activationMessage += ` - Warning: Only ${this.win.daysRemaining} days remaining`
-						}
-					}
+                // Special warning for KMS with few days remaining
+                if (
+                    this.win.licenseType === 'KMS' &&
+                    this.win.daysRemaining > 0 &&
+                    this.win.daysRemaining < 15
+                ) {
+                    console.log(
+                        `[CASE-6-WARNING] KMS activation with only ${this.win.daysRemaining} days remaining`,
+                    )
+                    activationMessage += ` - Warning: Only ${this.win.daysRemaining} days remaining`
+                }
+            }
 
-					this.$q.notify({
-						type: 'positive',
-						message: activationMessage,
-					})
+            this.$q.notify({
+                type: 'positive',
+                message: activationMessage,
+            })
 
-					this.test.keyWindows = this.win.keyWindows
-					this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
-					this.test.windows = 'Windows Activation Test PASS'
-				} else {
-					console.log('[CASE-6-FAIL] Final verification indicates Windows is not activated.')
-					console.log('[CASE-6-FAIL] Final keyWindows:', this.win.keyWindows)
-					console.log('[CASE-6-FAIL] Final oldKeyWin:', this.win.oldKeyWin)
-					this.win.activated = false // Ensure activated flag is false
+            this.test.keyWindows = this.win.keyWindows
+            this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+            this.test.windows = 'Windows Activation Test PASS'
+        } else {
+            console.log('[CASE-6-FAIL] Final verification indicates Windows is not activated.')
+            console.log('[CASE-6-FAIL] Final keyWindows:', this.win.keyWindows)
+            console.log('[CASE-6-FAIL] Final oldKeyWin:', this.win.oldKeyWin)
+            this.win.activated = false // Ensure activated flag is false
 
-					// Notify about failure based on final check
-					this.$q.notify({
-						type: 'negative',
-						message: 'Final verification failed. Windows is not activated.',
-					})
+            // Notify about failure based on final check
+            this.$q.notify({
+                type: 'negative',
+                message: 'Final verification failed. Windows is not activated.',
+            })
 
-					// Set test variables for failed activation
-					this.test.keyWindows = this.win.keyWindows || 'Not Found/Error'
-					this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
-					this.test.windows = 'Windows Activation Test FAIL'
-				}
-			} catch (error) {
-				console.error('[CASE-ERROR] Unexpected error in windows_test:', error)
-				this.$q.notify({
-					type: 'negative',
-					message: 'An unexpected error occurred during Windows activation: ' + error.message,
-				})
+            // Set test variables for failed activation
+            this.test.keyWindows = this.win.keyWindows || 'Not Found/Error'
+            this.test.oldKeyWin = this.win.oldKeyWin || 'N/A'
+            this.test.windows = 'Windows Activation Test FAIL'
+        }
+    } catch (error) {
+        console.error('[CASE-ERROR] Unexpected error in windows_test:', error)
+        this.$q.notify({
+            type: 'negative',
+            message: 'An unexpected error occurred during Windows activation: ' + error.message,
+        })
 
-				// Set test variables when there's an error
-				this.test.keyWindows = this.win ? this.win.keyWindows : 'Error'
-				this.test.oldKeyWin = this.win && this.win.oldKeyWin ? this.win.oldKeyWin : 'N/A'
-				this.test.windows = 'Windows Activation Test FAIL'
-			} finally {
-				// Ensure OS edition is captured
-				this.test.OS = this.win ? this.win.edition : 'Unknown'
-				console.log('[CASE-END] Finishing windows_test process')
-				this.$q.loading.hide()
+        // Set test variables when there's an error
+        this.test.keyWindows = this.win ? this.win.keyWindows : 'Error'
+        this.test.oldKeyWin = this.win && this.win.oldKeyWin ? this.win.oldKeyWin : 'N/A'
+        this.test.windows = 'Windows Activation Test FAIL'
+    } finally {
+        // Ensure OS edition is captured
+        this.test.OS = this.win ? this.win.edition : 'Unknown'
+        console.log('[CASE-END] Finishing windows_test process')
+        this.$q.loading.hide()
 
-				// IMPORTANT: Always execute espera('actionWindows') before finishing
-				console.log('[CASE-END] Waiting for user action in actionWindows')
-				await this.espera('actionWindows')
-				console.log('[CASE-END] User completed action in actionWindows')
+        // IMPORTANT: Always execute espera('actionWindows') before finishing
+        console.log('[CASE-END] Waiting for user action in actionWindows')
+        await this.espera('actionWindows')
+        console.log('[CASE-END] User completed action in actionWindows')
 
-				this.activate.windows = false
-				console.log('[CASE-END] windows_test method completely finished')
-			}
-		},
+        this.activate.windows = false
+        console.log('[CASE-END] windows_test method completely finished')
+    }
+},
 	},
 	async beforeCreate() {
 		this.dateStartAll = new Date()
-		this.$q.loading.show()
+		this.$q.loading.show({ message:'Logging in...'})
 		try {
 			this.user = await this.$rsNeDB('credenciales').findOne({})
 			this.si = this.$si()
 		} catch (error) {
 			console.error('Error during beforeCreate:', error)
 		}
-		
-		this.$q.loading.hide()
 	},
-	async mounted() {
-		try {
-			this.$q.loading.show({
-				message:
-					'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
-			})
+async mounted() {
+    // Create loading instance
+    const loading = this.$q.loading.show({
+        message: 'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
+        spinnerColor: 'primary',
+        spinnerSize: 140,
+        backgroundColor: 'grey-2'
+    })
 
-			
-			this.infDateStart = new Date()
-			console.log(this.infDateStart, 'Begin System Information...')
+    try {
+        this.infDateStart = new Date()
+        console.log(this.infDateStart, 'Begin System Information...')
 
-			// Initialize the win variable
-			this.win = this.$cmd.executeScriptCode(sWin)
+        // Initialize the win variable
+        this.win = this.$cmd.executeScriptCode(sWin)
 
-			if (!localStorage.getItem('infoSystem')) {
-				try {
-					// Execute all promises concurrently
-					let [is, it, id, cp, dt, dr, w] = await Promise.all([
-						this.$system(),
-						this.$cmd.executeScriptCode(imaging),
-						this.$cmd.executeScriptCode(intenalDevices),
-						this.$cmd.executeScriptCode(components),
-						this.DateTime(),
-						this.$cmd.executeScriptCode(drivers),
-						this.$cmd.executeScriptCode(sWin),
-					])
+        if (!localStorage.getItem('infoSystem')) {
+            try {
+                // Execute all promises concurrently
+                let [is, it, id, cp, dt, dr, w, enlmt, btlkr ] = await Promise.all([
+                    this.$system(),
+                    this.$cmd.executeScriptCode(imaging),
+                    this.$cmd.executeScriptCode(intenalDevices),
+                    this.$cmd.executeScriptCode(components),
+                    this.DateTime(),
+                    this.$cmd.executeScriptCode(drivers),
+                    this.$cmd.executeScriptCode(sWin),
+					this.$cmd.executeScriptCode(Enrollment),
+					this.$cmd.executeScriptCode(BitLocker)
+                ])
 
-					// Assign results to variables
-					this.infoSystem = is
-					this.iTest = it
-					this.intDev = id
-					this.componentes = cp
-					this.datetime = dt
-					this.driver = dr
-					this.win = w
-					// Save results to localStorage
-					localStorage.setItem('infoSystem', JSON.stringify(this.infoSystem))
-					localStorage.setItem('iTest', JSON.stringify(this.iTest))
-					localStorage.setItem('intDev', JSON.stringify(this.intDev))
-					localStorage.setItem('componentes', JSON.stringify(this.componentes))
-					localStorage.setItem('datetime', JSON.stringify(this.datetime))
-					localStorage.setItem('driver', JSON.stringify(this.driver))
-					localStorage.setItem('winDPK', JSON.stringify(this.win))
-				} catch (error) {
-					console.error('Error during system information retrieval:', error)
-					this.clearLocalStorage()
-					throw error // Re-throw the error to handle it in the catch block below
-				}
-			} else {
-				// Load data from localStorage
-				this.infoSystem = JSON.parse(localStorage.getItem('infoSystem'))
-				this.iTest = JSON.parse(localStorage.getItem('iTest'))
-				this.intDev = JSON.parse(localStorage.getItem('intDev'))
-				this.componentes = JSON.parse(localStorage.getItem('componentes'))
-				this.datetime = JSON.parse(localStorage.getItem('datetime'))
-				this.driver = JSON.parse(localStorage.getItem('driver'))
-				this.win = JSON.parse(localStorage.getItem('winDPK'))
-			}
+                // Assign results to variables
+                this.infoSystem = is
+                this.iTest = it
+                this.intDev = id
+                this.componentes = cp
+                this.datetime = dt
+                this.driver = dr
+                this.win = w
+				this.enrollment = enlmt
+				this.bitLocker = btlkr
+				if (this.bitLocker.status === true)
+				this.showNotification('The unit has a volume with BitLocker. Fix it and reload the system.')
+				if (this.enrollment.status === true)
+				this.showNotification('The unit has MDM (Enrollment). You need to run the Enrollment app...')
+                // Save results to localStorage
+                localStorage.setItem('infoSystem', JSON.stringify(this.infoSystem))
+                localStorage.setItem('iTest', JSON.stringify(this.iTest))
+                localStorage.setItem('intDev', JSON.stringify(this.intDev))
+                localStorage.setItem('componentes', JSON.stringify(this.componentes))
+                localStorage.setItem('datetime', JSON.stringify(this.datetime))
+                localStorage.setItem('driver', JSON.stringify(this.driver))
+                localStorage.setItem('winDPK', JSON.stringify(this.win))
+				localStorage.setItem('enrollment', JSON.stringify(this.enrollment))
+				localStorage.setItem('bitLocker', JSON.stringify(this.bitLocker))
+            } catch (error) {
+                console.error('Error during system information retrieval:', error)
+                this.clearLocalStorage()
+                throw error // Re-throw the error to handle it in the catch block below
+            }
+        } else {
+            // Load data from localStorage
+            this.infoSystem = JSON.parse(localStorage.getItem('infoSystem'))
+            this.iTest = JSON.parse(localStorage.getItem('iTest'))
+            this.intDev = JSON.parse(localStorage.getItem('intDev'))
+            this.componentes = JSON.parse(localStorage.getItem('componentes'))
+            this.datetime = JSON.parse(localStorage.getItem('datetime'))
+            this.driver = JSON.parse(localStorage.getItem('driver'))
+            this.win = JSON.parse(localStorage.getItem('winDPK'))
+			this.enrollment = JSON.parse(localStorage.getItem('enrollment'))
+			this.bitLocker = JSON.parse(localStorage.getItem('bitLocker'))
+        }
 
-			// Perform GPU check if conditions are met
-			if (
-				this.intDev.video
-					.filter((v) => v.Type === 'Dedicated')
-					.some((obj) => obj.AdapterRAM.includes('4'))
-			) {
-				this.myGpu = this.$cmd.getDx({ Serial: this.infoSystem.system.serial })
-			}
+        // Perform GPU check if conditions are met
+        if (
+            this.intDev.video
+                .filter((v) => v.Type === 'Dedicated')
+                .some((obj) => obj.AdapterRAM.includes('4'))
+        ) {
+            this.myGpu = this.$cmd.getDx({ Serial: this.infoSystem.system.serial })
+        }
 
-			console.log('Drivers: ', this.driver)
-			this.infDateEnd = new Date()
-			console.log(this.infDateEnd, 'End System Information...')
+        console.log('Drivers: ', this.driver)
+        this.infDateEnd = new Date()
+        console.log(this.infDateEnd, 'End System Information...')
 
-			// Final validation
-			this.validation()
+        // Final validation
 
-			window.addEventListener('keydown', this.handleKeyPress)
-		} catch (error) {
-			// Display error dialog using Quasar
-			this.$q
-				.dialog({
-					title: 'Error',
-					message: `An error occurred during initialization: ${error.message}`,
-					persistent: true,
-					color: 'red',
-					ok: {
-						label: 'Retry',
-					},
-				})
-				.onOk(async () => {
-					await this.clearLocalStorage() // Clear localStorage
-					window.location.reload() // Reload the page to retry
-				})
-		} finally {
-			// Hide the loading spinner
-			this.$q.loading.hide()
-		}
-	},
+        this.validation()
+
+        window.addEventListener('keydown', this.handleKeyPress)
+    } catch (error) {
+        // Display error dialog using Quasar
+        this.$q
+            .dialog({
+                title: 'Error',
+                message: `An error occurred during initialization: ${error.message}`,
+                persistent: true,
+                color: 'red',
+                ok: {
+                    label: 'Retry',
+                },
+            })
+            .onOk(async () => {
+                await this.clearLocalStorage() // Clear localStorage
+                window.location.reload() // Reload the page to retry
+            })
+    } finally {
+        // Ensure loading is hidden after a small delay
+        setTimeout(() => {
+            loading.hide()
+        }, 500)
+    }
+},
 	beforeDestroy() {
 		window.removeEventListener('keydown', this.handleKeyPress)
 		// Limpiar los eventos del cronómetro de actividad

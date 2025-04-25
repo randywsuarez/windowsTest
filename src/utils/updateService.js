@@ -1,119 +1,171 @@
-// updateService.js
-const axios = require('axios')
 const fs = require('fs')
-const fsPromises = require('fs').promises
-const AdmZip = require('adm-zip')
 const path = require('path')
-const env = require('./env')
-const { exec } = require('child_process')
 
-class UpdateService {
-	constructor(user, repository, version, token) {
-		this.usuario = user
-		this.repositorio = repository
-		this.versionActual = version
-		this.archivoDescarga = 'update.zip'
-		this.carpetaDestino = path.join(process.cwd().split(path.sep)[0] + path.sep, '..', 'update')
-		this.token = token
-	}
-
-	async verificarActualizacion() {
-		try {
-			const options = {
-				method: 'GET',
-				headers: {
-					'User-Agent': 'insomnia/2023.5.8',
-					Authorization: this.token,
-				},
-			}
-			const response = await fetch(
-				`https://api.github.com/repos/${this.usuario}/${this.repositorio}/releases/latest`,
-				options,
-			)
-			const data = await response.json()
-			const ultimaVersion = data.tag_name
-
-			if (this.compararVersiones(ultimaVersion, this.versionActual) > 0) {
-				return { result: true, version: ultimaVersion, body: data.body } // Hay una nueva versión disponible
-			} else {
-				return { result: false } // La versión actual es la más reciente
-			}
-		} catch (error) {
-			console.error('Error al verificar la actualización:', error.message)
-			return false
-		}
-	}
-
-	async descargarYDescomprimir(version) {
-		try {
-			// Verificar si existe un archivo previo en la carpeta de destino y eliminarlo
-			const rutaArchivo = path.join(this.carpetaDestino, this.archivoDescarga)
-			try {
-				await fsPromises.access(rutaArchivo)
-				// Si el archivo existe, lo eliminamos
-				await fsPromises.unlink(rutaArchivo)
-			} catch (unlinkError) {
-				// Si no se pudo eliminar, puede ser porque el archivo no existe, no es un problema
-			}
-
-			// Descargar el archivo update.zip
-			const zipResponse = await fetch(
-				`https://github.com/${this.usuario}/${this.repositorio}/releases/download/${version}/${this.archivoDescarga}`,
-				{ follow: 5 }, // Máximo número de redirecciones permitidas
-			)
-
-			// Crear o verificar la existencia de la carpeta de destino
-			try {
-				await fsPromises.access(this.carpetaDestino)
-			} catch (accessError) {
-				// Si la carpeta no existe, la creamos
-				await fsPromises.mkdir(this.carpetaDestino, { recursive: true })
-			}
-
-			// Guardar el nuevo archivo update.zip en la carpeta de destino
-			await fsPromises.writeFile(rutaArchivo, Buffer.from(await zipResponse.arrayBuffer()))
-
-			// Descomprimir el archivo update.zip
-			const zip = new AdmZip(rutaArchivo)
-			zip.extractAllTo(this.carpetaDestino, /*overwrite*/ true)
-
-			// Eliminar el archivo update.zip después de descomprimirlo
-			await fsPromises.unlink(rutaArchivo)
-			console.log(`Archivo update.zip eliminado después de descomprimir`)
-
-			return true // Descarga, descompresión y eliminación exitosas
-		} catch (error) {
-			console.error('Error al descargar, descomprimir o eliminar el archivo:', error.message)
-			return false
-		}
-	}
-
-	compararVersiones(version1, version2) {
-		const v1 = version1.split('.').map(Number)
-		const v2 = version2.split('.').map(Number)
-
-		for (let i = 0; i < v1.length; i++) {
-			if (v1[i] > v2[i]) {
-				return 1
-			} else if (v1[i] < v2[i]) {
-				return -1
-			}
-		}
-
-		return 0
-	}
-	async program() {
-		let exePath = path.join(process.cwd().split(path.sep)[0] + path.sep) // Reemplaza con la ruta correcta de tu archivo .exe
-		exePath = path.join(exePath + 'update.exe')
-		exec(exePath, (err, stdout, stderr) => {
-			if (err) {
-				console.error(err)
-				return
-			}
-			console.log(`stdout: ${stdout}`)
-			console.error(`stderr: ${stderr}`)
-		})
-	}
+// Función simplificada que SOLAMENTE usa el directorio actual como base
+// sin intentar usar la letra de unidad u otras alternativas
+function getBasePath(targetFolder = '') {
+  // Obtener directorio actual donde se está ejecutando la aplicación
+  const currentDir = process.cwd();
+  console.log('Executing from:', currentDir);
+  
+  // Construir ruta al directorio objetivo relativo al directorio actual
+  // Siempre será currentDir + targetFolder
+  const targetPath = path.join(currentDir, targetFolder);
+  console.log(`Target path: ${targetPath}`);
+  
+  return targetPath;
 }
 
-module.exports = UpdateService
+// Función para asegurar que un directorio exista
+function ensureDirectoryExists(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    console.log(`Creating directory: ${dirPath}`);
+    try {
+      fs.mkdirSync(dirPath, { recursive: true });
+      console.log(`Created directory successfully at: ${dirPath}`);
+      return true;
+    } catch (error) {
+      console.error(`Error creating directory ${dirPath}:`, error.message);
+      return false;
+    }
+  }
+  return true;
+}
+
+module.exports = ({ Vue }) => {
+  Vue.prototype.$uploadTextFile = function (fileName, fileContent) {
+    try {
+      console.log(`Starting text file upload: ${fileName}`);
+      
+      // Obtener ruta a la carpeta Logs relativa al directorio actual
+      // Esta es la parte clave: siempre usa currentDir/Logs sin alternativas
+      const logsFolderPath = getBasePath('Logs');
+      console.log(`Logs directory path: ${logsFolderPath}`);
+
+      // Crear carpeta "Logs" si no existe
+      if (!ensureDirectoryExists(logsFolderPath)) {
+        throw new Error('Failed to create logs directory');
+      }
+
+      // Ruta completa del archivo
+      const hasExtension = fileName.includes('.');
+      const finalFileName = hasExtension ? fileName : `${fileName}.txt`;
+      const textFilePath = path.join(logsFolderPath, finalFileName);
+      console.log(`Full file path: ${textFilePath}`);
+
+      // Convertir contenido a base64
+      const base64Content = Buffer.from(fileContent).toString('base64');
+
+      // Función para guardar archivos con reintentos
+      const saveFile = (filePath, content, retries = 3) => {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+          try {
+            fs.writeFileSync(filePath, content);
+            console.log(`File saved successfully at: ${filePath} (attempt ${attempt})`);
+            
+            // Verificar que el archivo se guardó correctamente
+            if (fs.existsSync(filePath)) {
+              const stats = fs.statSync(filePath);
+              console.log(`File saved (size: ${stats.size} bytes)`);
+              return true;
+            } else {
+              console.warn(`File appears not to have been saved correctly, retrying...`);
+              continue;
+            }
+          } catch (error) {
+            console.error(`Error saving file (attempt ${attempt}): ${filePath}`, error);
+            if (attempt === retries) {
+              return false;
+            }
+            // Pequeña pausa antes de reintentar
+            console.log(`Retrying in 100ms...`);
+            const startTime = new Date().getTime();
+            while (new Date().getTime() - startTime < 100) { /* esperar */ }
+          }
+        }
+        return false;
+      };
+
+      // Guardar archivo original con reintentos
+      const saveResult = saveFile(textFilePath, fileContent);
+      
+      if (saveResult) {
+        sessionStorage.setItem('txt', textFilePath);
+        
+        // Almacenar información del archivo en el prototipo de Vue
+        Vue.prototype.$textFile = {
+          original: {
+            name: fileName,
+            path: textFilePath,
+          },
+          base64: {
+            name: `${fileName}_base64`,
+            content: base64Content,
+          },
+        };
+        
+        return {
+          success: true,
+          SerialNumber: fileName,
+          EmployeeID: '',
+          FileType: '1',
+          fileExtension: '.txt',
+          fileBase64Str: base64Content,
+          filePath: textFilePath
+        };
+      } else {
+        throw new Error(`Failed to save file after multiple attempts`);
+      }
+    } catch (error) {
+      console.error('Error in uploadTextFile:', error.message);
+      console.error('Error details:', error);
+      
+      return {
+        success: false,
+        error: error.message,
+        fileName: fileName
+      };
+    }
+  };
+
+  Vue.prototype.$readTextFile = function (filePath) {
+    try {
+      console.log(`Attempting to read file: ${filePath}`);
+      
+      // Si la ruta es relativa, resolverla desde el directorio actual
+      if (!path.isAbsolute(filePath)) {
+        // Primero intentar desde la carpeta Logs relativa al directorio actual
+        const logsPath = getBasePath('Logs');
+        const resolvedPath = path.join(logsPath, filePath);
+        
+        if (fs.existsSync(resolvedPath)) {
+          filePath = resolvedPath;
+          console.log(`Resolved relative path to: ${filePath}`);
+        } else {
+          // Si no se encuentra, intentar directamente desde el directorio actual
+          const currentDirPath = path.join(process.cwd(), filePath);
+          
+          if (fs.existsSync(currentDirPath)) {
+            filePath = currentDirPath;
+            console.log(`Resolved relative path to: ${filePath}`);
+          }
+        }
+      }
+      
+      // Verificar si el archivo existe
+      if (!fs.existsSync(filePath)) {
+        console.error(`File not found: ${filePath}`);
+        return null;
+      }
+      
+      // Leer el archivo
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      console.log(`File read successfully: ${filePath} (${fileContent.length} characters)`);
+      
+      return fileContent;
+    } catch (error) {
+      console.error(`Error reading file ${filePath}:`, error);
+      return null; // Retornar null si hay un error
+    }
+  };
+};

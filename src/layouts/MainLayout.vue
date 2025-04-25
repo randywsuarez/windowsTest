@@ -15,6 +15,48 @@
 			</q-toolbar>
 		</q-header>
 
+		<!-- Outdated Version Dialog -->
+		<q-dialog v-model="isVersionOutdated" persistent>
+			<q-card>
+				<q-card-section>
+					<div class="text-h6">Outdated Version</div>
+				</q-card-section>
+
+				<q-card-section>
+					<div class="q-pa-md">
+						<p>Your current version (V{{ version }}) is outdated.</p>
+						<p>Please update to the latest version to continue using the application.</p>
+					</div>
+				</q-card-section>
+
+				<q-card-actions align="right">
+					<q-btn label="Check for Updates" color="primary" @click="updSystem" />
+					<q-btn label="Reload System" color="secondary" @click="reloadSystem" />
+				</q-card-actions>
+			</q-card>
+		</q-dialog>
+
+		<!-- Maintenance Mode Dialog -->
+		<q-dialog v-model="isMaintenanceMode" persistent>
+			<q-card>
+				<q-card-section>
+					<div class="text-h6">System Maintenance</div>
+				</q-card-section>
+
+				<q-card-section>
+					<div class="q-pa-md">
+						<p>The application is currently under maintenance.</p>
+						<p>Please try again later.</p>
+					</div>
+				</q-card-section>
+
+				<q-card-actions align="right">
+					<q-btn label="Check Status" color="primary" @click="checkMaintenanceStatus" />
+				</q-card-actions>
+			</q-card>
+		</q-dialog>
+
+		<!-- No Internet Dialog -->
 		<q-dialog v-model="isDialogVisible" class="login-card" persistent>
 			<q-card>
 				<q-card-section>
@@ -23,7 +65,7 @@
 
 				<q-card-section>
 					<div class="q-pa-md text-h6">
-						There is no Internet conection. Please verify your connection.
+						There is no Internet connection. Please verify your connection.
 					</div>
 				</q-card-section>
 
@@ -33,6 +75,8 @@
 				</q-card-actions>
 			</q-card>
 		</q-dialog>
+
+		<!-- Update Dialog -->
 		<q-dialog v-model="updt" persistent>
 			<q-card>
 				<q-card-section>
@@ -43,7 +87,7 @@
 
 				<q-card-section style="max-height: 50vh">
 					<p>
-						New version available! its current version is: {{ v.current }} and the new version is:
+						New version available! Your current version is: {{ v.current }} and the new version is:
 						{{ v.new }}
 					</p>
 				</q-card-section>
@@ -65,7 +109,7 @@
 		</q-dialog>
 
 		<q-page-container>
-			<router-view />
+			<router-view v-if="!isVersionOutdated && !isMaintenanceMode" />
 		</q-page-container>
 	</q-layout>
 </template>
@@ -123,12 +167,16 @@
 				test: { result: false },
 				hasInternet: navigator.onLine,
 				isDialogVisible: false,
+				isVersionOutdated: false,
+				isMaintenanceMode: false,
 				checkInterval: null,
 				intervalId: null,
 				updt: false,
 				v: {},
 				version: '',
 				updateService: '',
+				maintenanceData: null,
+				latestVersion: '',
 			}
 		},
 		async created() {
@@ -199,9 +247,9 @@
 			async comprobarToken() {
 				let respuesta = await this.checkToken()
 				if (respuesta && respuesta.status === 'OK') {
-					console.log('Usuario autenticado')
+					console.log('User authenticated')
 				} else {
-					console.error('Token no válido, redirigiendo al LoginLayout')
+					console.error('Invalid token, redirecting to LoginLayout')
 					this.$q.loading.hide()
 					this.$router.push('/login')
 				}
@@ -241,6 +289,35 @@
 					this.$q.notify({
 						color: 'negative',
 						message: 'Error downloading or unzipping the update.',
+					})
+				}
+			},
+			reloadSystem() {
+				location.reload()
+			},
+			async checkMaintenanceStatus() {
+				this.$q.loading.show({
+					message: 'Checking maintenance status...',
+				})
+				
+				try {
+					let d = await this.$db.collection('updateSystem').all_data().get()
+					this.maintenanceData = d[0]
+					this.isMaintenanceMode = d[0].Maintenance === true
+					
+					this.$q.loading.hide()
+					
+					if (!this.isMaintenanceMode) {
+						this.$q.notify({
+							color: 'positive',
+							message: 'System is now available.',
+						})
+					}
+				} catch (error) {
+					this.$q.loading.hide()
+					this.$q.notify({
+						color: 'negative',
+						message: 'Error checking maintenance status.',
 					})
 				}
 			},
@@ -289,6 +366,10 @@
 				window.removeEventListener('mouseup', this.stopDrag)
 			},
 			async updSystem() {
+				this.$q.loading.show({
+					message: 'Checking for updates...',
+				})
+				
 				this.updateService = new UpdateService(
 					env.github.user,
 					env.github.repository,
@@ -298,12 +379,20 @@
 
 				const actualizacionDisponible = await this.updateService.verificarActualizacion()
 
+				this.$q.loading.hide()
+
 				if (actualizacionDisponible.result) {
 					clearInterval(this.intervalId)
 					this.v['current'] = env.version
 					this.v['new'] = actualizacionDisponible.version
 					this.v['body'] = actualizacionDisponible.body
 					this.updt = actualizacionDisponible.result
+					this.latestVersion = actualizacionDisponible.version
+				} else {
+					this.$q.notify({
+						color: 'info',
+						message: 'No updates available at this time.',
+					})
 				}
 			},
 			compareVersions(currentVersion, availableVersion) {
@@ -319,12 +408,31 @@
 				}
 				return false
 			},
+			checkVersionStatus(latestVersion) {
+				if (this.compareVersions(env.version, latestVersion)) {
+					this.isVersionOutdated = true
+				}
+			}
 		},
 		async mounted() {
 			if (!this.$q.localStorage.getItem('api')) this.$q.localStorage.set('api', 'server')
 			document.addEventListener('keydown', this.handleKeyDown)
+			
+			// Get update system data
 			let d = await this.$db.collection('updateSystem').all_data().get()
-			if (d[0].activated && this.compareVersions(env.version, d[0].Version)) await this.updSystem()
+			this.maintenanceData = d[0]
+			
+			// Check maintenance mode
+			if (d[0].Maintenance === true) {
+				this.isMaintenanceMode = true
+			}
+			
+			// Check version status
+			if (d[0].activated && this.compareVersions(env.version, d[0].Version)) {
+				this.isVersionOutdated = true
+				this.latestVersion = d[0].Version
+				await this.updSystem()
+			}
 		},
 		beforeDestroy() {
 			document.removeEventListener('keydown', this.handleKeyDown)
