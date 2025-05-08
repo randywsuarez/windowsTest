@@ -60,19 +60,19 @@
 							<q-icon name="timer" color="primary" size="xs" class="q-mr-sm" />
 							<div class="text-caption text-weight-medium">Duration:</div>
 							<div class="text-caption q-ml-sm">{{ (() => {
-          // Parseamos las fechas (si ya son Date no hace falta el new Date)
-          const start = new Date(infDateStart)
-          const end   = new Date(infDateEnd)
-          const diff  = end - start            // diferencia en milisegundos
+								// Parseamos las fechas (si ya son Date no hace falta el new Date)
+								const start = new Date(infDateStart)
+								const end   = new Date(infDateEnd)
+								const diff  = end - start            // diferencia en milisegundos
 
-          // Calculamos horas, minutos y segundos
-          const hours   = Math.floor(diff / 3600000)
-          const minutes = Math.floor((diff % 3600000) / 60000)
-          const seconds = Math.floor((diff % 60000) / 1000)
+								// Calculamos horas, minutos y segundos
+								const hours   = Math.floor(diff / 3600000)
+								const minutes = Math.floor((diff % 3600000) / 60000)
+								const seconds = Math.floor((diff % 60000) / 1000)
 
-          // Devolvemos un string formateado
-          return `${hours}h ${minutes}m ${seconds}s`
-        })() }}</div>
+								// Devolvemos un string formateado
+								return `${hours}h ${minutes}m ${seconds}s`
+								})() }}</div>
 						</div>
 					</div>
 				</q-card-section>
@@ -86,6 +86,45 @@
 							style="width: 150px; height: 200px"
 							fit="contain" />
 					</div>
+				</q-card-section>
+				<q-separator />
+				<q-card-section>
+					<!-- System Status Table Start -->
+			<!-- <q-card class="card">
+				<q-card-section>
+					<div class="text-h6">System Status</div>
+				</q-card-section>
+				<q-separator />
+				<q-card-section>
+					<q-table
+						:data="formattedSystemStatus"
+						:columns="statusColumns"
+						row-key="name"
+						:loading="statusLoading"
+						virtual-scroll
+						style="height: 250px"
+						:rows-per-page-options="[0]"
+						hide-bottom
+						flat bordered
+					>
+						<template v-slot:body-cell-status="props">
+							<q-td :props="props">
+								<q-chip :icon="props.row._statusIcon" :color="props.row._statusClass.replace('text-', '')" text-color="white" dense square>
+									{{ props.value }}
+								</q-chip>
+							</q-td>
+						</template>
+
+						<template v-slot:loading>
+							<q-inner-loading showing color="primary" />
+						</template>
+					</q-table>
+				</q-card-section>
+				<q-card-actions align="right" id="actionSystemStatus">
+					<q-btn flat color="primary" size="md" label="Refresh" @click="fetchSystemStatus" :loading="statusLoading"/>
+				</q-card-actions>
+			</q-card> -->
+			<!-- System Status Table End -->
 				</q-card-section>
 			</q-card>
 
@@ -226,9 +265,9 @@
 						</div>
 					</div>
 					<div class="q-mt-sm">{{ win.licenseDetails }}</div>
-					<div v-if="forceInject" class="text-warning q-mt-sm">
+					<!-- <div v-if="forceInject" class="text-warning q-mt-sm">
 						<i class="fas fa-exclamation-triangle"></i> Force mode activated (Ctrl + Shift + F)
-					</div>
+					</div> -->
 				</q-card-section>
 				<q-card-section class="center" v-else>
 					<div>Wait...</div>
@@ -368,7 +407,7 @@
 						<q-checkbox size="xl" v-model="test.WWAN" true-value="YES" false-value="NO" label="WWAN" />
 						<q-checkbox size="xl" v-model="test.WLAN" true-value="YES" false-value="NO" label="WLAN" />
 						<q-checkbox size="xl" v-model="componentes.Keyboard.Privacy" true-value="YES" false-value="NO"
-							label="Privacy" />
+							label="Privacy" v-if="componentes && componentes.Keyboard" />
 						<q-checkbox size="xl" v-model="test.NFC" true-value="YES" false-value="NO" label="NFC" />
 						<q-checkbox size="xl" v-model="test.SmartCard" true-value="YES" false-value="NO"
 							label="Smart Card" />
@@ -392,7 +431,7 @@
 						<q-checkbox size="xl" v-model="hotKey.speakers" val="80x" label="Speakers" />
 						<q-checkbox size="xl" v-model="hotKey.brights" val="80px" label="Brightness" />
 						<q-checkbox size="150px" v-model="hotKey.privacy" val="80px" label="Privacy"
-							v-if="componentes.Keyboard.Privacy == 'YES'" />
+							v-if="componentes && componentes.Keyboard && componentes.Keyboard.Privacy == 'YES'" />
 					</div>
 				</q-card-section>
 				<q-card-section>
@@ -407,16 +446,39 @@
 				</q-card-section>
 				<q-separator />
 				<q-card-section class="center">
-					Is the Drivers and Video working?
+					<!-- Is the Drivers and Video working?
 					<div>Driver: {{ driver.status }}</div>
-					<div>Video: {{ driver.video ? 'PASS' : 'FAIL' }}</div>
+					<div>Video: {{ driver.video ? 'PASS' : 'FAIL' }}</div> -->
+					<q-list>
+						<q-item-label header>Is the Drivers and Video working?</q-item-label>
+						<q-item>
+							<q-item-section top>
+							<q-item-label lines="1">
+								<span class="text-weight-medium">Drivers</span>
+								<span class="text-grey-8"> - {{ driver.status }}</span>
+							</q-item-label>
+							<q-item-label lines="1">
+								<span class="text-weight-medium">Video</span>
+								<span class="text-grey-8"> -  {{ driver.video ? 'PASS' : 'FAIL' }}</span>
+							</q-item-label>
+							</q-item-section>
+
+							<q-item-section top side>
+							<div class="text-grey-8 q-gutter-xs">
+								<q-btn class="gt-xs" size="12px" flat dense round label="Pass" v-if="driver.status != 'PASS'" @click="driver.status = 'PASS'" />
+							</div>
+							</q-item-section>
+						</q-item>
+					</q-list>
+				</q-card-section>
+				<q-separator />
+				<q-card-section>
 					<q-list bordered v-if="driver.missingDrivers.length">
 						<q-item v-for="(d, k) in driver.missingDrivers" :key="k">
 							<q-item-section>{{ d }}</q-item-section>
 						</q-item>
 					</q-list>
 				</q-card-section>
-
 				<q-card-actions align="left" id="actionInformation">
 					<q-btn flat color="positive" size="xl" label="Next" />
 				</q-card-actions>
@@ -454,6 +516,7 @@
 					<q-btn flat color="positive" size="xl" label="Pass" @click="action = 'PASS'" />
 				</q-card-actions>
 			</q-card>
+
 			<q-card class="card" v-show="activate.done">
 				<q-card-section>
 					<div class="row items-center no-wrap">
@@ -562,6 +625,7 @@ import VirtualKeyboard from '../components/Keyboard.vue'
 import AudioRecorder from '../components/audioRecorder.vue'
 import Touch from '../components/Touch.vue'
 import ColorSelect from '../components/ColorSelect.vue'
+import {Loading} from 'quasar'
 import {
 	drivers,
 	Enrollment,
@@ -574,6 +638,8 @@ import {
 	sWin,
 	dWin,
 	BitLocker,
+	mountDrive,
+	unmountDrive
 } from '../scripts'
 import moment from 'moment'
 import JsBarcode from 'jsbarcode'
@@ -693,6 +759,7 @@ export default {
 				touch: false,
 				information: false,
 				Storage: false,
+				systemStatus: false, // Added for system status card visibility
 			},
 			showActions: false,
 			GPUIntegrated: '',
@@ -786,9 +853,27 @@ export default {
 			datetime: '',
 			winChange: false,
 			forceInject: false, // Cambiado a true por defecto
+			// System Status Table Data
+			systemStatus: [],
+			statusColumns: [
+				{ name: 'name', label: 'Component', field: 'name', align: 'left' },
+				{ name: 'status', label: 'Status', field: 'status', align: 'center' },
+				{ name: 'details', label: 'Details', field: 'details', align: 'left' }
+			],
+			statusLoading: false,
 		}
 	},
 	computed: {
+		// System Status Table Computed Property
+		formattedSystemStatus() {
+			return this.systemStatus.map(item => {
+				return {
+					...item,
+					_statusClass: item.status === 'OK' ? 'text-positive' : item.status === 'Warning' ? 'text-warning' : 'text-negative',
+					_statusIcon: item.status === 'OK' ? 'check_circle' : item.status === 'Warning' ? 'warning' : 'error'
+				};
+			});
+		},
 		leftItems() {
 			return this.items.slice(0, Math.ceil(this.items.length / 3))
 		},
@@ -816,6 +901,29 @@ export default {
 		},
 	},
 	methods: {
+		// System Status Table Method
+		async fetchSystemStatus() {
+			this.statusLoading = true;
+			this.activate.systemStatus = true; // Ensure the card is shown when fetching
+			try {
+				// Replace with your actual API call or data fetching logic
+				// Simulating an API call that might return different statuses
+				const response = await new Promise(resolve => setTimeout(() => resolve([
+					{ name: 'CPU', status: 'OK', details: 'Running normally - ' + Math.floor(Math.random() * 100) + '%' },
+					{ name: 'Memory', status: Math.random() > 0.5 ? 'OK' : 'Warning', details: 'Usage: ' + Math.floor(Math.random() * 100) + '%' },
+					{ name: 'Disk C:', status: Math.random() > 0.2 ? 'OK' : 'Error', details: 'Free space: ' + Math.floor(Math.random() * 500) + 'GB' },
+					{ name: 'Network', status: 'OK', details: 'Connected - ' + (Math.random() * 1000).toFixed(2) + ' Mbps' },
+					{ name: 'Database Service', status: Math.random() > 0.7 ? 'OK' : 'Error', details: 'Service status check' },
+				]), 1500));
+				this.systemStatus = response;
+			} catch (error) {
+				console.error('Error fetching system status:', error);
+				this.$q.notify({ type: 'negative', message: 'Failed to load system status.' });
+				this.systemStatus = []; // Clear data on error
+			} finally {
+				this.statusLoading = false;
+			}
+		},
 		calculatePercentage(free, total) {
 			return (total - free) / total
 		},
@@ -1089,10 +1197,10 @@ export default {
 		       Windows Product Key old: ${this.test.oldKeyWin}
 		       ${this.test.windows}
 		       ${this.test.color ? `Color: ${this.test.color}` : ''}
-			   BitLocker: ${this.bitLocker.status ? 'YES' : 'NO'}
-			   Enrollment: ${this.enrollment.status ? 'YES' : 'NO'}
-		       ${this.test.bitLocker? `BitLocker Key: ${this.test.bitLockerKey}` : ''}
-		       ${this.test.bitLocker? `BitLocker Key old: ${this.test.oldBitLockerKey}` : ''}
+               BitLocker: ${this.bitLocker && this.bitLocker.hasOwnProperty('status') ? (this.bitLocker.status ? 'YES' : 'NO') : 'NO'}
+               Enrollment: ${this.enrollment && this.enrollment.hasOwnProperty('status') ? (this.enrollment.status ? 'YES' : 'NO') : 'NO'}
+               ${this.test.bitLocker? `BitLocker Key: ${this.test.bitLockerKey}` : ''}
+               ${this.test.bitLocker? `BitLocker Key old: ${this.test.oldBitLockerKey}` : ''}
 		       Hard Drive: ${this.intDev.HDD.Total}
 		       ${this.disks.map((disk) => disk.specs).join('\n')}
 		       Memory RAM: ${this.intDev.RAM.Total} - ${this.form.lightRAM ? 'With RBG' : ''}
@@ -1117,7 +1225,7 @@ export default {
 		       ${this.type != 'desktop' ? this.test.audio : ''}
 		       ${this.type != 'desktop' ? this.test.camera : ''}
 		       ${this.test.drivers}
-			   ${this.driver.missingDrivers.join('\n')}
+			   ${this.test.drivers.hasOwnProperty('missingDrivers') && this.driver.missingDrivers.length ? this.driver.missingDrivers.join('\n') : ''}
 		       ${this.test.display}
 		       ${this.type == 'laptop' ? this.test.battery : ''}
 		       ${this.type == 'laptop' ? this.test.keyboard : ''}
@@ -1325,7 +1433,9 @@ export default {
 			this.setTypeUnit()
 			this.$q.loading.show()
 			if (this.device.brand == 'HP') {
+				//alert('biosData')
 				this.bios = JSON.parse(JSON.stringify(await this.$cmd.biosData(this.device.Serial)))
+				//alert(this.bios)
 				console.log('BIOS: ', this.bios.components)
 				console.log('Select: ', this.select)
 				await this.infoHP()
@@ -1363,7 +1473,6 @@ export default {
 
 			this.activate.logo = false
 			this.activate.type = true
-			this.startActivityTimer()
 			//this.stepsDate['']
 			await this.espera2('actionType')
 			this.activate.type = false
@@ -1497,6 +1606,7 @@ export default {
 			}
 			this.txt = await this.report()
 			this.file = await this.$uploadTextFile(this.device.Serial, this.txt)
+			console.log('File: ', this.file)
 			if (this.file) await this.saveFile(this.file)
 			if (!this.audit) {
 				if (this.image && this.type != 'desktop') await this.saveFile(this.image)
@@ -2780,12 +2890,42 @@ export default {
 	},
 async mounted() {
     // Create loading instance
-    const loading = this.$q.loading.show({
+    Loading.show({
         message: 'Some important <b>process</b> is in progress.<br/><span class="text-orange text-weight-bold">Hang on...</span>',
         spinnerColor: 'primary',
         spinnerSize: 140,
         backgroundColor: 'grey-2'
     })
+	// Detectar y almacenar rutas UNC y normales
+	
+	/* await this.$cmd.executeScriptCode(mountDrive)
+	const path = require('path');
+	this.rutasCMD = {};
+	try {
+		const currentDir = process.cwd();
+		this.rutasCMD.normal = currentDir;
+		
+		// Verificar si estamos en una ruta UNC
+		if (currentDir.startsWith('\\\\')) {
+			const parts = currentDir.split(path.sep);
+			if (parts.length >= 4) {
+				const serverSharePath = parts.slice(0, 4).join(path.sep);
+				console.log(`Detectada ruta UNC: ${currentDir}. Usando base: ${serverSharePath}`);
+				this.rutasCMD.unc = serverSharePath;
+				this.rutasCMD.isUnc = true;
+			}
+		} else {
+			console.log('Directorio actual no es una ruta UNC:', currentDir);
+			this.rutasCMD.unc = currentDir;
+			this.rutasCMD.isUnc = false;
+		}
+	} catch (error) {
+		console.error('Error al detectar rutas:', error);
+		this.rutasCMD = { normal: process.cwd(), isUnc: false };
+	} */
+	
+	this.fetchSystemStatus(); // Fetch initial system status
+	this.startActivityTimer()
 
     try {
         this.infDateStart = new Date()
@@ -2797,17 +2937,25 @@ async mounted() {
         if (!localStorage.getItem('infoSystem')) {
             try {
                 // Execute all promises concurrently
-                let [is, it, id, cp, dt, dr, w, enlmt, btlkr ] = await Promise.all([
-                    this.$system(),
-                    this.$cmd.executeScriptCode(imaging),
-                    this.$cmd.executeScriptCode(intenalDevices),
-                    this.$cmd.executeScriptCode(components),
-                    this.DateTime(),
-                    this.$cmd.executeScriptCode(drivers),
-                    this.$cmd.executeScriptCode(sWin),
+				const results = await Promise.allSettled([
+					this.$system(),
+					this.$cmd.executeScriptCode(imaging),
+					this.$cmd.executeScriptCode(intenalDevices), 
+					this.$cmd.executeScriptCode(components),
+					this.DateTime(),
+					this.$cmd.executeScriptCode(drivers),
+					this.$cmd.executeScriptCode(sWin),
 					this.$cmd.executeScriptCode(Enrollment),
 					this.$cmd.executeScriptCode(BitLocker)
-                ])
+				]);
+
+				// Map results to variables, using default error state if rejected
+				let [is, it, id, cp, dt, dr, w, enlmt, btlkr] = results.map(result => {
+					if (result.status === 'fulfilled') {
+						return result.value;
+					}
+					return { error: true };
+				});
 
                 // Assign results to variables
                 this.infoSystem = is
@@ -2820,8 +2968,8 @@ async mounted() {
 				this.enrollment = enlmt
 				this.bitLocker = btlkr
 				if (this.bitLocker.status === true)
-				this.showNotification('The unit has a volume with BitLocker. Fix it and reload the system.')
-				if (this.enrollment.status === true)
+				this.$q.notify({ type: 'negative', message: 'The unit has a volume with BitLocker. Fix it and reload the system.' })
+				if (this.enrollment.Status === true)
 				this.showNotification('The unit has MDM (Enrollment). You need to run the Enrollment app...')
                 // Save results to localStorage
                 localStorage.setItem('infoSystem', JSON.stringify(this.infoSystem))
@@ -2852,6 +3000,7 @@ async mounted() {
         }
 
         // Perform GPU check if conditions are met
+		console.log(this.intDev.video)
         if (
             this.intDev.video
                 .filter((v) => v.Type === 'Dedicated')
@@ -2868,7 +3017,7 @@ async mounted() {
 
         this.validation()
 
-        window.addEventListener('keydown', this.handleKeyPress)
+        //window.addEventListener('keydown', this.handleKeyPress)
     } catch (error) {
         // Display error dialog using Quasar
         this.$q
@@ -2887,12 +3036,11 @@ async mounted() {
             })
     } finally {
         // Ensure loading is hidden after a small delay
-        setTimeout(() => {
-            loading.hide()
-        }, 500)
+        this.$q.loading.hide()
     }
 },
-	beforeDestroy() {
+	async beforeDestroy() {
+		//await this.$cmd.executeScriptCode(unmountDrive)
 		window.removeEventListener('keydown', this.handleKeyPress)
 		// Limpiar los eventos del cronómetro de actividad
 		this.stopActivityTimer()
